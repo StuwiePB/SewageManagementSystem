@@ -16,3 +16,9 @@ Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
 require __DIR__.'/settings.php';
+
+
+// Operations routes
+Route::get('/Operations', function () {
+    return view('operations.dashboard');
+})->name('operations.dashboard');
