@@ -13,7 +13,6 @@ Route::view('/checkreportstatus', 'checkreportstatus')
     ->name('checkreportstatus');
 
 Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
 require __DIR__.'/settings.php';

@@ -415,60 +415,8 @@
             }
         }
 
-        .sidebar {
-            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
-            min-height: 100vh;
-            padding: 2rem 0;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            color: white;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            border-right: 2px solid var(--secondary-blue);
-        }
-
-        .sidebar-title {
-            padding: 1.5rem 1.5rem 2rem;
-            font-weight: 700;
-            font-size: 1.2rem;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 2rem;
-            color: white;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-menu li {
-            margin: 0;
-        }
-
-        .sidebar-menu a {
-            display: block;
-            padding: 1rem 1.5rem;
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-            border-bottom: none;
-        }
-
-        .sidebar-menu a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-left-color: var(--accent-teal);
-            color: white;
-            font-weight: 500;
-        }
-
         .main-content {
-            margin-left: 250px;
+            margin-left: 0;
         }
 
         .back-button {
@@ -487,59 +435,38 @@
             color: var(--primary-blue);
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: relative;
-                min-height: auto;
-                padding: 0.5rem 0;
-                border-right: none;
-                border-bottom: 2px solid var(--secondary-blue);
-            }
 
-            .sidebar-title {
-                padding: 0.75rem 1rem;
-                font-size: 1rem;
-                margin-bottom: 0;
-                border-bottom: none;
-                display: inline-block;
-            }
-
-            .sidebar-menu {
-                flex-direction: row;
-                flex-wrap: nowrap;
-                overflow-x: auto;
-            }
-
-            .sidebar-menu a {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
-                white-space: nowrap;
-                flex-shrink: 0;
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-        }
     </style>
 </head>
 <body>
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div class="sidebar-title">
-            <i class="fas fa-water me-2"></i>
-            Sewage Management System
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ route('home') }}">
+                <i class="fas fa-water me-2"></i>
+                Sewage Management System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('home') }}">Public Portal</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ route('submitreport') }}">Report Issue</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('checkreportstatus') }}">Check Status</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a>
+                    </li>
+                </ul>
+            </div>
         </div>
-        <ul class="sidebar-menu">
-            <li><a href="{{ route('home') }}"><i class="fas fa-home me-2"></i>Public Portal</a></li>
-            <li><a href="{{ route('submitreport') }}"><i class="fas fa-flag me-2"></i>Report Issue</a></li>
-            <li><a href="{{ route('checkreportstatus') }}"><i class="fas fa-search me-2"></i>Check Status</a></li>
-            <li><a href="#"><i class="fas fa-chart-bar me-2"></i>Blockage Reports</a></li>
-            <li><a href="#"><i class="fas fa-wrench me-2"></i>Maintenance Logs</a></li>
-            <li><a href="#"><i class="fas fa-map me-2"></i>GIS Map</a></li>
-        </ul>
-    </aside>
+    </nav>
 
     <!-- Main Content -->
     <div class="main-content">
