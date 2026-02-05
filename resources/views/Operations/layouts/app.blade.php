@@ -30,7 +30,7 @@
         .sidebar h2 {
             margin: 0 0 32px;
             font-size: 20px;
-            color: #2563eb;
+            color: #0056A6;
         }
 
         .nav a {
@@ -40,12 +40,13 @@
             text-decoration: none;
             color: #374151;
             border-radius: 8px;
+            transition: all 0.2s;
         }
 
         .nav a.active,
         .nav a:hover {
-            background-color: #eff6ff;
-            color: #2563eb;
+            background-color: rgba(0, 86, 166, 0.1);
+            color: #0056A6;
         }
 
         /* Main content */
@@ -90,6 +91,57 @@
             margin: 8px 0 0;
             font-size: 28px;
         }
+
+        /* Button styles */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #0056A6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #004494;
+        }
+
+        .btn-secondary {
+            background: #0077CC;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #0066aa;
+        }
+
+        /* Form elements */
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="tel"],
+        select,
+        textarea {
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="number"]:focus,
+        input[type="tel"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #0056A6;
+            box-shadow: 0 0 0 3px rgba(0, 86, 166, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -100,17 +152,28 @@
         <h2>SewageOps</h2>
 
         <nav class="nav">
-            <a href="{{ route('operations.dashboard') }}" class="active">Dashboard</a>
-            <a href="#">GIS Map</a>
-            <a href="#">Incidents</a>
-            <a href="#">Work Orders</a>
-            <a href="#">Maintenance</a>
-            <a href="#">Crew Management</a>
+            <a href="{{ route('operations.dashboard') }}" class="{{ request()->routeIs('operations.dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('operations.map') }}" class="{{ request()->routeIs('operations.map') ? 'active' : '' }}">GIS Map</a>
+            <a href="{{ route('operations.reports') }}" class="{{ request()->routeIs('operations.reports') ? 'active' : '' }}">Reports</a>
+            <a href="{{ route('operations.work-orders.index') }}" class="{{ request()->routeIs('operations.work-orders.*') ? 'active' : '' }}">Work Orders</a>
+            <a href="{{ route('operations.crews.index') }}" class="{{ request()->routeIs('operations.crews.*') ? 'active' : '' }}">Crew Management</a>
         </nav>
     </aside>
 
     {{-- Main content --}}
     <main class="main">
+        @if(session('success'))
+            <div style="background: #d1fae5; color: #065f46; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #6ee7b7;">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fca5a5;">
+                {{ session('error') }}
+            </div>
+        @endif
+
         @yield('content')
     </main>
 </div>
