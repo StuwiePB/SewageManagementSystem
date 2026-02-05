@@ -18,6 +18,32 @@
     ">+ Add New Crew</a>
 </div>
 
+{{-- Unassigned Workers Tab --}}
+@if($unassignedCount > 0)
+<a href="{{ route('operations.crews.unassigned') }}" style="
+    display:block;
+    text-decoration:none;
+    margin-bottom:20px;
+">
+    <div class="card" style="
+        background:linear-gradient(135deg, #0056A6 0%, #0077CC 100%);
+        color:white;
+        cursor:pointer;
+        transition:transform 0.2s, box-shadow 0.2s;
+        border:none;
+    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,86,166,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <p style="margin:0; font-size:14px; opacity:0.9;">Unassigned Personnel</p>
+                <h3 style="margin:8px 0 0; font-size:32px; font-weight:600;">{{ $unassignedCount }}</h3>
+                <p style="margin:4px 0 0; font-size:12px; opacity:0.8;">Click to view and assign →</p>
+            </div>
+            <div style="font-size:48px; opacity:0.3;">👥</div>
+        </div>
+    </div>
+</a>
+@endif
+
 <div class="card">
     <table style="width:100%; border-collapse:collapse;">
         <thead>

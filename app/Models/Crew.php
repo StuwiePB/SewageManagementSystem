@@ -32,4 +32,12 @@ class Crew extends Model
         return $this->workOrders()
             ->whereIn('status', ['pending', 'assigned', 'in_progress']);
     }
+
+    /**
+     * Workers assigned to this crew
+     */
+    public function workers(): HasMany
+    {
+        return $this->hasMany(Worker::class);
+    }
 }

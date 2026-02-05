@@ -25,6 +25,8 @@ Route::prefix('operations')->name('operations.')->group(function () {
     Route::get('/map', [OperationsController::class, 'map'])->name('map');
     
     // Crew Management
+    Route::get('/crews/unassigned', [CrewController::class, 'unassigned'])->name('crews.unassigned');
+    Route::post('/crews/assign-worker', [CrewController::class, 'assignWorker'])->name('crews.assign-worker');
     Route::resource('crews', CrewController::class);
     
     // Work Orders
