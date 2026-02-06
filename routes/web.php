@@ -19,6 +19,38 @@ Route::view('/checkreportstatus', 'checkreportstatus')
 Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
+Route::view('/workers', 'workers')
+    ->name('workers');
+
+Route::get('/workers/work-order/{id}', function ($id) {
+    $workOrder = \App\Models\WorkOrder::find($id);
+
+    // If no work order exists (e.g. dummy "View" links for presentation), show demo data
+    if (!$workOrder) {
+        $workOrder = \App\Models\WorkOrder::first()
+            ?? \App\Models\WorkOrder::make([
+                'work_order_number' => 'WO-1042',
+                'type' => 'Emergency Overflow Response',
+                'priority' => 'critical',
+                'location_address' => 'Jalan Gadong, near commercial area',
+                'district' => 'brunei-muara',
+                'mukim' => 'gadong-a',
+                'latitude' => 4.9012,
+                'longitude' => 114.9089,
+                'description' => 'Contain overflow, deploy pumps, and clear main line.',
+                'created_at' => now()->setTime(8, 39),
+                'assigned_at' => now()->setTime(6, 39),
+            ]);
+        if ($workOrder->exists) {
+            $workOrder->load(['crew', 'report']);
+        }
+    } else {
+        $workOrder->load(['crew', 'report']);
+    }
+
+    return view('worker-work-order', compact('workOrder'));
+})->name('workers.work-order.show');
+
 // Redirect old operations URL to new one (so bookmarks still work)
 Route::get('/operation.dashboard', function () {
     return redirect()->route('operations.dashboard', [], 301);
