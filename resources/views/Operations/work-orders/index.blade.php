@@ -5,17 +5,8 @@
 <div class="topbar">
     <div>
         <h1>Work Orders</h1>
-        <p>Manage and track work orders</p>
+        <p>Manage and track work orders (created by admin)</p>
     </div>
-    <a href="{{ route('operations.work-orders.create') }}" style="
-        background:#0056A6;
-        color:white;
-        padding:10px 20px;
-        border-radius:8px;
-        text-decoration:none;
-        font-weight:500;
-        display:inline-block;
-    ">+ Create Work Order</a>
 </div>
 
 {{-- Filters --}}
@@ -90,6 +81,7 @@
         <thead>
             <tr style="text-align:left; border-bottom:2px solid #e5e7eb;">
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Work Order #</th>
+                <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">District</th>
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Location</th>
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Type</th>
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Priority</th>
@@ -106,6 +98,7 @@
                             {{ $workOrder->work_order_number }}
                         </a>
                     </td>
+                    <td style="padding:12px 8px; font-size:14px;">{{ $workOrder->district_display ?? '—' }}</td>
                     <td style="padding:12px 8px; font-size:14px;">{{ $workOrder->location_address }}</td>
                     <td style="padding:12px 8px; font-size:14px;">{{ $workOrder->type }}</td>
                     <td style="padding:12px 8px;">
@@ -151,8 +144,8 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="padding:24px; text-align:center; color:#9ca3af;">
-                        No work orders found. <a href="{{ route('operations.work-orders.create') }}" style="color:#0056A6;">Create your first work order</a>
+                    <td colspan="8" style="padding:24px; text-align:center; color:#9ca3af;">
+                        No work orders found.
                     </td>
                 </tr>
             @endforelse

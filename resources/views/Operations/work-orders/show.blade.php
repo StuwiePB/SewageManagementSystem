@@ -38,8 +38,13 @@
         <div style="margin-bottom:16px;">
             <p style="margin:0; font-size:12px; color:#6b7280;">Location</p>
             <p style="margin:4px 0 0; font-size:16px;">{{ $workOrder->location_address }}</p>
+            @if($workOrder->district_display || $workOrder->mukim_display)
+                <p style="margin:4px 0 0; font-size:13px; color:#6b7280;">
+                    {{ $workOrder->district_display }}{{ $workOrder->mukim_display ? ' • ' . $workOrder->mukim_display : '' }}
+                </p>
+            @endif
             @if($workOrder->latitude && $workOrder->longitude)
-                <p style="margin:4px 0 0; font-size:12px; color:#6b7280;">
+                <p style="margin:4px 0 0; font-size:12px; color:#9ca3af;">
                     {{ $workOrder->latitude }}, {{ $workOrder->longitude }}
                 </p>
             @endif

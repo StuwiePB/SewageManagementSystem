@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Municipal Sewage Issue Reporting Portal</title>
+    <title>Check Report Status – Brunei Darussalam</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
@@ -469,9 +469,9 @@
                         <div class="status-card resolved">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="mb-1">Blockage at Main Street Drain</h5>
+                                    <h5 class="mb-1">Blockage at Jalan Gadong Drain</h5>
                                     <p class="mb-1 text-muted">Report #SMS-2023-0856 • Submitted on Oct 15, 2023</p>
-                                    <p class="mb-0">Address: 123 Main Street, near City Park</p>
+                                    <p class="mb-0">Brunei-Muara • Gadong 'A' • Jalan Gadong, near commercial area</p>
                                 </div>
                                 <span class="status-badge badge-resolved">Resolved</span>
                             </div>
@@ -489,9 +489,9 @@
                         <div class="status-card in-progress">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="mb-1">Sewage Odor in Downtown Area</h5>
+                                    <h5 class="mb-1">Sewage Odor in Bandar Area</h5>
                                     <p class="mb-1 text-muted">Report #SMS-2023-0921 • Submitted on Oct 18, 2023</p>
-                                    <p class="mb-0">Address: Downtown area near 5th Ave and Elm Street</p>
+                                    <p class="mb-0">Brunei-Muara • Kianggeh • Bandar Seri Begawan area</p>
                                 </div>
                                 <span class="status-badge badge-in-progress">In Progress</span>
                             </div>
@@ -516,7 +516,7 @@
             <div class="row">
                 <div class="col-lg-4 mb-4">
                     <h5 class="footer-title">Sewage Monitoring System</h5>
-                    <p>A public service portal for reporting and tracking sewage system issues in our municipality.</p>
+                    <p>A public service portal for reporting and tracking sewage system issues in Brunei Darussalam.</p>
                 </div>
                 
                 <div class="col-lg-2 col-md-6 mb-4">
@@ -530,7 +530,7 @@
             </div>
             
             <div class="copyright">
-                <p class="mb-0">&copy; 2023 Municipal Public Works Department. All rights reserved.</p>
+                <p class="mb-0">&copy; {{ date('Y') }} Public Works Department, Brunei Darussalam. All rights reserved.</p>
             </div>
         </div>
     </footer>

@@ -15,6 +15,8 @@ class Report extends Model
         'reporter_name',
         'reporter_contact',
         'location_address',
+        'district',
+        'mukim',
         'latitude',
         'longitude',
         'status',
@@ -26,6 +28,25 @@ class Report extends Model
     public function workOrder(): HasOne
     {
         return $this->hasOne(WorkOrder::class);
+    }
+
+    /**
+     * Display name for district (Brunei)
+     */
+    public function getDistrictDisplayAttribute(): ?string
+    {
+        return $this->district ? (config("brunei.districts.{$this->district}") ?? $this->district) : null;
+    }
+
+    /**
+     * Display name for mukim (whereabouts)
+     */
+    public function getMukimDisplayAttribute(): ?string
+    {
+        if (!$this->district || !$this->mukim) {
+            return null;
+        }
+        return config("brunei.mukims.{$this->district}.{$this->mukim}") ?? $this->mukim;
     }
 
     /**

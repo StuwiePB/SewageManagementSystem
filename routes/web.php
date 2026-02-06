@@ -4,13 +4,14 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\CrewController;
 use App\Http\Controllers\WorkOrderController;
+use App\Http\Controllers\PublicReportController;
 
 Route::get('/', function () {
     return view('publicpage');
 })->name('home');
 
-Route::view('/submitreport', 'submitreport')
-    ->name('submitreport');
+Route::get('/submitreport', [PublicReportController::class, 'create'])->name('submitreport');
+Route::post('/submitreport', [PublicReportController::class, 'store'])->name('reports.store');
 
 Route::view('/checkreportstatus', 'checkreportstatus')
     ->name('checkreportstatus');
@@ -18,7 +19,12 @@ Route::view('/checkreportstatus', 'checkreportstatus')
 Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
-// Operations routes
+// Redirect old operations URL to new one (so bookmarks still work)
+Route::get('/operation.dashboard', function () {
+    return redirect()->route('operations.dashboard', [], 301);
+});
+
+// Operations routes – use /operations/dashboard (with 's' and a slash)
 Route::prefix('operations')->name('operations.')->group(function () {
     Route::get('/dashboard', [OperationsController::class, 'dashboard'])->name('dashboard');
     Route::get('/reports', [OperationsController::class, 'reports'])->name('reports');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Municipal Sewage Issue Reporting Portal</title>
+    <title>Sewage Issue Reporting – Brunei Darussalam</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
@@ -441,6 +441,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#contact">Contact</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('operations.dashboard') }}">Operations</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -477,7 +480,7 @@
                                 <i class="fas fa-flag"></i>
                             </div>
                             <h4 class="feature-title">1. Report Issue</h4>
-                            <p>Use our simple form to report sewage issues in your area. Provide details, location, and optional photos.</p>
+                            <p>Use our simple form to report sewage issues in Brunei Darussalam. Provide details, district, mukim, and location.</p>
                         </div>
                     </div>
                     
@@ -534,7 +537,7 @@
                             <h5><i class="fas fa-envelope me-2"></i> General Inquiries</h5>
                             <p>For non-emergency questions about the sewage system:</p>
                             <ul class="list-unstyled">
-                                <li class="mb-2"><i class="fas fa-inbox me-2"></i> Email: publicworks@municipality.gov</li>
+                                <li class="mb-2"><i class="fas fa-inbox me-2"></i> Email: Public Works, Brunei Darussalam</li>
                                 <li class="mb-2"><i class="fas fa-phone me-2"></i> Phone: (555) 123-4567 (Mon-Fri, 8AM-5PM)</li>
                                 <li><i class="fas fa-map-marker-alt me-2"></i> Address: 123 Public Works Blvd, City, State 12345</li>
                             </ul>
@@ -551,7 +554,7 @@
             <div class="row">
                 <div class="col-lg-4 mb-4">
                     <h5 class="footer-title">Sewage Monitoring System</h5>
-                    <p>A public service portal for reporting and tracking sewage system issues in our municipality. Together, we can maintain a clean and functional sewage infrastructure.</p>
+                    <p>A public service portal for reporting and tracking sewage system issues in Brunei Darussalam. Together, we can maintain a clean and functional sewage infrastructure.</p>
                 </div>
                 
                 <div class="col-lg-2 col-md-6 mb-4">
@@ -570,7 +573,7 @@
                         <a href="#">Sewage System Maintenance Tips</a>
                         <a href="#">Environmental Impact Information</a>
                         <a href="#">Public Works Department</a>
-                        <a href="#">Municipal Services</a>
+                        <a href="#">Public Services</a>
                     </div>
                 </div>
                 
@@ -585,7 +588,7 @@
             </div>
             
             <div class="copyright">
-                <p class="mb-0">&copy; 2023 Municipal Public Works Department. All rights reserved.</p>
+                <p class="mb-0">&copy; {{ date('Y') }} Public Works Department, Brunei Darussalam. All rights reserved.</p>
             </div>
         </div>
     </footer>

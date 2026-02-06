@@ -111,6 +111,10 @@ class OperationsController extends Controller
             $query->where('issue_type', $request->issue_type);
         }
 
+        if ($request->filled('district')) {
+            $query->where('district', $request->district);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {

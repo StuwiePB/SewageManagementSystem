@@ -42,8 +42,10 @@ class WorkOrderController extends Controller
     {
         $reports = Report::where('status', 'new')->orderBy('created_at', 'desc')->get();
         $crews = Crew::where('status', 'available')->orderBy('name')->get();
+        $districts = config('brunei.districts', []);
+        $mukims = config('brunei.mukims', []);
 
-        return view('operations.work-orders.create', compact('reports', 'crews'));
+        return view('operations.work-orders.create', compact('reports', 'crews', 'districts', 'mukims'));
     }
 
     /**
@@ -57,6 +59,8 @@ class WorkOrderController extends Controller
             'type' => 'required|string|max:255',
             'priority' => 'required|in:low,medium,high,critical',
             'location_address' => 'required|string|max:255',
+            'district' => 'nullable|string|max:255',
+            'mukim' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'description' => 'nullable|string',
@@ -68,6 +72,25 @@ class WorkOrderController extends Controller
         
         if ($request->crew_id) {
             $validated['assigned_at'] = now();
+        }
+
+        // Copy district/mukim from report when linking
+        if ($request->report_id) {
+            $report = \App\Models\Report::find($request->report_id);
+            if ($report) {
+                $validated['district'] = $validated['district'] ?? $report->district;
+                $validated['mukim'] = $validated['mukim'] ?? $report->mukim;
+            }
+        }
+
+        // Validate coordinates are within Brunei Darussalam if provided
+        $bounds = config('brunei.bounds', ['lat_min' => 4.0, 'lat_max' => 5.2, 'lng_min' => 114.0, 'lng_max' => 115.5]);
+        if ($request->filled('latitude') || $request->filled('longitude')) {
+            $lat = (float) ($validated['latitude'] ?? 0);
+            $lng = (float) ($validated['longitude'] ?? 0);
+            if ($lat < $bounds['lat_min'] || $lat > $bounds['lat_max'] || $lng < $bounds['lng_min'] || $lng > $bounds['lng_max']) {
+                return back()->withInput()->withErrors(['latitude' => 'Coordinates must be within Brunei Darussalam.']);
+            }
         }
 
         $workOrder = WorkOrder::create($validated);

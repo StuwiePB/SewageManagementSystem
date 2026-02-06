@@ -55,6 +55,21 @@
             </select>
         </div>
         <div>
+            <label style="display:block; margin-bottom:6px; font-size:13px; color:#6b7280; font-weight:500;">District</label>
+            <select name="district" style="
+                width:100%;
+                padding:8px 12px;
+                border:1px solid #d1d5db;
+                border-radius:8px;
+                font-size:14px;
+            ">
+                <option value="">All Districts</option>
+                @foreach(config('brunei.districts', []) as $slug => $name)
+                    <option value="{{ $slug }}" {{ request('district') == $slug ? 'selected' : '' }}>{{ $name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <label style="display:block; margin-bottom:6px; font-size:13px; color:#6b7280; font-weight:500;">Issue Type</label>
             <select name="issue_type" style="
                 width:100%;
@@ -93,6 +108,8 @@
             <tr style="text-align:left; border-bottom:2px solid #e5e7eb;">
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Report #</th>
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Type</th>
+                <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">District</th>
+                <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Mukim</th>
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Location</th>
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Severity</th>
                 <th style="padding:12px 8px; font-size:13px; color:#6b7280; font-weight:600;">Status</th>
@@ -105,6 +122,8 @@
                 <tr style="border-bottom:1px solid #f3f4f6;">
                     <td style="padding:12px 8px; font-size:14px; font-weight:500;">{{ $report->report_number }}</td>
                     <td style="padding:12px 8px; font-size:14px;">{{ ucfirst($report->issue_type) }}</td>
+                    <td style="padding:12px 8px; font-size:14px;">{{ $report->district_display ?? '—' }}</td>
+                    <td style="padding:12px 8px; font-size:14px;">{{ $report->mukim_display ?? '—' }}</td>
                     <td style="padding:12px 8px; font-size:14px;">{{ $report->location_address }}</td>
                     <td style="padding:12px 8px;">
                         <span style="
@@ -145,7 +164,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="padding:24px; text-align:center; color:#9ca3af;">
+                    <td colspan="8" style="padding:24px; text-align:center; color:#9ca3af;">
                         No reports found
                     </td>
                 </tr>

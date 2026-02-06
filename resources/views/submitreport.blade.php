@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Municipal Sewage Issue Reporting Portal</title>
+    <title>Sewage Issue Reporting – Brunei Darussalam</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
@@ -476,9 +476,28 @@
                 <i class="fas fa-arrow-left"></i> Back to Home
             </a>
 
-            <!-- Report Issue Section -->
+            <!-- Report Issue Section (Brunei Darussalam only) -->
             <section id="report" class="mb-5">
                 <h2 class="section-title">Report a Sewage Issue</h2>
+                <p class="text-muted mb-4">Location: <strong>Brunei Darussalam</strong> only. Select your district and mukim.</p>
+                
+                @if(session('report_success'))
+                    <div class="alert alert-success mb-4">
+                        <h5><i class="fas fa-check-circle me-2"></i> Report Submitted Successfully!</h5>
+                        <p class="mb-1">Your report has been received and assigned a reference number: <strong>{{ session('report_number') }}</strong></p>
+                        <p class="mb-0">Use this number to track the status of your report. Our team will review it and take appropriate action.</p>
+                    </div>
+                @endif
+
+                @if($errors->any())
+                    <div class="alert alert-danger mb-4">
+                        <ul class="mb-0">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 
                 <!-- Progress Tracker -->
                 <div class="progress-tracker">
@@ -494,82 +513,92 @@
                 </div>
                 
                 <div class="report-card">
-                    <form id="reportForm">
+                    <form id="reportForm" action="{{ route('reports.store') }}" method="POST">
+                        @csrf
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="issueType" class="form-label">Type of Issue *</label>
-                                <select class="form-select" id="issueType" required>
+                                <select class="form-select" id="issueType" name="issue_type" required>
                                     <option value="">Select issue type</option>
-                                    <option value="blockage">Sewage Blockage</option>
-                                    <option value="overflow">Sewage Overflow</option>
-                                    <option value="odor">Strong Sewage Odor</option>
-                                    <option value="maintenance">Maintenance Required</option>
-                                    <option value="other">Other Issue</option>
+                                    <option value="blockage" {{ old('issue_type') == 'blockage' ? 'selected' : '' }}>Sewage Blockage</option>
+                                    <option value="overflow" {{ old('issue_type') == 'overflow' ? 'selected' : '' }}>Sewage Overflow</option>
+                                    <option value="odor" {{ old('issue_type') == 'odor' ? 'selected' : '' }}>Strong Sewage Odor</option>
+                                    <option value="maintenance" {{ old('issue_type') == 'maintenance' ? 'selected' : '' }}>Maintenance Required</option>
+                                    <option value="other" {{ old('issue_type') == 'other' ? 'selected' : '' }}>Other Issue</option>
                                 </select>
                             </div>
                             
                             <div class="col-md-6 mb-3">
                                 <label for="severity" class="form-label">Severity Level *</label>
-                                <select class="form-select" id="severity" required>
+                                <select class="form-select" id="severity" name="severity" required>
                                     <option value="">Select severity</option>
-                                    <option value="low">Low - Minor Issue</option>
-                                    <option value="medium">Medium - Significant Issue</option>
-                                    <option value="high">High - Serious Issue</option>
-                                    <option value="critical">Critical - Emergency</option>
+                                    <option value="low" {{ old('severity') == 'low' ? 'selected' : '' }}>Low - Minor Issue</option>
+                                    <option value="medium" {{ old('severity') == 'medium' ? 'selected' : '' }}>Medium - Significant Issue</option>
+                                    <option value="high" {{ old('severity') == 'high' ? 'selected' : '' }}>High - Serious Issue</option>
+                                    <option value="critical" {{ old('severity') == 'critical' ? 'selected' : '' }}>Critical - Emergency</option>
                                 </select>
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <label for="description" class="form-label">Description of the Issue *</label>
-                            <textarea class="form-control" id="description" rows="4" placeholder="Please provide details about the sewage issue, including when you first noticed it and any other relevant information." required></textarea>
+                            <textarea class="form-control" id="description" name="description" rows="4" placeholder="Please provide details about the sewage issue, including when you first noticed it and any other relevant information." required>{{ old('description') }}</textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="district" class="form-label">District (Brunei Darussalam) *</label>
+                                <select class="form-select" id="district" name="district" required>
+                                    <option value="">Select district...</option>
+                                    @foreach($districts ?? [] as $slug => $name)
+                                        <option value="{{ $slug }}" {{ old('district') == $slug ? 'selected' : '' }}>{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="mukim" class="form-label">Mukim (whereabouts)</label>
+                                <select class="form-select" id="mukim" name="mukim">
+                                    <option value="">Select mukim...</option>
+                                    @foreach($mukims ?? [] as $dSlug => $mukimList)
+                                        @foreach($mukimList as $mSlug => $mName)
+                                            <option value="{{ $mSlug }}" data-district="{{ $dSlug }}" {{ old('mukim') == $mSlug && old('district') == $dSlug ? 'selected' : '' }}>{{ $mName }} ({{ $districts[$dSlug] ?? $dSlug }})</option>
+                                        @endforeach
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="address" class="form-label">Address *</label>
-                                <input type="text" class="form-control" id="address" placeholder="Street address or nearest intersection" required>
+                                <label for="address" class="form-label">Street / Area address *</label>
+                                <input type="text" class="form-control" id="address" name="location_address" value="{{ old('location_address') }}" placeholder="e.g. Jalan Gadong, Kampung Sengkurong" required>
                             </div>
-                            
                             <div class="col-md-6 mb-3">
-                                <label for="landmark" class="form-label">Nearest Landmark</label>
-                                <input type="text" class="form-control" id="landmark" placeholder="E.g., near the park, next to library">
+                                <label for="landmark" class="form-label">Nearest Landmark (optional)</label>
+                                <input type="text" class="form-control" id="landmark" placeholder="e.g. near Masjid, next to school">
                             </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Location on Map</label>
-                            <div class="map-container">
-                                <div class="map-placeholder">
-                                    <i class="fas fa-map-marked-alt"></i>
-                                    <p>Interactive map would appear here</p>
-                                    <small>Click to pinpoint the exact location of the issue</small>
-                                </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="latitude" class="form-label">Latitude (optional, within Brunei)</label>
+                                <input type="number" step="any" class="form-control" id="latitude" name="latitude" value="{{ old('latitude') }}" placeholder="e.g. 4.9031">
                             </div>
-                            <div class="form-text mt-2">
-                                <i class="fas fa-info-circle me-1"></i> You can also use the "Use My Location" button for automatic detection.
+                            <div class="col-md-6 mb-3">
+                                <label for="longitude" class="form-label">Longitude (optional, within Brunei)</label>
+                                <input type="number" step="any" class="form-control" id="longitude" name="longitude" value="{{ old('longitude') }}" placeholder="e.g. 114.9398">
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Photo Evidence (Optional)</label>
-                            <div class="photo-preview" id="photoUpload">
-                                <i class="fas fa-camera"></i>
-                                <p>Click to upload a photo of the issue</p>
-                                <small>Maximum file size: 5MB. Supported formats: JPG, PNG</small>
-                            </div>
-                            <input type="file" id="photoInput" accept="image/*" style="display: none;">
-                        </div>
+                        <p class="form-text text-muted small">If you provide coordinates, they must be within Brunei Darussalam.</p>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="name" class="form-label">Your Name (Optional)</label>
-                                <input type="text" class="form-control" id="name" placeholder="For follow-up if needed">
+                                <input type="text" class="form-control" id="name" name="reporter_name" value="{{ old('reporter_name') }}" placeholder="For follow-up if needed">
                             </div>
-                            
                             <div class="col-md-6 mb-3">
-                                <label for="contact" class="form-label">Contact Information (Optional)</label>
-                                <input type="text" class="form-control" id="contact" placeholder="Email or phone number">
+                                <label for="contact" class="form-label">Contact (Optional)</label>
+                                <input type="text" class="form-control" id="contact" name="reporter_contact" value="{{ old('reporter_contact') }}" placeholder="e.g. +673 123 4567 or email">
                                 <div class="form-text">We'll only contact you for follow-up questions about your report.</div>
                             </div>
                         </div>
@@ -582,10 +611,10 @@
                         </div>
                     </form>
                     
-                    <!-- Report Summary (Will appear after submission) -->
+                    <!-- Report Summary placeholder (shown after redirect with session) -->
                     <div class="report-summary" id="reportSummary" style="display: none;">
                         <h5><i class="fas fa-check-circle me-2 text-success"></i> Report Submitted Successfully!</h5>
-                        <p class="mb-1">Your report has been received and assigned a reference number: <strong>SMS-2023-0856</strong></p>
+                        <p class="mb-1">Your report has been received and assigned a reference number: <strong id="summaryReportNumber"></strong></p>
                         <p class="mb-0">You can use this number to track the status of your report. Our team will review it and take appropriate action.</p>
                     </div>
                 </div>
@@ -599,7 +628,7 @@
             <div class="row">
                 <div class="col-lg-3 mb-4">
                     <h5 class="footer-title"><i class="fas fa-water me-2"></i>Sewage Monitoring System</h5>
-                    <p>A public service portal for reporting and tracking sewage system issues in our municipality.</p>
+                    <p>A public service portal for reporting and tracking sewage system issues in Brunei Darussalam.</p>
                 </div>
 
                 <div class="col-lg-2 col-md-6 mb-4">
@@ -630,7 +659,7 @@
             </div>
             
             <div class="copyright">
-                <p class="mb-0">&copy; 2026 Municipal Council Public Works Department. All rights reserved.</p>
+                <p class="mb-0">&copy; {{ date('Y') }} Public Works Department, Brunei Darussalam. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -639,58 +668,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Form submission handler
-        document.getElementById('reportForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Show success message
-            document.getElementById('reportSummary').style.display = 'block';
-            
-            // Scroll to the summary
-            document.getElementById('reportSummary').scrollIntoView({ behavior: 'smooth' });
-            
-            // Reset progress tracker
-            const steps = document.querySelectorAll('.progress-step');
-            steps.forEach(step => {
-                step.classList.remove('active', 'completed');
-            });
-            
-            // Mark first two as completed, last as active
-            steps[0].classList.add('completed');
-            steps[1].classList.add('completed');
-            steps[2].classList.add('active');
-            
-            // You would normally send form data to a server here
-            console.log('Form submitted successfully');
-        });
-        
-        // Photo upload functionality
-        document.getElementById('photoUpload').addEventListener('click', function() {
-            document.getElementById('photoInput').click();
-        });
-        
-        document.getElementById('photoInput').addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                const fileName = e.target.files[0].name;
-                document.getElementById('photoUpload').innerHTML = `
-                    <i class="fas fa-check-circle text-success"></i>
-                    <p>Photo uploaded: ${fileName}</p>
-                    <small>Click to change photo</small>
-                `;
+        // Filter mukim options by selected district (Brunei only)
+        (function() {
+            var districtSelect = document.getElementById('district');
+            var mukimSelect = document.getElementById('mukim');
+            if (districtSelect && mukimSelect) {
+                districtSelect.addEventListener('change', function() {
+                    var district = this.value;
+                    for (var i = 0; i < mukimSelect.options.length; i++) {
+                        var opt = mukimSelect.options[i];
+                        opt.style.display = (!district || opt.getAttribute('data-district') === district || opt.value === '') ? '' : 'none';
+                        opt.disabled = district && opt.getAttribute('data-district') && opt.getAttribute('data-district') !== district;
+                    }
+                    mukimSelect.value = '';
+                });
+                districtSelect.dispatchEvent(new Event('change'));
             }
-        });
+        })();
         
         // Update progress steps when interacting with form
-        const formInputs = document.querySelectorAll('#reportForm input, #reportForm select, #reportForm textarea');
-        formInputs.forEach(input => {
+        var formInputs = document.querySelectorAll('#reportForm input, #reportForm select, #reportForm textarea');
+        formInputs.forEach(function(input) {
             input.addEventListener('input', function() {
-                // Mark first step as completed when user starts filling form
                 document.querySelectorAll('.progress-step')[0].classList.add('completed');
             });
         });
-        
-        // Address field special handling for location step
-        document.getElementById('address').addEventListener('input', function() {
+        document.getElementById('address') && document.getElementById('address').addEventListener('input', function() {
             if (this.value.trim() !== '') {
                 document.querySelectorAll('.progress-step')[1].classList.add('completed');
             }

@@ -14,6 +14,8 @@ class WorkOrder extends Model
         'type',
         'priority',
         'location_address',
+        'district',
+        'mukim',
         'latitude',
         'longitude',
         'description',
@@ -29,6 +31,25 @@ class WorkOrder extends Model
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
+
+    /**
+     * Display name for district (Brunei)
+     */
+    public function getDistrictDisplayAttribute(): ?string
+    {
+        return $this->district ? (config("brunei.districts.{$this->district}") ?? $this->district) : null;
+    }
+
+    /**
+     * Display name for mukim (whereabouts)
+     */
+    public function getMukimDisplayAttribute(): ?string
+    {
+        if (!$this->district || !$this->mukim) {
+            return null;
+        }
+        return config("brunei.mukims.{$this->district}.{$this->mukim}") ?? $this->mukim;
+    }
 
     /**
      * Get the report associated with this work order
