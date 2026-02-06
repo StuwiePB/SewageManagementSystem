@@ -391,6 +391,71 @@
             color: var(--secondary-blue);
         }
         
+        /* AI Chatbot section (React-style) */
+        #chatbot .chatbot-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        #chatbot .chatbot-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: #fff;
+            padding: 1rem 1.25rem;
+        }
+        #chatbot .chatbot-header h3 { font-size: 1.1rem; margin: 0 0 0.2rem 0; font-weight: 600; }
+        #chatbot .chatbot-header p { margin: 0; font-size: 0.85rem; opacity: 0.9; }
+        #chatbot .chatbot-messages {
+            height: 24rem;
+            overflow-y: auto;
+            padding: 1rem 1.25rem;
+            background: #f9fafb;
+        }
+        #chatbot .chat-msg { margin-bottom: 0.75rem; display: flex; }
+        #chatbot .chat-msg.user { justify-content: flex-end; }
+        #chatbot .chat-msg.bot { justify-content: flex-start; }
+        #chatbot .chat-bubble {
+            max-width: 75%;
+            padding: 0.6rem 0.9rem;
+            border-radius: 1.25rem;
+            font-size: 0.95rem;
+        }
+        #chatbot .chat-bubble.user {
+            background: var(--secondary-blue);
+            color: #fff;
+            border-bottom-right-radius: 0.35rem;
+        }
+        #chatbot .chat-bubble.bot {
+            background: #fff;
+            color: #1f2937;
+            border-bottom-left-radius: 0.35rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        #chatbot .chatbot-footer {
+            border-top: 1px solid #e5e7eb;
+            background: #fff;
+            padding: 0.75rem 1rem 1rem;
+        }
+        #chatbot .chatbot-footer .form-control {
+            border-radius: 0.5rem;
+            padding: 0.6rem 0.85rem;
+        }
+        #chatbot .typing-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #9ca3af;
+            margin: 0 2px;
+            animation: typingBounce 1s infinite;
+        }
+        #chatbot .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+        #chatbot .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes typingBounce {
+            0%, 100% { transform: translateY(0); opacity: 0.6; }
+            50% { transform: translateY(-4px); opacity: 1; }
+        }
+
         @media (max-width: 768px) {
             .hero-section {
                 padding: 2.5rem 0;
@@ -439,6 +504,9 @@
                         <a class="nav-link" href="#information">Information</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="#chatbot">AI Assistant</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#contact">Contact</a>
                     </li>
                     <li class="nav-item">
@@ -469,6 +537,33 @@
     <!-- Main Content -->
     <div class="main-container">
         <div class="container">
+            <!-- AI Chatbot Section -->
+            <section id="chatbot" class="mb-5">
+                <h2 class="section-title">
+                    <i class="fas fa-comments me-2"></i>Ask Our AI Assistant
+                </h2>
+                <div class="chatbot-card">
+                    <div class="chatbot-header">
+                        <h3>Sewage System AI Assistant</h3>
+                        <p>Get instant answers about sewage issues, reporting, and more</p>
+                    </div>
+                    <div id="chatbotMessages" class="chatbot-messages">
+                        <div class="chat-msg bot">
+                            <div class="chat-bubble bot">Hello! I'm here to help you with sewage-related questions. How can I assist you today?</div>
+                        </div>
+                    </div>
+                    <div class="chatbot-footer">
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="text" id="chatbotInput" class="form-control flex-grow-1" placeholder="Ask about reporting, status checks, emergencies..." />
+                            <button type="button" id="chatbotSend" class="btn btn-primary" style="background-color: var(--primary-blue); border-color: var(--primary-blue);">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <p class="text-muted small mb-0">Try asking: "How do I report an issue?" or "What's the emergency number?"</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- Information Section -->
             <section id="information" class="mb-5">
                 <h2 class="section-title">How It Works</h2>
@@ -595,79 +690,143 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Form submission handler
-        document.getElementById('reportForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Show success message
-            document.getElementById('reportSummary').style.display = 'block';
-            
-            // Scroll to the summary
-            document.getElementById('reportSummary').scrollIntoView({ behavior: 'smooth' });
-            
-            // Reset progress tracker
-            const steps = document.querySelectorAll('.progress-step');
-            steps.forEach(step => {
-                step.classList.remove('active', 'completed');
+        // Form submission handler (only on pages that have reportForm)
+        var reportForm = document.getElementById('reportForm');
+        if (reportForm) {
+            reportForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var summary = document.getElementById('reportSummary');
+                if (summary) { summary.style.display = 'block'; summary.scrollIntoView({ behavior: 'smooth' }); }
+                var steps = document.querySelectorAll('.progress-step');
+                steps.forEach(function(step) { step.classList.remove('active', 'completed'); });
+                if (steps[0]) steps[0].classList.add('completed');
+                if (steps[1]) steps[1].classList.add('completed');
+                if (steps[2]) steps[2].classList.add('active');
             });
-            
-            // Mark first two as completed, last as active
-            steps[0].classList.add('completed');
-            steps[1].classList.add('completed');
-            steps[2].classList.add('active');
-            
-            // You would normally send form data to a server here
-            console.log('Form submitted successfully');
-        });
-        
-        // Photo upload functionality
-        document.getElementById('photoUpload').addEventListener('click', function() {
-            document.getElementById('photoInput').click();
-        });
-        
-        document.getElementById('photoInput').addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                const fileName = e.target.files[0].name;
-                document.getElementById('photoUpload').innerHTML = `
-                    <i class="fas fa-check-circle text-success"></i>
-                    <p>Photo uploaded: ${fileName}</p>
-                    <small>Click to change photo</small>
-                `;
-            }
-        });
-        
-        // Track report button functionality
-        document.getElementById('trackButton').addEventListener('click', function() {
-            const trackingNumber = document.getElementById('trackingNumber').value;
-            
-            if (trackingNumber.trim() === '') {
-                alert('Please enter a report tracking number');
-                return;
-            }
-            
-            // In a real app, you would fetch status from server
-            // For demo, we'll just show the existing status cards
-            document.getElementById('statusDisplay').style.display = 'block';
-            
-            // Scroll to status display
-            document.getElementById('statusDisplay').scrollIntoView({ behavior: 'smooth' });
-        });
-        
-        // Update progress steps when interacting with form
-        const formInputs = document.querySelectorAll('#reportForm input, #reportForm select, #reportForm textarea');
-        formInputs.forEach(input => {
+        }
+
+        var photoUpload = document.getElementById('photoUpload');
+        var photoInput = document.getElementById('photoInput');
+        if (photoUpload && photoInput) {
+            photoUpload.addEventListener('click', function() { photoInput.click(); });
+            photoInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    photoUpload.innerHTML = '<i class="fas fa-check-circle text-success"></i><p>Photo uploaded: ' + e.target.files[0].name + '</p><small>Click to change photo</small>';
+                }
+            });
+        }
+
+        var trackButton = document.getElementById('trackButton');
+        if (trackButton) {
+            trackButton.addEventListener('click', function() {
+                var trackingNumber = (document.getElementById('trackingNumber') || {}).value || '';
+                if (trackingNumber.trim() === '') { alert('Please enter a report tracking number'); return; }
+                var statusDisplay = document.getElementById('statusDisplay');
+                if (statusDisplay) { statusDisplay.style.display = 'block'; statusDisplay.scrollIntoView({ behavior: 'smooth' }); }
+            });
+        }
+
+        var formInputs = document.querySelectorAll('#reportForm input, #reportForm select, #reportForm textarea');
+        formInputs.forEach(function(input) {
             input.addEventListener('input', function() {
-                // Mark first step as completed when user starts filling form
-                document.querySelectorAll('.progress-step')[0].classList.add('completed');
+                var first = document.querySelectorAll('.progress-step')[0];
+                if (first) first.classList.add('completed');
             });
         });
         
         // Address field special handling for location step
-        document.getElementById('address').addEventListener('input', function() {
-            if (this.value.trim() !== '') {
-                document.querySelectorAll('.progress-step')[1].classList.add('completed');
+        var addressEl = document.getElementById('address');
+        if (addressEl) {
+            addressEl.addEventListener('input', function() {
+                if (this.value.trim() !== '') {
+                    var steps = document.querySelectorAll('.progress-step');
+                    if (steps[1]) steps[1].classList.add('completed');
+                }
+            });
+        }
+
+        // AI Chatbot (React-style inline assistant)
+        (function() {
+            var messagesEl = document.getElementById('chatbotMessages');
+            var inputEl = document.getElementById('chatbotInput');
+            var sendBtn = document.getElementById('chatbotSend');
+            if (!messagesEl || !inputEl || !sendBtn) return;
+
+            function appendMessage(text, role) {
+                var row = document.createElement('div');
+                row.className = 'chat-msg ' + role;
+                var bubble = document.createElement('div');
+                bubble.className = 'chat-bubble ' + role;
+                bubble.textContent = text;
+                row.appendChild(bubble);
+                messagesEl.appendChild(row);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
             }
-        });
+
+            function showTyping() {
+                var row = document.createElement('div');
+                row.className = 'chat-msg bot';
+                row.id = 'chatbotTyping';
+                var bubble = document.createElement('div');
+                bubble.className = 'chat-bubble bot';
+                bubble.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+                row.appendChild(bubble);
+                messagesEl.appendChild(row);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+
+            function hideTyping() {
+                var el = document.getElementById('chatbotTyping');
+                if (el) el.remove();
+            }
+
+            function sendMessage() {
+                var text = inputEl.value.trim();
+                if (!text) return;
+                
+                appendMessage(text, 'user');
+                inputEl.value = '';
+                sendBtn.disabled = true;
+                showTyping();
+
+                // Call OpenAI API via Laravel route
+                fetch('{{ route("ai.chat") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ message: text }),
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    hideTyping();
+                    if (data.reply) {
+                        appendMessage(data.reply, 'bot');
+                    } else if (data.error) {
+                        appendMessage('Sorry, ' + data.error + ' Please check your OpenAI API key configuration.', 'bot');
+                    } else {
+                        appendMessage('Sorry, I could not generate a response. Please try again.', 'bot');
+                    }
+                })
+                .catch(function(error) {
+                    hideTyping();
+                    appendMessage('Sorry, I could not reach the AI service. Please check your internet connection and try again.', 'bot');
+                    console.error('Chatbot error:', error);
+                })
+                .finally(function() {
+                    sendBtn.disabled = false;
+                });
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+            inputEl.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+            });
+        })();
     </script>
 </body>
 </html>
