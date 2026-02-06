@@ -1,0 +1,158 @@
+{
+  "sewage_indicators": {
+    "visual_indicators": {
+      "water_discoloration": [
+        "Brown or dark brown water",
+        "Yellow or yellowish-green water",
+        "Green or murky green water",
+        "Black or dark black water",
+        "Gray or grayish water",
+        "Unusual color in water that is not natural"
+      ],
+      "foam_and_bubbles": [
+        "White or colored foam on water surface",
+        "Excessive bubbles or froth",
+        "Foamy discharge from pipes",
+        "Bubbling water surface",
+        "Froth accumulation"
+      ],
+      "pipe_discharge": [
+        "Pipes discharging discolored liquid",
+        "Outlets releasing murky water",
+        "Drain pipes with visible waste",
+        "Sewage pipes leaking or broken",
+        "Manholes overflowing with liquid",
+        "Pipe joints leaking",
+        "Cracked or damaged pipes visible"
+      ],
+      "overflow_and_backup": [
+        "Sewage overflow from manholes",
+        "Water backing up from drains",
+        "Sewage flooding an area",
+        "Manhole covers displaced by pressure",
+        "Sewage backup in basements",
+        "Toilets or drains backing up"
+      ],
+      "contamination_signs": [
+        "Visible waste or debris in water",
+        "Organic matter floating",
+        "Fecal matter visible",
+        "Trash or debris mixed with water",
+        "Sewage solids visible",
+        "Contaminated soil around discharge"
+      ],
+      "structural_damage": [
+        "Broken or cracked sewage pipes",
+        "Collapsed pipe sections",
+        "Exposed pipes with visible damage",
+        "Damaged manhole structures",
+        "Cracked concrete around pipes",
+        "Erosion around pipe outlets"
+      ]
+    },
+    "environmental_context": {
+      "location_indicators": [
+        "Near sewage treatment facilities",
+        "Around manholes or access points",
+        "Near residential sewer lines",
+        "Industrial discharge points",
+        "Municipal sewer systems",
+        "Wastewater treatment areas"
+      ],
+      "surrounding_signs": [
+        "Dead vegetation near discharge",
+        "Unusual odors (if detectable in context)",
+        "Contaminated ground or soil",
+        "Staining on surfaces",
+        "Algae growth in contaminated water",
+        "Unusual water pooling patterns"
+      ]
+    },
+    "severity_levels": {
+      "critical": [
+        "Raw sewage flooding public areas",
+        "Major pipe break with large discharge",
+        "Sewage entering water bodies",
+        "Complete system failure",
+        "Health hazard level contamination"
+      ],
+      "high": [
+        "Significant overflow from manholes",
+        "Large volume discharge",
+        "Visible waste in discharge",
+        "Multiple pipe failures",
+        "Contamination spreading"
+      ],
+      "medium": [
+        "Moderate discharge visible",
+        "Some discoloration and foam",
+        "Single pipe issue",
+        "Localized contamination",
+        "Minor overflow"
+      ],
+      "low": [
+        "Minor discoloration",
+        "Small amount of foam",
+        "Potential early warning signs",
+        "Slight contamination indicators",
+        "Preventive maintenance needed"
+      ]
+    },
+    "not_sewage_indicators": {
+      "clear_rejections": [
+        "People, faces, portraits, selfies",
+        "Clothing, fashion items, products",
+        "Cartoons, anime, artwork, illustrations",
+        "Clean, clear water",
+        "Normal rain or rainwater",
+        "Regular puddles without contamination",
+        "Fountains or decorative water features",
+        "Swimming pools",
+        "Natural water bodies (rivers, lakes) without contamination",
+        "Landscapes without sewage indicators",
+        "Buildings or architecture without sewage"
+      ],
+      "requires_sewage_indicators": [
+        "If image shows water, must have discoloration/foam to be sewage",
+        "If image shows pipes, must show discharge/discoloration to be sewage",
+        "If image shows outdoor scene, must show contamination to be sewage",
+        "If image shows people, sewage must be clearly visible in background"
+      ]
+    },
+    "detection_rules": {
+      "must_have": [
+        "At least one visual indicator from sewage_indicators",
+        "Clear evidence of contamination or discharge",
+        "Discoloration OR foam OR pipe discharge OR overflow"
+      ],
+      "confidence_factors": {
+        "high_confidence": [
+          "Multiple indicators present",
+          "Clear discoloration + foam",
+          "Visible pipe discharge with waste",
+          "Obvious overflow or backup"
+        ],
+        "medium_confidence": [
+          "Single clear indicator",
+          "Some discoloration visible",
+          "Possible discharge but unclear",
+          "Moderate contamination signs"
+        ],
+        "low_confidence": [
+          "Uncertain indicators",
+          "Possible but not clear",
+          "Early warning signs only",
+          "Needs closer inspection"
+        ]
+      }
+    },
+    "analysis_prompt_guidance": {
+      "step_1": "Identify what the image actually shows - be specific about visual elements",
+      "step_2": "Check for sewage indicators: discoloration, foam, pipe discharge, overflow, contamination",
+      "step_3": "Check for clear false positives: people, clothing, art, clean water",
+      "step_4": "Determine if sewage indicators are present AND clear",
+      "step_5": "Assign confidence based on how clear the indicators are",
+      "step_6": "Provide specific reasons citing the indicators found"
+    }
+  }
+}
