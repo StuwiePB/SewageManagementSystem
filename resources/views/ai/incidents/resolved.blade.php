@@ -181,7 +181,7 @@
                         <a class="nav-link" href="{{ route('admin.incidents.review') }}">Review</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('incidents.dashboard') }}">Dashboard</a>
+                        <a class="nav-link" href="{{ route('ai.incidents.dashboard') }}">Dashboard</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{{ route('incidents.resolved') }}">Resolved</a>
@@ -303,7 +303,7 @@
                         </div>
                         
                         <div class="col-md-2 text-end">
-                            <a href="{{ route('incidents.dashboard') }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ route('ai.incidents.dashboard') }}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-eye me-1"></i>View Details
                             </a>
                         </div>

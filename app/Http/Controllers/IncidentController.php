@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\AnalyzeIncidentImage;
+use App\Jobs\AI\AnalyzeIncidentImage;
 use App\Models\Incident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +15,7 @@ class IncidentController extends Controller
      */
     public function create()
     {
-        return view('AI');
+        return view('ai.upload');
     }
 
     /**
@@ -113,7 +113,7 @@ class IncidentController extends Controller
         $mediumPriority = $incidents->whereBetween('risk_score', [30, 69]);
         $lowPriority = $incidents->where('risk_score', '<', 30);
 
-        return view('incidents.dashboard', compact('incidents', 'highPriority', 'mediumPriority', 'lowPriority'));
+        return view('ai.incidents.dashboard', compact('incidents', 'highPriority', 'mediumPriority', 'lowPriority'));
     }
 
     /**
@@ -147,7 +147,7 @@ class IncidentController extends Controller
         $sewageConfirmed = $incidents->where('review_status', 'SEWAGE_CONFIRMED');
         $notSewage = $incidents->where('review_status', 'NOT_SEWAGE_CONFIRMED');
 
-        return view('incidents.resolved', compact('incidents', 'sewageConfirmed', 'notSewage'));
+        return view('ai.incidents.resolved', compact('incidents', 'sewageConfirmed', 'notSewage'));
     }
 
     /**

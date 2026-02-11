@@ -176,7 +176,7 @@
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('home') }}">
+            <a class="navbar-brand" href="{{ route('ai.incidents.dashboard') }}">
                 <i class="fas fa-chart-line me-2"></i>
                 Incidents Dashboard
             </a>
@@ -186,7 +186,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}">Home</a>
+                        <a class="nav-link" href="{{ route('ai.incidents.dashboard') }}">Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('incidents.create') }}">Upload Incident</a>
@@ -195,7 +195,7 @@
                         <a class="nav-link" href="{{ route('admin.incidents.review') }}">Review</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('incidents.dashboard') }}">Dashboard</a>
+                        <a class="nav-link active" href="{{ route('ai.incidents.dashboard') }}">Dashboard</a>
                     </li>
                 </ul>
             </div>

@@ -420,7 +420,7 @@
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">
+            <a class="navbar-brand">
                 <i class="fas fa-water me-2"></i>
                 Aqua Guard
             </a>

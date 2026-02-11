@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\AnalyzeIncidentImage;
+use App\Jobs\AI\AnalyzeIncidentImage;
 use App\Models\Incident;
 use Illuminate\Console\Command;
 
