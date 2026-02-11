@@ -396,6 +396,74 @@
     .workers-submit:hover {
         opacity: 0.95;
     }
+
+    /* Take Attendance (Crew Management) – first in panel */
+    .workers-attendance-wrap { margin-bottom: 0; }
+    .workers-attendance-header {
+        background: #fff;
+        border-radius: var(--worker-radius-sm);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        padding: 16px 18px;
+        margin-bottom: 14px;
+    }
+    .workers-attendance-header h3 {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 12px;
+    }
+    .workers-attendance-datetime { font-size: 0.9375rem; font-weight: 500; color: #374151; }
+    .workers-attendance-card {
+        background: #fff;
+        border-radius: var(--worker-radius-sm);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        padding: 14px 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid #e5e7eb;
+    }
+    .workers-attendance-card:last-child { margin-bottom: 0; }
+    .workers-attendance-avatar {
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+    .workers-attendance-info { flex: 1; min-width: 0; }
+    .workers-attendance-name { font-weight: 700; font-size: 0.9375rem; color: #1f2937; margin-bottom: 2px; }
+    .workers-attendance-role { font-size: 0.8125rem; color: #6b7280; margin-bottom: 4px; }
+    .workers-attendance-status { font-size: 0.75rem; color: #6b7280; margin-top: 4px; }
+    .workers-attendance-status.recorded { font-weight: 500; }
+    .workers-attendance-status.present { color: #059669; }
+    .workers-attendance-status.late { color: #b45309; }
+    .workers-attendance-status.absent { color: #dc2626; }
+    .workers-attendance-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .workers-attendance-btn {
+        width: 34px; height: 34px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        color: #9ca3af;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .workers-attendance-btn:hover { background: #f3f4f6; color: #6b7280; }
+    .workers-attendance-btn svg { width: 16px; height: 16px; }
+    .workers-attendance-btn.present { border-color: #86efac; background: #dcfce7; color: #166534; }
+    .workers-attendance-btn.present.active { background: #22c55e; border-color: #22c55e; color: #fff; }
+    .workers-attendance-btn.late { border-color: #fde047; background: #fef9c3; color: #a16207; }
+    .workers-attendance-btn.late.active { background: #eab308; border-color: #eab308; color: #fff; }
+    .workers-attendance-btn.absent { border-color: #fca5a5; background: #fee2e2; color: #b91c1c; }
+    .workers-attendance-btn.absent.active { background: #ef4444; border-color: #ef4444; color: #fff; }
+    .workers-attendance-btn.active { box-shadow: 0 0 0 2px rgba(0,0,0,0.08); }
+    .workers-attendance-btn:not(.active) { opacity: 0.8; }
+    .workers-attendance-actions:has(.workers-attendance-btn.active) .workers-attendance-btn:not(.active) { opacity: 0.6; }
 </style>
 
 <div class="workers-app">
@@ -481,6 +549,93 @@
     {{-- Panel: Crew Management --}}
     <section id="panel-crew" class="workers-panel" role="tabpanel" aria-labelledby="crew" hidden>
         <h2 class="workers-panel-title">Crew Management</h2>
+
+        <div class="workers-attendance-wrap">
+            <div class="workers-attendance-header">
+                <h3 style="color:#1f2937;">Take Attendance</h3>
+                <div class="workers-attendance-datetime" id="crew-datetime">—</div>
+            </div>
+            <div class="workers-attendance-list">
+                <div class="workers-attendance-card" data-attendance-worker="1">
+                    <div class="workers-attendance-avatar">BL</div>
+                    <div class="workers-attendance-info">
+                        <div class="workers-attendance-name">Brianna Lee</div>
+                        <div class="workers-attendance-role">Maintenance Specialist</div>
+                        <div class="workers-attendance-status" data-attendance-status></div>
+                    </div>
+                    <div class="workers-attendance-actions">
+                        <button type="button" class="workers-attendance-btn present" data-status="present" title="Present" aria-label="Present">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn late" data-status="late" title="Late" aria-label="Late">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn absent" data-status="absent" title="Absent" aria-label="Absent">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="workers-attendance-card" data-attendance-worker="2">
+                    <div class="workers-attendance-avatar">CM</div>
+                    <div class="workers-attendance-info">
+                        <div class="workers-attendance-name">Carlos Mendes</div>
+                        <div class="workers-attendance-role">Emergency Responder</div>
+                        <div class="workers-attendance-status" data-attendance-status></div>
+                    </div>
+                    <div class="workers-attendance-actions">
+                        <button type="button" class="workers-attendance-btn present" data-status="present" title="Present" aria-label="Present">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn late" data-status="late" title="Late" aria-label="Late">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn absent" data-status="absent" title="Absent" aria-label="Absent">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="workers-attendance-card" data-attendance-worker="3">
+                    <div class="workers-attendance-avatar">DG</div>
+                    <div class="workers-attendance-info">
+                        <div class="workers-attendance-name">Dana Gupta</div>
+                        <div class="workers-attendance-role">Inspector</div>
+                        <div class="workers-attendance-status" data-attendance-status></div>
+                    </div>
+                    <div class="workers-attendance-actions">
+                        <button type="button" class="workers-attendance-btn present" data-status="present" title="Present" aria-label="Present">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn late" data-status="late" title="Late" aria-label="Late">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn absent" data-status="absent" title="Absent" aria-label="Absent">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="workers-attendance-card" data-attendance-worker="4">
+                    <div class="workers-attendance-avatar">AR</div>
+                    <div class="workers-attendance-info">
+                        <div class="workers-attendance-name">Alex Rivera</div>
+                        <div class="workers-attendance-role">Field Technician</div>
+                        <div class="workers-attendance-status" data-attendance-status></div>
+                    </div>
+                    <div class="workers-attendance-actions">
+                        <button type="button" class="workers-attendance-btn present" data-status="present" title="Present" aria-label="Present">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn late" data-status="late" title="Late" aria-label="Late">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </button>
+                        <button type="button" class="workers-attendance-btn absent" data-status="absent" title="Absent" aria-label="Absent">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="font-size:1rem; font-weight:600; color:var(--worker-text); margin:24px 0 12px;">Crew</h3>
         <div class="workers-crew-grid">
             <article class="workers-crew-card">
                 <div class="workers-crew-header">
@@ -597,6 +752,11 @@
         });
     });
 
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('panel') === 'crew') {
+        switchPanel('crew');
+    }
+
     // Drag and drop for upload zone
     var zone = app.querySelector('#upload-zone');
     var input = app.querySelector('#medical-proof');
@@ -613,6 +773,36 @@
             if (files.length) input.files = files;
         });
     }
+
+    function attendanceTimeStr() {
+        var d = new Date();
+        return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+    function recordedTimeStr() {
+        var d = new Date(), h = d.getHours(), m = d.getMinutes();
+        var am = h < 12;
+        h = h % 12 || 12;
+        m = m < 10 ? '0' + m : m;
+        return h + ':' + m + ' ' + (am ? 'AM' : 'PM');
+    }
+    var crewDt = document.getElementById('crew-datetime');
+    if (crewDt) {
+        crewDt.textContent = attendanceTimeStr();
+        setInterval(function () { crewDt.textContent = attendanceTimeStr(); }, 60000);
+    }
+    app.querySelectorAll('.workers-attendance-card').forEach(function (card) {
+        var statusEl = card.querySelector('[data-attendance-status]');
+        var btns = card.querySelectorAll('.workers-attendance-btn[data-status]');
+        btns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var status = btn.getAttribute('data-status');
+                btns.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-status') === status); });
+                var label = status.charAt(0).toUpperCase() + status.slice(1);
+                statusEl.textContent = 'Status: ' + label + ' – ' + recordedTimeStr();
+                statusEl.className = 'workers-attendance-status recorded ' + status;
+            });
+        });
+    });
 })();
 </script>
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Work Order {{ $workOrder->work_order_number }} - Workers Portal</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <style>
         * {
             margin: 0;
@@ -163,17 +164,13 @@
 
         .wo-map-container {
             width: 100%;
-            height: 200px;
+            height: 220px;
             border: 1px solid #d1d5db;
             border-radius: 8px;
-            background: #f9fafb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             margin-top: 12px;
-            position: relative;
             overflow: hidden;
         }
+        #wo-map { width: 100%; height: 100%; min-height: 220px; }
 
         .wo-map-link {
             display: inline-flex;
@@ -285,24 +282,28 @@
                     <span class="wo-label">Map</span>
                     <div class="wo-map-container">
                         @if($workOrder->latitude && $workOrder->longitude)
+                            <div id="wo-map"></div>
                             <a href="https://www.google.com/maps?q={{ $workOrder->latitude }},{{ $workOrder->longitude }}" 
                                target="_blank" 
-                               class="wo-map-link">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               rel="noopener"
+                               class="wo-map-link"
+                               style="display: inline-flex; margin-top: 10px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                Link to Google Maps for the location
+                                Open in Google Maps
                             </a>
                         @else
-                            <a href="https://www.google.com/maps/search/{{ urlencode($workOrder->location_address) }}" 
+                            <a href="https://www.google.com/maps/search/{{ urlencode($workOrder->location_address ?? '') }}" 
                                target="_blank" 
+                               rel="noopener"
                                class="wo-map-link">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                Link to Google Maps for the location
+                                Open in Google Maps for the location
                             </a>
                         @endif
                     </div>
@@ -316,12 +317,12 @@
         <div class="wo-timeline">
             <div class="wo-timeline-item">
                 <span class="wo-label">Created</span>
-                <div class="wo-timeline-value">{{ $workOrder->created_at->format('M d, Y g:i A') }}</div>
+                <div class="wo-timeline-value">{{ $workOrder->created_at?->format('M d, Y g:i A') ?? '—' }}</div>
             </div>
             @if($workOrder->assigned_at)
             <div class="wo-timeline-item">
                 <span class="wo-label">Assigned</span>
-                <div class="wo-timeline-value">{{ $workOrder->assigned_at->format('M d, Y g:i A') }}</div>
+                <div class="wo-timeline-value">{{ $workOrder->assigned_at?->format('M d, Y g:i A') ?? '—' }}</div>
             </div>
             @else
             <div class="wo-timeline-item">
@@ -332,6 +333,23 @@
         </div>
     </div>
 </div>
+
+@if($workOrder->latitude && $workOrder->longitude)
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function () {
+    var lat = {{ (float) $workOrder->latitude }};
+    var lng = {{ (float) $workOrder->longitude }};
+    var map = L.map('wo-map').setView([lat, lng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+    L.marker([lat, lng]).addTo(map)
+        .bindPopup('{{ addslashes($workOrder->location_address ?? $workOrder->work_order_number) }}')
+        .openPopup();
+})();
+</script>
+@endif
 
 </body>
 </html>

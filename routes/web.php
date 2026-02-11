@@ -162,10 +162,53 @@ Answer questions briefly, clearly, and helpfully. Always prioritize safety - dir
 Route::view('/workers', 'workers')
     ->name('workers');
 
-Route::get('/workers/work-order/{id}', function ($id) {
+$dummyWorkOrders = [
+    1 => [
+        'work_order_number' => 'WO-1042',
+        'type' => 'Blockage',
+        'priority' => 'high',
+        'location_address' => 'Maple St',
+        'district' => 'brunei-muara',
+        'mukim' => null,
+        'latitude' => 4.9012,
+        'longitude' => 114.9089,
+        'description' => 'Main line blockage; pump and clear.',
+        'created_at' => now()->setTime(8, 39),
+        'assigned_at' => now()->setTime(9, 15),
+    ],
+    2 => [
+        'work_order_number' => 'WO-1041',
+        'type' => 'Inspection',
+        'priority' => 'medium',
+        'location_address' => 'Oak Ave',
+        'district' => 'brunei-muara',
+        'mukim' => null,
+        'latitude' => 4.9120,
+        'longitude' => 114.9200,
+        'description' => 'Routine inspection of sewer segment.',
+        'created_at' => now()->setTime(7, 0),
+        'assigned_at' => now()->setTime(8, 0),
+    ],
+    3 => [
+        'work_order_number' => 'WO-1040',
+        'type' => 'Repair',
+        'priority' => 'low',
+        'location_address' => 'Pine Rd',
+        'district' => 'brunei-muara',
+        'mukim' => null,
+        'latitude' => 4.8950,
+        'longitude' => 114.8950,
+        'description' => 'Repair damaged manhole cover.',
+        'created_at' => now()->subDay()->setTime(14, 30),
+        'assigned_at' => now()->subDay()->setTime(15, 0),
+    ],
+];
+Route::get('/workers/work-order/{id}', function ($id) use ($dummyWorkOrders) {
     $workOrder = \App\Models\WorkOrder::find($id);
 
-    // If no work order exists (e.g. dummy "View" links for presentation), show demo data
+    if (!$workOrder && isset($dummyWorkOrders[$id])) {
+        $workOrder = \App\Models\WorkOrder::make($dummyWorkOrders[$id]);
+    }
     if (!$workOrder) {
         $workOrder = \App\Models\WorkOrder::first()
             ?? \App\Models\WorkOrder::make([
@@ -184,7 +227,7 @@ Route::get('/workers/work-order/{id}', function ($id) {
         if ($workOrder->exists) {
             $workOrder->load(['crew', 'report']);
         }
-    } else {
+    } else if ($workOrder->exists) {
         $workOrder->load(['crew', 'report']);
     }
 
@@ -200,8 +243,8 @@ Route::get('/operation.dashboard', function () {
 Route::prefix('operations')->name('operations.')->group(function () {
     Route::get('/dashboard', [OperationsController::class, 'dashboard'])->name('dashboard');
     Route::get('/reports', [OperationsController::class, 'reports'])->name('reports');
-    Route::get('/map', [OperationsController::class, 'map'])->name('map');
-    
+Route::get('/map', [OperationsController::class, 'map'])->name('map');
+
     // Crew Management
     Route::get('/crews/unassigned', [CrewController::class, 'unassigned'])->name('crews.unassigned');
     Route::post('/crews/assign-worker', [CrewController::class, 'assignWorker'])->name('crews.assign-worker');

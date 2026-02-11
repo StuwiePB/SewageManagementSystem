@@ -44,6 +44,24 @@
 </a>
 @endif
 
+{{-- Attendance section --}}
+<div class="card" style="margin-bottom: 24px;">
+    <h2 style="margin: 0 0 12px; font-size: 1.125rem; font-weight: 700; color: #1f2937;">Attendance</h2>
+    <p style="margin: 0 0 16px; font-size: 0.875rem; color: #6b7280; line-height: 1.5;">
+        Crew leaders take attendance on the standalone <strong>Workers</strong> page at <a href="{{ url('/workers') }}" style="color:#0056A6;">/workers</a> (Crew Management tab → Take Attendance). Mark each worker Present, Late, or Absent. Once the attendance feature is connected to the database, recent attendance will appear here.
+    </p>
+    <a href="{{ url('/workers') }}" style="
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 8px;
+        background: #0056A6;
+        color: white;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+    ">Open Workers → Take Attendance</a>
+</div>
+
 <div class="card">
     <table style="width:100%; border-collapse:collapse;">
         <thead>
