@@ -542,6 +542,35 @@
         }
         
         /* AI Chatbot section */
+        #chatbot .chat-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        #chatbot .chat-suggestion-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--bn-border);
+            border-radius: 2rem;
+            color: var(--bn-text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #chatbot .chat-suggestion-chip:hover {
+            background: rgba(207,155,0,0.15);
+            border-color: var(--bn-gold);
+            color: var(--bn-gold);
+        }
+        #chatbot .chat-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
         #chatbot .chatbot-card {
             background: var(--bn-card-bg);
             border: 1px solid var(--bn-border);
@@ -888,13 +917,21 @@
                         </div>
                     </div>
                     <div class="chatbot-footer">
-                        <div class="d-flex gap-2 mb-2">
-                            <input type="text" id="chatbotInput" class="form-control flex-grow-1" placeholder="Ask about reporting, status checks, emergencies..." />
+                        <div class="chat-suggestions">
+                            <span class="chat-suggestion-chip" data-question="What do I do if I have a sewage problem?">What do I do</span>
+                            <span class="chat-suggestion-chip" data-question="What is the emergency number for sewage?">Emergency</span>
+                            <span class="chat-suggestion-chip" data-question="Help, I need to report a sewage issue">Help</span>
+                            <span class="chat-suggestion-chip" data-question="How do I report an issue?">How to report</span>
+                            <span class="chat-suggestion-chip" data-question="How do I check my report status?">Check status</span>
+                            <span class="chat-suggestion-chip" data-question="What types of sewage issues can I report?">Report types</span>
+                        </div>
+                        <div class="chat-input-row">
+                            <input type="text" id="chatbotInput" class="form-control flex-grow-1" placeholder="Type your question or search..." />
                             <button type="button" id="chatbotSend" class="btn btn-primary">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
-                        <p class="small mb-0" style="color: var(--bn-text-muted);">Try: "How do I report an issue?" or type <strong>admin</strong> for Admin Tools</p>
+                        <p class="small mb-0 mt-2" style="color: var(--bn-text-muted);">Type <strong>admin</strong> for Admin Tools</p>
                     </div>
                 </div>
             </section>
@@ -1272,6 +1309,12 @@
             sendBtn.addEventListener('click', sendMessage);
             inputEl.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+            });
+            document.querySelectorAll('.chat-suggestion-chip').forEach(function(chip) {
+                chip.addEventListener('click', function() {
+                    var q = chip.getAttribute('data-question');
+                    if (q) { inputEl.value = q; sendMessage(); }
+                });
             });
         })();
 

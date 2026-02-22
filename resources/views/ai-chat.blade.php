@@ -140,6 +140,36 @@
             color: #6b7280;
         }
 
+        .chat-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .chat-suggestion-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 2rem;
+            color: #4b5563;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chat-suggestion-chip:hover {
+            background: #e0e7ff;
+            border-color: #0056a6;
+            color: #0056a6;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
         .typing-dots {
             display: flex;
             gap: 0.25rem;
@@ -368,22 +398,28 @@
                 </div>
 
                 <div class="chat-footer">
-                    <div class="mb-2">
+                    <div class="chat-suggestions">
+                        <span class="chat-suggestion-chip" data-question="What do I do if I have a sewage problem?">What do I do</span>
+                        <span class="chat-suggestion-chip" data-question="What is the emergency number for sewage?">Emergency</span>
+                        <span class="chat-suggestion-chip" data-question="Help, I need to report a sewage issue">Help</span>
+                        <span class="chat-suggestion-chip" data-question="How do I report an issue?">How to report</span>
+                        <span class="chat-suggestion-chip" data-question="How do I check my report status?">Check status</span>
+                        <span class="chat-suggestion-chip" data-question="What types of sewage issues can I report?">Report types</span>
+                    </div>
+                    <div class="chat-input-row mb-2">
                         <input
                             id="aiChatInput"
                             type="text"
-                            class="form-control chat-input"
-                            placeholder="Ask about reporting, status checks, emergencies..."
+                            class="form-control chat-input flex-grow-1"
+                            placeholder="Type your question or search..."
                         />
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small id="aiChatStatus" class="chat-status">
-                            Try: "How do I report an issue?" or type <strong>admin</strong> for Admin Tools
-                        </small>
                         <button id="aiChatSend" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" style="background-color: #0056a6; border-color: #0056a6;">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
+                    <small id="aiChatStatus" class="chat-status">
+                        Type <strong>admin</strong> for Admin Tools
+                    </small>
                 </div>
             </div>
         </div>
@@ -565,6 +601,15 @@
                     e.preventDefault();
                     sendMessage();
                 }
+            });
+            document.querySelectorAll('.chat-suggestion-chip').forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    const q = chip.getAttribute('data-question');
+                    if (q) {
+                        input.value = q;
+                        sendMessage();
+                    }
+                });
             });
         })();
 
