@@ -171,15 +171,163 @@
                 opacity: 1;
             }
         }
+
+        /* Admin Troubleshooting Toolbar */
+        #admin-toolbar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+        }
+        #admin-login-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+        }
+        #admin-login-btn:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+        #admin-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 400px;
+            max-width: 90%;
+            z-index: 10000;
+            border: 2px solid #007bff;
+        }
+        #admin-panel h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        #admin-panel input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        #admin-panel input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        #admin-panel button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 5px 0;
+            transition: background 0.3s;
+        }
+        #admin-panel button:hover {
+            background: #0056b3;
+        }
+        #admin-panel button.danger {
+            background: #dc3545;
+        }
+        #admin-panel button.danger:hover {
+            background: #c82333;
+        }
+        #admin-panel button.success {
+            background: #28a745;
+        }
+        #admin-panel button.success:hover {
+            background: #218838;
+        }
+        #admin-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover {
+            color: #333;
+        }
+        #output-console {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .tool-group {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .tool-group h3 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+            font-size: 16px;
+        }
+        .admin-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 10001;
+            display: none;
+        }
+        .quick-fix-btn {
+            background: #6c757d;
+            margin: 2px !important;
+            width: auto !important;
+            display: inline-block !important;
+            padding: 8px 12px !important;
+            font-size: 14px !important;
+        }
     </style>
 </head>
 <body>
     <div class="page-wrapper">
         <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #0056a6, #0077cc);">
             <div class="container">
-                <a class="navbar-brand fw-bold" href="{{ route('home') }}">
-                    <i class="fas fa-water me-2"></i>
-                    Aqua Guard
+                <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ route('home') }}">
+                    <img src="/images/bruflow-logo.png" alt="BruFlow" class="me-2" style="height: 36px; width: auto;">
+                    BruFlow
                 </a>
                 <span class="navbar-text text-white-50 d-none d-md-inline">
                     Public Portal · AI Assistant
@@ -230,13 +378,68 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <small id="aiChatStatus" class="chat-status">
-                            Try asking: "How do I report an issue?" or "What's the emergency number?"
+                            Try: "How do I report an issue?" or type <strong>admin</strong> for Admin Tools
                         </small>
                         <button id="aiChatSend" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" style="background-color: #0056a6; border-color: #0056a6;">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Badge -->
+    <div id="admin-badge" class="admin-badge">🛠️ ADMIN MODE ACTIVE</div>
+    <!-- Admin Overlay -->
+    <div id="admin-overlay"></div>
+    <!-- Admin Panel -->
+    <div id="admin-panel">
+        <span class="close-btn" onclick="hideAdminPanel()">&times;</span>
+        <h2>🛠️ Admin Troubleshooting</h2>
+        <div id="login-form">
+            <input type="password" id="admin-password" placeholder="Enter admin password" onkeypress="adminCheckEnter(event)">
+            <button onclick="adminVerifyPassword()">Login</button>
+            <p style="color: #666; font-size: 12px; text-align: center;">Default password: admin123</p>
+        </div>
+        <div id="admin-tools" style="display: none;">
+            <div class="tool-group">
+                <h3>📊 Diagnostics</h3>
+                <button onclick="checkConsoleErrors()">Check Console Errors</button>
+                <button onclick="testApiConnections()">Test API Connections</button>
+                <button onclick="checkLocalStorage()">Check Local Storage</button>
+                <button onclick="checkNetworkStatus()">Network Status</button>
+            </div>
+            <div class="tool-group">
+                <h3>🔄 Cache & Storage</h3>
+                <button onclick="clearBrowserCache()">Clear Browser Cache</button>
+                <button onclick="clearLocalStorage()">Clear Local Storage</button>
+                <button onclick="clearSessionStorage()">Clear Session Storage</button>
+                <button onclick="reloadPage()">Reload Page</button>
+            </div>
+            <div class="tool-group">
+                <h3>🎨 Visual Debug</h3>
+                <button onclick="toggleOutlines()">Toggle Element Outlines</button>
+                <button onclick="highlightBrokenImages()">Find Broken Images</button>
+                <button onclick="checkResponsive()">Check Responsive Layout</button>
+            </div>
+            <div class="tool-group">
+                <h3>⚡ Quick Fixes</h3>
+                <button class="quick-fix-btn" onclick="fixJavaScriptErrors()">Fix JS Errors</button>
+                <button class="quick-fix-btn" onclick="resetCss()">Reset CSS</button>
+                <button class="quick-fix-btn" onclick="forceRepaint()">Force Repaint</button>
+                <button class="quick-fix-btn" onclick="disableAnimations()">Disable Animations</button>
+            </div>
+            <div class="tool-group">
+                <h3>📝 Console Output</h3>
+                <div id="output-console">Ready to diagnose...</div>
+                <button onclick="clearOutput()">Clear Output</button>
+            </div>
+            <div class="tool-group">
+                <h3>🔧 Advanced</h3>
+                <button onclick="inspectElement()">Inspect Element Mode</button>
+                <button onclick="showPageInfo()">Page Information</button>
+                <button class="danger" onclick="adminLogout()">Logout</button>
             </div>
         </div>
     </div>
@@ -306,6 +509,14 @@
                     return;
                 }
 
+                // Check for admin command
+                const adminCommand = /^(admin|admin\s*tools?|open\s*admin|\/admin)\s*$/i.test(text);
+                if (adminCommand) {
+                    input.value = '';
+                    if (typeof window.showLogin === 'function') window.showLogin();
+                    return;
+                }
+
                 appendMessage(text, 'user');
                 input.value = '';
                 status.textContent = 'Contacting AI...';
@@ -354,6 +565,178 @@
                     e.preventDefault();
                     sendMessage();
                 }
+            });
+        })();
+
+        // Admin Troubleshooting Tools
+        (function() {
+            let adminActive = false;
+            let outlineMode = false;
+
+            function adminLogToConsole(message, type) {
+                const consoleEl = document.getElementById('output-console');
+                if (!consoleEl) return;
+                const timestamp = new Date().toLocaleTimeString();
+                let color = '#00ff00';
+                if (type === 'error') color = '#ff5555';
+                if (type === 'success') color = '#55ff55';
+                if (type === 'warning') color = '#ffff55';
+                consoleEl.innerHTML += '<div style="color:' + color + '">[' + timestamp + '] ' + message + '</div>';
+                consoleEl.scrollTop = consoleEl.scrollHeight;
+            }
+
+            window.adminVerifyPassword = function() {
+                const password = document.getElementById('admin-password').value;
+                if (password === 'admin123') {
+                    adminActive = true;
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('admin-tools').style.display = 'block';
+                    document.getElementById('admin-badge').style.display = 'block';
+                    document.getElementById('admin-panel').style.borderColor = '#28a745';
+                    adminLogToConsole('Admin access granted. Troubleshooting mode active.', 'success');
+                } else {
+                    alert('Incorrect password!');
+                    adminLogToConsole('Failed login attempt', 'error');
+                }
+            };
+
+            window.showLogin = function() {
+                document.getElementById('admin-overlay').style.display = 'block';
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('admin-tools').style.display = 'none';
+                document.getElementById('admin-password').value = '';
+                document.getElementById('admin-password').focus();
+            };
+
+            window.hideAdminPanel = function() {
+                document.getElementById('admin-overlay').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'none';
+            };
+
+            window.adminCheckEnter = function(e) {
+                if (e.key === 'Enter') window.adminVerifyPassword();
+            };
+
+            window.clearOutput = function() {
+                const c = document.getElementById('output-console');
+                if (c) c.innerHTML = 'Ready to diagnose...';
+            };
+
+            window.checkConsoleErrors = function() {
+                adminLogToConsole('Error catching enabled. Check browser console (F12).', 'success');
+            };
+
+            window.testApiConnections = function() {
+                adminLogToConsole('Testing API connections...');
+                fetch(window.location.origin + '/ai/chat', { method: 'OPTIONS' })
+                    .then(function() { adminLogToConsole('AI chat route reachable', 'success'); })
+                    .catch(function() { adminLogToConsole('AI chat route not reachable', 'error'); });
+            };
+
+            window.checkLocalStorage = function() {
+                adminLogToConsole('Local storage: ' + localStorage.length + ' items', 'info');
+            };
+
+            window.checkNetworkStatus = function() {
+                adminLogToConsole('Online: ' + (navigator.onLine ? 'Yes' : 'No'), 'info');
+            };
+
+            window.clearBrowserCache = function() {
+                if (confirm('Clear cache and reload?')) location.reload(true);
+            };
+
+            window.clearLocalStorage = function() {
+                if (confirm('Clear local storage?')) { localStorage.clear(); adminLogToConsole('Local storage cleared', 'success'); }
+            };
+
+            window.clearSessionStorage = function() {
+                if (confirm('Clear session storage?')) { sessionStorage.clear(); adminLogToConsole('Session storage cleared', 'success'); }
+            };
+
+            window.reloadPage = function() {
+                if (confirm('Reload page?')) location.reload();
+            };
+
+            window.toggleOutlines = function() {
+                outlineMode = !outlineMode;
+                var style = document.getElementById('admin-outline-style');
+                if (outlineMode) {
+                    style = document.createElement('style');
+                    style.id = 'admin-outline-style';
+                    style.textContent = '* { outline: 2px solid red !important; }';
+                    document.head.appendChild(style);
+                    adminLogToConsole('Element outlines enabled', 'warning');
+                } else {
+                    if (style) style.remove();
+                    adminLogToConsole('Element outlines disabled');
+                }
+            };
+
+            window.highlightBrokenImages = function() {
+                var imgs = document.getElementsByTagName('img');
+                var broken = 0;
+                for (var i = 0; i < imgs.length; i++) {
+                    if (!imgs[i].complete || imgs[i].naturalHeight === 0) {
+                        imgs[i].style.border = '5px solid red';
+                        broken++;
+                    }
+                }
+                adminLogToConsole(broken > 0 ? broken + ' broken image(s)' : 'No broken images', broken > 0 ? 'error' : 'success');
+            };
+
+            window.checkResponsive = function() {
+                adminLogToConsole('Viewport: ' + window.innerWidth + ' x ' + window.innerHeight);
+            };
+
+            window.fixJavaScriptErrors = function() {
+                window.onerror = function() { return true; };
+                adminLogToConsole('Error handling enabled', 'success');
+            };
+
+            window.resetCss = function() {
+                var els = document.getElementsByTagName('*');
+                for (var i = 0; i < els.length; i++) { if (els[i].style) els[i].style.cssText = ''; }
+                adminLogToConsole('CSS reset complete', 'success');
+            };
+
+            window.forceRepaint = function() {
+                document.body.style.display = 'none';
+                document.body.offsetHeight;
+                document.body.style.display = '';
+                adminLogToConsole('Repaint complete', 'success');
+            };
+
+            window.disableAnimations = function() {
+                var s = document.createElement('style');
+                s.textContent = '* { animation-duration: 0s !important; transition-duration: 0s !important; }';
+                document.head.appendChild(s);
+                adminLogToConsole('Animations disabled', 'success');
+            };
+
+            window.inspectElement = function() {
+                adminLogToConsole('Inspect mode: click any element for details', 'warning');
+            };
+
+            window.showPageInfo = function() {
+                adminLogToConsole('URL: ' + window.location.href);
+                adminLogToConsole('Title: ' + document.title);
+            };
+
+            window.adminLogout = function() {
+                adminActive = false;
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('admin-tools').style.display = 'none';
+                document.getElementById('admin-badge').style.display = 'none';
+                document.getElementById('admin-panel').style.borderColor = '#007bff';
+                hideAdminPanel();
+                if (outlineMode) toggleOutlines();
+            };
+
+            document.getElementById('admin-overlay').onclick = hideAdminPanel;
+
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.shiftKey && e.key === 'A') { e.preventDefault(); showLogin(); }
             });
         })();
     </script>

@@ -420,9 +420,9 @@
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('home') }}">
-                <i class="fas fa-water me-2"></i>
-                Sewage Monitoring System
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
+                <img src="/images/bruflow-logo.png" alt="BruFlow" class="me-2" style="height: 36px; width: auto;">
+                BruFlow
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -515,7 +515,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 mb-4">
-                    <h5 class="footer-title">Sewage Monitoring System</h5>
+                    <h5 class="footer-title">BruFlow</h5>
                     <p>A public service portal for reporting and tracking sewage system issues in Brunei Darussalam.</p>
                 </div>
                 

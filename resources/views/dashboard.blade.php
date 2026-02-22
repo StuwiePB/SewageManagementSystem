@@ -9,7 +9,9 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('home') }}">Aqua Guard</a>
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
+                <img src="/images/bruflow-logo.png" alt="BruFlow" class="me-2" style="height: 36px; width: auto;">BruFlow
+            </a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">

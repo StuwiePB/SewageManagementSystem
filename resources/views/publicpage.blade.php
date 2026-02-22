@@ -1,46 +1,131 @@
+@php
+    $districts = $districts ?? config('brunei.districts', []);
+    $mukims = $mukims ?? config('brunei.mukims', []);
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sewage Issue Reporting – Brunei Darussalam</title>
+    <title>Sewage Issue Reporting – Government of Brunei Darussalam</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-blue: #0056a6;
-            --secondary-blue: #0077cc;
-            --accent-teal: #00a896;
-            --alert-red: #e63946;
-            --warning-yellow: #ffbe0b;
-            --success-green: #2a9d8f;
-            --light-gray: #f8f9fa;
-            --dark-gray: #343a40;
-            --text-light: #6c757d;
+            /* Brunei Government palette - national colours */
+            --bn-gold: #CF9B00;
+            --bn-gold-light: #F7D117;
+            --bn-black: #000000;
+            --bn-white: #FFFFFF;
+            --bn-navy: #0C2340;
+            --bn-navy-light: #1B3A5C;
+            --bn-card-bg: #122942;
+            --bn-border: #2A4A6B;
+            --bn-text-muted: #94A3B8;
+            --secondary-blue: #3B82F6;
+            --accent-teal: #0D9488;
+            --success-green: #059669;
+            --warning-yellow: var(--bn-gold);
         }
         
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f0f8ff;
-            color: var(--dark-gray);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bn-navy);
+            color: var(--bn-white);
             line-height: 1.6;
+            position: relative;
+            font-size: 1rem;
         }
+        .text-muted, .text-white-50, .text-secondary { color: var(--bn-text-muted) !important; }
+        .page-bg-blur {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .page-bg-blur .layer1 {
+            position: absolute;
+            inset: 0;
+            background: url('/images/background-blur.png') center/cover no-repeat;
+            opacity: 0.18;
+            filter: blur(40px);
+        }
+        .page-bg-blur .layer2 {
+            position: absolute;
+            inset: 0;
+            background: url('/images/background-blur.png') center/120% no-repeat;
+            opacity: 0.12;
+            filter: blur(80px);
+        }
+        .page-bg-blur .layer3 {
+            position: absolute;
+            inset: 0;
+            background: url('/images/background-blur.png') center/100% no-repeat;
+            opacity: 0.15;
+            filter: blur(12px);
+        }
+        /* Animated background paths */
+        .page-bg-blur .bg-paths {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+        .page-bg-blur .bg-paths svg {
+            width: 100%;
+            height: 100%;
+            opacity: 0.4;
+        }
+        .page-bg-blur .bg-paths path {
+            fill: none;
+            stroke: var(--bn-gold);
+            stroke-opacity: 0.06;
+            stroke-linecap: round;
+            stroke-dasharray: 350 700;
+            stroke-dashoffset: 0;
+            animation: pathDraw 22s linear infinite;
+        }
+        .page-bg-blur .bg-paths path:nth-child(1) { animation-delay: 0s; stroke-opacity: 0.05; animation-duration: 24s; }
+        .page-bg-blur .bg-paths path:nth-child(2) { animation-delay: -3s; stroke-opacity: 0.06; animation-duration: 20s; }
+        .page-bg-blur .bg-paths path:nth-child(3) { animation-delay: -6s; stroke-opacity: 0.07; animation-duration: 26s; }
+        .page-bg-blur .bg-paths path:nth-child(4) { animation-delay: -9s; stroke-opacity: 0.05; animation-duration: 22s; }
+        .page-bg-blur .bg-paths path:nth-child(5) { animation-delay: -12s; stroke-opacity: 0.06; animation-duration: 25s; }
+        .page-bg-blur .bg-paths path:nth-child(6) { animation-delay: -15s; stroke-opacity: 0.04; animation-duration: 21s; }
+        .page-bg-blur .bg-paths path:nth-child(7) { animation-delay: -18s; stroke-opacity: 0.05; animation-duration: 23s; }
+        .page-bg-blur .bg-paths path:nth-child(8) { animation-delay: -20s; stroke-opacity: 0.06; animation-duration: 27s; }
+        .page-bg-blur .bg-paths svg:last-child path:nth-child(1) { animation-delay: -4s; animation-duration: 19s; }
+        .page-bg-blur .bg-paths svg:last-child path:nth-child(2) { animation-delay: -10s; animation-duration: 28s; }
+        .page-bg-blur .bg-paths svg:last-child path:nth-child(3) { animation-delay: -16s; animation-duration: 24s; }
+        @keyframes pathDraw {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -700; }
+        }
+        .page-content { position: relative; z-index: 1; }
         
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-weight: 600;
         }
         
         .navbar {
-            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
-            box-shadow: 0 4px 12px rgba(0, 87, 166, 0.15);
+            background: var(--bn-navy);
+            border-bottom: 2px solid var(--bn-gold);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
         }
         
         .navbar-brand {
             font-weight: 700;
-            font-size: 1.5rem;
-            color: white !important;
+            font-size: 1.35rem;
+            color: var(--bn-white) !important;
+            letter-spacing: 0.02em;
+        }
+        
+        .navbar-brand .gov-badge {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--bn-gold);
+            letter-spacing: 0.05em;
         }
         
         .nav-link {
@@ -48,30 +133,65 @@
             font-weight: 500;
         }
         
-        .nav-link:hover {
-            color: white !important;
+        .nav-link:hover, .nav-link.active {
+            color: var(--bn-gold) !important;
         }
         
         .hero-section {
-            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7)), 
-                        url('https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
-            background-size: cover;
-            background-position: center;
+            position: relative;
             padding: 4rem 0;
-            border-radius: 0 0 20px 20px;
             margin-bottom: 2rem;
+            border-bottom: 2px solid var(--bn-gold);
+            overflow: hidden;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: url('/images/mosque-bg.png') center/cover no-repeat;
+            filter: blur(2px);
+            opacity: 0.9;
+        }
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(to bottom, rgba(12,35,64,0.6), rgba(12,35,64,0.75));
+        }
+        .hero-section .container {
+            position: relative;
+            z-index: 2;
         }
         
-        .hero-title {
-            color: var(--primary-blue);
-            font-weight: 700;
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(207,155,0,0.15);
+            border: 1px solid var(--bn-gold);
+            color: var(--bn-gold);
+            padding: 0.35rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             margin-bottom: 1rem;
         }
         
+        .hero-title {
+            color: var(--bn-white);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        
         .hero-subtitle {
-            color: var(--text-light);
-            font-size: 1.1rem;
-            max-width: 700px;
+            color: var(--bn-text-muted);
+            font-size: 1.05rem;
+            max-width: 640px;
             margin: 0 auto 2rem;
         }
         
@@ -81,75 +201,91 @@
         }
         
         .report-card {
-            background-color: white;
-            border-radius: 15px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-            padding: 2rem;
-            margin-bottom: 2.5rem;
-            border: none;
-            transition: transform 0.3s ease;
+            background: var(--bn-card-bg);
+            border: 1px solid var(--bn-border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
         }
+        .report-card .card-body { padding: 1.75rem; }
         
         .report-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
         }
         
         .section-title {
-            color: var(--primary-blue);
-            border-bottom: 3px solid var(--accent-teal);
+            color: var(--bn-white);
+            border-bottom: 3px solid var(--bn-gold);
             padding-bottom: 0.5rem;
             display: inline-block;
             margin-bottom: 1.5rem;
+            font-size: 1.35rem;
         }
         
         .form-label {
             font-weight: 600;
-            color: var(--dark-gray);
+            color: #fff;
             margin-bottom: 0.5rem;
         }
         
         .form-control, .form-select {
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s;
+            border-radius: 0.375rem;
+            border: 1px solid var(--bn-border);
+            background: var(--bn-navy);
+            color: var(--bn-white);
+            padding: 0.625rem 1rem;
+            transition: all 0.2s;
         }
-        
+        .form-control::placeholder { color: var(--bn-text-muted); }
         .form-control:focus, .form-select:focus {
-            border-color: var(--secondary-blue);
-            box-shadow: 0 0 0 0.25rem rgba(0, 119, 204, 0.25);
+            border-color: var(--bn-gold);
+            box-shadow: 0 0 0 3px rgba(207,155,0,0.2);
+            outline: none;
         }
         
         .btn-primary {
-            background-color: var(--primary-blue);
-            border-color: var(--primary-blue);
-            border-radius: 8px;
-            padding: 0.75rem 2rem;
+            background-color: var(--bn-gold);
+            border-color: var(--bn-gold);
+            color: var(--bn-black);
+            border-radius: 0.375rem;
+            padding: 0.625rem 1.5rem;
             font-weight: 600;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
         
         .btn-primary:hover {
-            background-color: var(--secondary-blue);
-            border-color: var(--secondary-blue);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 119, 204, 0.25);
+            background-color: var(--bn-gold-light);
+            border-color: var(--bn-gold-light);
+            color: var(--bn-black);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(207,155,0,0.3);
+        }
+        
+        .btn-outline-warning {
+            border-color: var(--bn-gold);
+            color: var(--bn-gold);
+            border-radius: 0.375rem;
+        }
+        
+        .btn-outline-warning:hover {
+            background-color: rgba(207,155,0,0.15);
+            color: var(--bn-gold-light);
+            border-color: var(--bn-gold);
         }
         
         .btn-secondary {
-            background-color: var(--accent-teal);
-            border-color: var(--accent-teal);
-            border-radius: 8px;
-            padding: 0.75rem 2rem;
-            font-weight: 600;
-            transition: all 0.3s;
+            background-color: var(--bn-navy-light);
+            border-color: var(--bn-border);
+            color: var(--bn-white);
+            border-radius: 0.375rem;
         }
         
         .btn-secondary:hover {
-            background-color: #008f7a;
-            border-color: #008f7a;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 168, 150, 0.25);
+            background-color: var(--bn-border);
+            border-color: var(--bn-border);
+            color: var(--bn-white);
         }
         
         .map-container {
@@ -235,7 +371,8 @@
         .feature-card {
             text-align: center;
             padding: 1.5rem;
-            background-color: white;
+            background: var(--bn-card-bg);
+            border: 1px solid var(--bn-border);
             border-radius: 10px;
             height: 100%;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
@@ -247,50 +384,63 @@
         }
         
         .feature-title {
-            color: var(--primary-blue);
+            color: #fff;
             font-weight: 600;
             margin-bottom: 0.75rem;
         }
+        .feature-card p {
+            color: var(--bn-text-muted);
+        }
         
+        .info-box, .info-box li {
+            color: var(--bn-text-muted);
+        }
         .info-box {
-            background-color: rgba(0, 168, 150, 0.05);
-            border-radius: 10px;
+            background: var(--bn-card-bg);
+            border-radius: 0.5rem;
             padding: 1.5rem;
-            border-left: 4px solid var(--accent-teal);
+            border: 1px solid var(--bn-border);
+            border-left: 4px solid var(--bn-gold);
             margin-top: 2rem;
         }
         
         .footer {
-            background-color: var(--dark-gray);
-            color: white;
+            background: var(--bn-navy);
+            border-top: 2px solid var(--bn-gold);
+            color: var(--bn-white);
             padding: 2.5rem 0;
             margin-top: 4rem;
         }
         
+        .footer p, .footer .footer-title + p {
+            color: var(--bn-text-muted);
+        }
         .footer-title {
-            color: white;
+            color: var(--bn-white);
             font-weight: 600;
             margin-bottom: 1.5rem;
+            font-size: 1rem;
         }
         
         .footer-links a {
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--bn-text-muted);
             text-decoration: none;
             display: block;
             margin-bottom: 0.5rem;
-            transition: color 0.3s;
+            transition: color 0.2s;
         }
         
         .footer-links a:hover {
-            color: white;
+            color: var(--bn-gold);
         }
         
         .copyright {
             text-align: center;
             padding-top: 1.5rem;
             margin-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid var(--bn-border);
+            color: var(--bn-text-muted);
+            font-size: 0.9rem;
         }
         
         .progress-tracker {
@@ -391,15 +541,17 @@
             color: var(--secondary-blue);
         }
         
-        /* AI Chatbot section (React-style) */
+        /* AI Chatbot section */
         #chatbot .chatbot-card {
-            background: #fff;
+            background: var(--bn-card-bg);
+            border: 1px solid var(--bn-border);
             border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             overflow: hidden;
         }
         #chatbot .chatbot-header {
-            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            background: var(--bn-navy);
+            border-bottom: 1px solid var(--bn-border);
             color: #fff;
             padding: 1rem 1.25rem;
         }
@@ -409,7 +561,7 @@
             height: 24rem;
             overflow-y: auto;
             padding: 1rem 1.25rem;
-            background: #f9fafb;
+            background: var(--bn-navy);
         }
         #chatbot .chat-msg { margin-bottom: 0.75rem; display: flex; }
         #chatbot .chat-msg.user { justify-content: flex-end; }
@@ -426,19 +578,22 @@
             border-bottom-right-radius: 0.35rem;
         }
         #chatbot .chat-bubble.bot {
-            background: #fff;
-            color: #1f2937;
+            background: var(--bn-card-bg);
+            color: #ffffff;
             border-bottom-left-radius: 0.35rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         #chatbot .chatbot-footer {
-            border-top: 1px solid #e5e7eb;
-            background: #fff;
+            border-top: 1px solid var(--bn-border);
+            background: var(--bn-navy);
             padding: 0.75rem 1rem 1rem;
         }
         #chatbot .chatbot-footer .form-control {
             border-radius: 0.5rem;
             padding: 0.6rem 0.85rem;
+            background: var(--bn-navy);
+            border: 1px solid var(--bn-border);
+            color: #fff;
         }
         #chatbot .typing-dots span {
             display: inline-block;
@@ -455,6 +610,156 @@
             0%, 100% { transform: translateY(0); opacity: 0.6; }
             50% { transform: translateY(-4px); opacity: 1; }
         }
+
+        /* How It Works Carousel */
+        @keyframes cardFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes centerPop {
+            0% { box-shadow: 0 8px 0 4px var(--bn-border); }
+            50% { box-shadow: 0 12px 0 6px var(--bn-border); }
+            100% { box-shadow: 0 8px 0 4px var(--bn-border); }
+        }
+        .how-it-works-carousel {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            overflow: hidden;
+            background: rgba(18, 41, 66, 0.5);
+            border-radius: 0.5rem;
+            border: 1px solid var(--bn-border);
+        }
+        .how-it-works-card {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            cursor: pointer;
+            border: 2px solid var(--bn-border);
+            padding: 1.5rem 2rem;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        border-color 0.3s ease,
+                        background 0.4s ease,
+                        box-shadow 0.4s ease;
+            background: #1a2942;
+            color: #fff;
+            clip-path: polygon(50px 0%, calc(100% - 50px) 0%, 100% 50px, 100% 100%, calc(100% - 50px) 100%, 50px 100%, 0 100%, 0 0);
+            animation: cardFadeIn 0.5s ease-out forwards;
+        }
+        .how-it-works-card:hover {
+            border-color: rgba(207, 155, 0, 0.6);
+        }
+        .how-it-works-card.center {
+            z-index: 10;
+            background: var(--bn-gold);
+            color: var(--bn-black);
+            border-color: var(--bn-gold);
+            box-shadow: 0 8px 0 4px var(--bn-border);
+            animation: cardFadeIn 0.5s ease-out forwards, centerPop 2s ease-in-out 0.5s;
+        }
+        .how-it-works-card .how-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(207, 155, 0, 0.2);
+            color: var(--bn-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .how-it-works-card:hover .how-icon {
+            transform: scale(1.08);
+        }
+        .how-it-works-card.center .how-icon {
+            background: rgba(0, 0, 0, 0.15);
+            color: var(--bn-black);
+            animation: iconPulse 2.5s ease-in-out infinite;
+        }
+        .how-it-works-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .how-it-works-card p.byline {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            right: 2rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .how-it-works-card.center p.byline { color: rgba(0, 0, 0, 0.8); }
+        .how-it-works-card:not(.center) p.byline { color: #9ca3af; }
+        .how-it-works-nav {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+        }
+        .how-it-works-nav button {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bn-navy);
+            border: 2px solid var(--bn-border);
+            color: #fff;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .how-it-works-nav button:hover {
+            background: var(--bn-gold);
+            color: var(--bn-black);
+            border-color: var(--bn-gold);
+            transform: scale(1.08);
+        }
+        .how-it-works-nav button:active {
+            transform: scale(0.95);
+        }
+        @media (max-width: 639px) {
+            .how-it-works-carousel { height: 550px; }
+        }
+
+        /* Admin Panel */
+        #admin-panel-public {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bn-card-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            width: 400px;
+            max-width: 90%;
+            z-index: 10001;
+            border: 2px solid var(--bn-gold);
+        }
+        #admin-panel-public h2 { margin-top: 0; color: var(--bn-white); border-bottom: 2px solid var(--bn-gold); padding-bottom: 10px; }
+        #admin-panel-public input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid var(--bn-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; background: var(--bn-navy); color: var(--bn-white); }
+        #admin-panel-public input:focus { border-color: var(--bn-gold); outline: none; }
+        #admin-panel-public button { background: var(--bn-gold); color: var(--bn-black); border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%; margin: 5px 0; transition: background 0.3s; }
+        #admin-panel-public button:hover { background: var(--bn-gold-light); }
+        #admin-panel-public button.danger { background: #dc3545; color: white; }
+        #admin-overlay-public { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; }
+        .admin-close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: var(--bn-text-muted); }
+        .admin-close-btn:hover { color: var(--bn-white); }
+        #admin-console-public { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; height: 180px; overflow-y: auto; margin: 10px 0; font-size: 13px; }
+        .admin-tool-group { margin: 12px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; }
+        .admin-tool-group h3 { margin: 0 0 10px 0; color: var(--bn-gold); font-size: 14px; }
+        .admin-tool-group button { margin: 4px; width: auto; }
 
         @media (max-width: 768px) {
             .hero-section {
@@ -482,12 +787,38 @@
     </style>
 </head>
 <body>
+    <div class="page-bg-blur">
+        <div class="layer1"></div>
+        <div class="layer2"></div>
+        <div class="layer3"></div>
+        <div class="bg-paths">
+            <svg viewBox="0 0 1400 800" preserveAspectRatio="xMidYMid slice">
+                <path d="M-100,100 Q200,50 500,150 T1100,100 T1500,200" stroke-width="0.8"/>
+                <path d="M-50,250 Q300,200 700,300 T1400,250" stroke-width="0.6"/>
+                <path d="M0,400 Q400,350 800,450 T1600,400" stroke-width="1"/>
+                <path d="M-100,550 Q250,500 650,600 T1250,550 T1650,600" stroke-width="0.7"/>
+                <path d="M-80,200 Q150,100 500,250 T1000,180 T1400,300" stroke-width="0.5"/>
+                <path d="M-120,500 Q200,400 600,550 T1200,450" stroke-width="0.6"/>
+                <path d="M0,650 Q350,600 750,700 T1500,650" stroke-width="0.8"/>
+                <path d="M-60,350 Q180,300 550,400 T1150,350 T1550,450" stroke-width="0.5"/>
+            </svg>
+            <svg viewBox="0 0 1400 800" preserveAspectRatio="xMidYMid slice" style="transform: scaleX(-1);">
+                <path d="M-100,120 Q250,80 600,180 T1200,120" stroke-width="0.7"/>
+                <path d="M-80,350 Q220,300 580,400 T1180,350" stroke-width="0.6"/>
+                <path d="M0,550 Q380,500 780,600 T1580,550" stroke-width="0.8"/>
+            </svg>
+        </div>
+    </div>
+    <div class="page-content">
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <i class="fas fa-water me-2"></i>
-                Aqua Guard
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('dashboard') }}">
+                <img src="/images/bruflow-logo.png" alt="BruFlow" class="me-2" style="height: 36px; width: auto;">
+                <span>
+                    <span class="d-block">BruFlow</span>
+                    <span class="gov-badge">Government of Brunei Darussalam</span>
+                </span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -520,15 +851,19 @@
     <!-- Hero Section -->
     <section class="hero-section">
         <div class="container text-center">
+            <div class="hero-badge">
+                <i class="fas fa-shield-alt"></i>
+                Citizen Services — Government Portal
+            </div>
             <h1 class="hero-title">Report Sewage Issues in Our Community</h1>
             <p class="hero-subtitle">
                 Help us keep our sewage system running smoothly. Report blockages, overflows, or maintenance issues quickly and easily. 
                 Your reports help us respond faster and protect our environment.
             </p>
-            <a href="{{ route('submitreport') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus-circle me-2"></i> Report a New Issue
+            <a href="#report" class="btn btn-primary btn-lg">
+                <i class="fas fa-flag me-2"></i> Report a New Issue
             </a>
-            <a href="{{ route('checkreportstatus') }}" class="btn btn-secondary btn-lg ms-2">
+            <a href="#status" class="btn btn-outline-warning btn-lg ms-2">
                 <i class="fas fa-search me-2"></i> Check Report Status
             </a>
         </div>
@@ -537,8 +872,8 @@
     <!-- Main Content -->
     <div class="main-container">
         <div class="container">
-            <!-- AI Chatbot Section -->
-            <section id="chatbot" class="mb-5">
+            <!-- AI Chatbot Section (first after hero) -->
+            <section id="chatbot" class="mb-5 scroll-mt-5">
                 <h2 class="section-title">
                     <i class="fas fa-comments me-2"></i>Ask Our AI Assistant
                 </h2>
@@ -555,11 +890,122 @@
                     <div class="chatbot-footer">
                         <div class="d-flex gap-2 mb-2">
                             <input type="text" id="chatbotInput" class="form-control flex-grow-1" placeholder="Ask about reporting, status checks, emergencies..." />
-                            <button type="button" id="chatbotSend" class="btn btn-primary" style="background-color: var(--primary-blue); border-color: var(--primary-blue);">
+                            <button type="button" id="chatbotSend" class="btn btn-primary">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
-                        <p class="text-muted small mb-0">Try asking: "How do I report an issue?" or "What's the emergency number?"</p>
+                        <p class="small mb-0" style="color: var(--bn-text-muted);">Try: "How do I report an issue?" or type <strong>admin</strong> for Admin Tools</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Report Issue Section -->
+            <section id="report" class="mb-5 scroll-mt-5">
+                <h2 class="section-title"><i class="fas fa-flag me-2"></i>Report a Sewage Issue</h2>
+                <p class="mb-4" style="color: var(--bn-text-muted);">Submit a detailed report to our maintenance team</p>
+                <div class="report-card">
+                    <div class="card-body">
+                        <form id="reportForm" action="{{ route('reports.store') }}" method="POST">
+                            @csrf
+                            @if($errors->any())
+                                <div class="alert alert-danger mb-4">
+                                    <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                                </div>
+                            @endif
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Type of Issue <span class="text-danger">*</span></label>
+                                    <select name="issue_type" class="form-select" required>
+                                        <option value="">Select</option>
+                                        <option value="blockage" {{ old('issue_type')=='blockage'?'selected':'' }}>Sewage Blockage</option>
+                                        <option value="overflow" {{ old('issue_type')=='overflow'?'selected':'' }}>Sewage Overflow</option>
+                                        <option value="odor" {{ old('issue_type')=='odor'?'selected':'' }}>Strong Sewage Odor</option>
+                                        <option value="maintenance" {{ old('issue_type')=='maintenance'?'selected':'' }}>Maintenance Required</option>
+                                        <option value="other" {{ old('issue_type')=='other'?'selected':'' }}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Severity <span class="text-danger">*</span></label>
+                                    <select name="severity" class="form-select" required>
+                                        <option value="">Select</option>
+                                        <option value="low" {{ old('severity')=='low'?'selected':'' }}>Low</option>
+                                        <option value="medium" {{ old('severity')=='medium'?'selected':'' }}>Medium</option>
+                                        <option value="high" {{ old('severity')=='high'?'selected':'' }}>High</option>
+                                        <option value="critical" {{ old('severity')=='critical'?'selected':'' }}>Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea name="description" class="form-control" rows="4" required>{{ old('description') }}</textarea>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">District <span class="text-danger">*</span></label>
+                                    <select name="district" id="district" class="form-select" required>
+                                        <option value="">Select</option>
+                                        @foreach($districts as $slug=>$name)
+                                            <option value="{{ $slug }}" {{ old('district')==$slug?'selected':'' }}>{{ $name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Mukim</label>
+                                    <select name="mukim" id="mukim" class="form-select">
+                                        <option value="">Select (optional)</option>
+                                        @foreach($mukims as $dSlug=>$list)
+                                            @foreach($list as $mSlug=>$mName)
+                                                <option value="{{ $mSlug }}" data-district="{{ $dSlug }}">{{ $mName }}</option>
+                                            @endforeach
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Address <span class="text-danger">*</span></label>
+                                    <input type="text" name="location_address" class="form-control" required value="{{ old('location_address') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Your Name (optional)</label>
+                                    <input type="text" name="reporter_name" class="form-control" value="{{ old('reporter_name') }}">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Contact (optional)</label>
+                                <input type="text" name="reporter_contact" class="form-control" value="{{ old('reporter_contact') }}">
+                            </div>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button type="submit" class="btn btn-danger px-4">Submit Report</button>
+                            </div>
+                        </form>
+                        @if(session('report_success') && session('report_number'))
+                            <div class="alert alert-success mt-3 mb-0">
+                                <strong>Report Submitted!</strong> Reference: <code>{{ session('report_number') }}</code>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </section>
+
+            <!-- Check Status Section -->
+            <section id="status" class="mb-5 scroll-mt-5">
+                <h2 class="section-title"><i class="fas fa-search me-2"></i>Check Report Status</h2>
+                <p class="mb-4" style="color: var(--bn-text-muted);">Track the progress of your submitted reports</p>
+                <div class="report-card">
+                    <div class="card-body">
+                        <div class="d-flex gap-2 mb-3">
+                            <input type="text" id="trackingNumber" class="form-control flex-grow-1" placeholder="E.g. RPT-20260206-XXXXXX" style="max-width:20rem">
+                            <button type="button" id="trackButton" class="btn btn-primary">Track</button>
+                        </div>
+                        <div id="statusDisplay" style="display:none" class="mt-3 pt-3 border-top border-secondary">
+                            <div class="p-3 rounded bg-dark bg-opacity-50">
+                                <span class="badge bg-success mb-2">Resolved</span>
+                                <h5 class="text-white mb-1">Blockage at Main Street Drain</h5>
+                                <p class="small mb-0" style="color: var(--bn-text-muted);">REF: <span id="statusRef">RPT-20260206-XXXXXX</span></p>
+                                <p class="small mt-2 mb-0" style="color: var(--bn-text-muted);"><a href="{{ route('checkreportstatus') }}" style="color: var(--bn-gold);">Full tracking page</a></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -568,39 +1014,15 @@
             <section id="information" class="mb-5">
                 <h2 class="section-title">How It Works</h2>
                 
-                <div class="row">
-                    <div class="col-lg-4 mb-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="fas fa-flag"></i>
-                            </div>
-                            <h4 class="feature-title">1. Report Issue</h4>
-                            <p>Use our simple form to report sewage issues in Brunei Darussalam. Provide details, district, mukim, and location.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 mb-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="fas fa-tasks"></i>
-                            </div>
-                            <h4 class="feature-title">2. We Assess & Prioritize</h4>
-                            <p>Our team reviews reports, assesses severity, and prioritizes based on urgency and public safety.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 mb-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="fas fa-truck"></i>
-                            </div>
-                            <h4 class="feature-title">3. Dispatch & Resolve</h4>
-                            <p>Maintenance crews are dispatched to resolve issues. We work efficiently to minimize disruptions.</p>
-                        </div>
+                <div id="howItWorksCarousel" class="how-it-works-carousel">
+                    <div id="howItWorksCards"></div>
+                    <div class="how-it-works-nav">
+                        <button type="button" id="howPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+                        <button type="button" id="howNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
                 
-                <div class="info-box">
+                <div class="info-box mt-4">
                     <h4><i class="fas fa-lightbulb me-2"></i> What to Report</h4>
                     <ul class="mb-0">
                         <li><strong>Sewage blockages</strong> - Water backing up from drains or toilets</li>
@@ -643,13 +1065,49 @@
         </div>
     </div>
 
+    <!-- Admin Panel (chatbot command: type "admin") -->
+    <div id="admin-overlay-public"></div>
+    <div id="admin-panel-public">
+        <span class="admin-close-btn" onclick="window.hideAdminPanel()">&times;</span>
+        <h2>Admin Troubleshooting</h2>
+        <div id="admin-login-form">
+            <input type="hidden" id="admin-csrf" value="{{ csrf_token() }}">
+            <input type="password" id="admin-password-public" placeholder="Enter admin password" onkeypress="if(event.key==='Enter')window.adminVerify()">
+            <button onclick="window.adminVerify()">Login</button>
+            <p class="small mb-0 mt-2" style="color: var(--bn-text-muted); text-align: center;">Password: admin123</p>
+        </div>
+        <div id="admin-tools-public" style="display: none;">
+            <div class="admin-tool-group">
+                <h3>Diagnostics</h3>
+                <button onclick="adminDiagnostic()">Test API</button>
+                <button onclick="adminNetwork()">Network Status</button>
+            </div>
+            <div class="admin-tool-group">
+                <h3>Cache & Storage</h3>
+                <button onclick="adminClearCache()">Clear Local Storage</button>
+                <button onclick="adminReload()">Reload Page</button>
+            </div>
+            <div class="admin-tool-group">
+                <h3>Visual Debug</h3>
+                <button onclick="adminBrokenImages()">Find Broken Images</button>
+                <button onclick="adminResponsive()">Check Layout</button>
+            </div>
+            <div class="admin-tool-group">
+                <h3>Console</h3>
+                <div id="admin-console-public">Ready...</div>
+                <button onclick="document.getElementById('admin-console-public').innerHTML='Ready...'">Clear</button>
+            </div>
+            <button class="danger" onclick="window.adminLogout()">Logout</button>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 mb-4">
-                    <h5 class="footer-title">Sewage Monitoring System</h5>
-                    <p>A public service portal for reporting and tracking sewage system issues in Brunei Darussalam. Together, we can maintain a clean and functional sewage infrastructure.</p>
+                    <h5 class="footer-title">BruFlow — Public Works</h5>
+                    <p>Official Government of Brunei Darussalam portal for reporting and tracking sewage system issues. Together we maintain a clean and functional infrastructure for the nation.</p>
                 </div>
                 
                 <div class="col-lg-2 col-md-6 mb-4">
@@ -683,66 +1141,39 @@
             </div>
             
             <div class="copyright">
-                <p class="mb-0">&copy; {{ date('Y') }} Public Works Department, Brunei Darussalam. All rights reserved.</p>
+                <p class="mb-0">&copy; {{ date('Y') }} Government of Brunei Darussalam. All rights reserved.</p>
             </div>
         </div>
     </footer>
+    </div><!-- end page-content -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Form submission handler (only on pages that have reportForm)
-        var reportForm = document.getElementById('reportForm');
-        if (reportForm) {
-            reportForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                var summary = document.getElementById('reportSummary');
-                if (summary) { summary.style.display = 'block'; summary.scrollIntoView({ behavior: 'smooth' }); }
-                var steps = document.querySelectorAll('.progress-step');
-                steps.forEach(function(step) { step.classList.remove('active', 'completed'); });
-                if (steps[0]) steps[0].classList.add('completed');
-                if (steps[1]) steps[1].classList.add('completed');
-                if (steps[2]) steps[2].classList.add('active');
-            });
-        }
-
-        var photoUpload = document.getElementById('photoUpload');
-        var photoInput = document.getElementById('photoInput');
-        if (photoUpload && photoInput) {
-            photoUpload.addEventListener('click', function() { photoInput.click(); });
-            photoInput.addEventListener('change', function(e) {
-                if (e.target.files.length > 0) {
-                    photoUpload.innerHTML = '<i class="fas fa-check-circle text-success"></i><p>Photo uploaded: ' + e.target.files[0].name + '</p><small>Click to change photo</small>';
-                }
-            });
-        }
-
         var trackButton = document.getElementById('trackButton');
-        if (trackButton) {
+        var trackingInput = document.getElementById('trackingNumber');
+        var statusDisplay = document.getElementById('statusDisplay');
+        if (trackButton && statusDisplay) {
             trackButton.addEventListener('click', function() {
-                var trackingNumber = (document.getElementById('trackingNumber') || {}).value || '';
-                if (trackingNumber.trim() === '') { alert('Please enter a report tracking number'); return; }
-                var statusDisplay = document.getElementById('statusDisplay');
-                if (statusDisplay) { statusDisplay.style.display = 'block'; statusDisplay.scrollIntoView({ behavior: 'smooth' }); }
+                var num = (trackingInput && trackingInput.value) ? trackingInput.value.trim() : '';
+                if (!num) { alert('Please enter a report tracking number'); return; }
+                var refEl = document.getElementById('statusRef');
+                if (refEl) refEl.textContent = num;
+                statusDisplay.style.display = 'block';
+                statusDisplay.scrollIntoView({ behavior: 'smooth' });
             });
         }
-
-        var formInputs = document.querySelectorAll('#reportForm input, #reportForm select, #reportForm textarea');
-        formInputs.forEach(function(input) {
-            input.addEventListener('input', function() {
-                var first = document.querySelectorAll('.progress-step')[0];
-                if (first) first.classList.add('completed');
-            });
-        });
-        
-        // Address field special handling for location step
-        var addressEl = document.getElementById('address');
-        if (addressEl) {
-            addressEl.addEventListener('input', function() {
-                if (this.value.trim() !== '') {
-                    var steps = document.querySelectorAll('.progress-step');
-                    if (steps[1]) steps[1].classList.add('completed');
-                }
-            });
+        var districtEl = document.getElementById('district');
+        var mukimEl = document.getElementById('mukim');
+        if (districtEl && mukimEl) {
+            function filterMukims() {
+                var d = districtEl.value;
+                mukimEl.querySelectorAll('option[data-district]').forEach(function(o) {
+                    o.style.display = o.getAttribute('data-district') === d ? '' : 'none';
+                });
+                if (!d) mukimEl.value = '';
+            }
+            districtEl.addEventListener('change', filterMukims);
+            filterMukims();
         }
 
         // AI Chatbot (React-style inline assistant)
@@ -784,23 +1215,38 @@
                 var text = inputEl.value.trim();
                 if (!text) return;
                 
+                var adminCommand = /^(admin|admin\s*tools?|open\s*admin|\/admin)\s*$/i.test(text);
+                if (adminCommand) {
+                    inputEl.value = '';
+                    if (typeof window.showAdminPanel === 'function') window.showAdminPanel();
+                    return;
+                }
+                
                 appendMessage(text, 'user');
                 inputEl.value = '';
                 sendBtn.disabled = true;
                 showTyping();
 
                 // Call OpenAI API via Laravel route
-                fetch('{{ route("ai.chat") }}', {
+                fetch('/ai/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
                     },
                     body: JSON.stringify({ message: text }),
+                    credentials: 'same-origin',
                 })
-                .then(function(response) {
-                    return response.json();
+                .then(function(r) {
+                    return r.json().then(function(data) {
+                        if (!r.ok) throw new Error((data && data.error) || 'Server error');
+                        return data;
+                    }).catch(function(e) {
+                        if (e instanceof SyntaxError) throw new Error('Invalid response');
+                        throw e;
+                    });
                 })
                 .then(function(data) {
                     hideTyping();
@@ -812,10 +1258,11 @@
                         appendMessage('Sorry, I could not generate a response. Please try again.', 'bot');
                     }
                 })
-                .catch(function(error) {
+                .catch(function(err) {
                     hideTyping();
-                    appendMessage('Sorry, I could not reach the AI service. Please check your internet connection and try again.', 'bot');
-                    console.error('Chatbot error:', error);
+                    var msg = (err && err.message) ? err.message : 'Could not reach the AI. Check connection and try again.';
+                    appendMessage('Sorry, ' + msg, 'bot');
+                    console.error('Chatbot error:', err);
                 })
                 .finally(function() {
                     sendBtn.disabled = false;
@@ -826,6 +1273,124 @@
             inputEl.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
             });
+        })();
+
+        // Admin Panel (type "admin" in chatbot)
+        (function() {
+            var consoleEl = document.getElementById('admin-console-public');
+            function log(msg) {
+                if (consoleEl) {
+                    var t = new Date().toLocaleTimeString();
+                    consoleEl.innerHTML += '<div style="color:#55ff55">[' + t + '] ' + msg + '</div>';
+                    consoleEl.scrollTop = consoleEl.scrollHeight;
+                }
+            }
+            window.showAdminPanel = function() {
+                document.getElementById('admin-overlay-public').style.display = 'block';
+                document.getElementById('admin-panel-public').style.display = 'block';
+                document.getElementById('admin-login-form').style.display = 'block';
+                document.getElementById('admin-tools-public').style.display = 'none';
+                document.getElementById('admin-password-public').value = '';
+                document.getElementById('admin-password-public').focus();
+            };
+            window.hideAdminPanel = function() {
+                document.getElementById('admin-overlay-public').style.display = 'none';
+                document.getElementById('admin-panel-public').style.display = 'none';
+            };
+            window.adminVerify = function() {
+                var p = document.getElementById('admin-password-public').value;
+                if (p === 'admin123') {
+                    document.getElementById('admin-login-form').style.display = 'none';
+                    document.getElementById('admin-tools-public').style.display = 'block';
+                    log('Admin access granted.');
+                } else {
+                    alert('Incorrect password.');
+                }
+            };
+            window.adminLogout = function() {
+                document.getElementById('admin-login-form').style.display = 'block';
+                document.getElementById('admin-tools-public').style.display = 'none';
+                hideAdminPanel();
+            };
+            adminDiagnostic = function() {
+                log('Testing AI route...');
+                fetch('/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (document.getElementById('admin-csrf')||{}).value || '' }, body: JSON.stringify({message:'test'}) })
+                    .then(function() { log('AI route reachable.'); }).catch(function() { log('AI route error.', 'error'); });
+            };
+            adminNetwork = function() { log('Online: ' + navigator.onLine); };
+            adminClearCache = function() { if (confirm('Clear local storage?')) { localStorage.clear(); log('Cleared.'); } };
+            adminReload = function() { if (confirm('Reload?')) location.reload(); };
+            adminBrokenImages = function() {
+                var imgs = document.getElementsByTagName('img');
+                var n = 0;
+                for (var i = 0; i < imgs.length; i++) { if (!imgs[i].complete || imgs[i].naturalHeight === 0) { imgs[i].style.border = '3px solid red'; n++; } }
+                log(n > 0 ? n + ' broken image(s)' : 'No broken images.');
+            };
+            adminResponsive = function() { log('Viewport: ' + window.innerWidth + ' x ' + window.innerHeight); };
+            document.getElementById('admin-overlay-public').onclick = hideAdminPanel;
+        })();
+
+        // How It Works Carousel
+        (function() {
+            var steps = [
+                { title: "1. Report Issue", text: "Use our simple form to report sewage issues in Brunei Darussalam. Provide details, district, mukim, and location.", icon: "fa-flag" },
+                { title: "2. We Assess & Prioritize", text: "Our team reviews reports, assesses severity, and prioritizes based on urgency and public safety.", icon: "fa-tasks" },
+                { title: "3. Dispatch & Resolve", text: "Maintenance crews are dispatched to resolve issues. We work efficiently to minimize disruptions.", icon: "fa-truck" },
+                { title: "4. Track Your Report", text: "Use your reference number to check status anytime. Stay informed from submission to resolution.", icon: "fa-search" },
+                { title: "5. Issue Resolved", text: "Once fixed, your report is marked resolved. Our goal is a clean and functional sewage system for all.", icon: "fa-check-circle" }
+            ];
+            var list = steps.map(function(s, i) { return { tempId: i, title: s.title, text: s.text, icon: s.icon }; });
+            var cardsEl = document.getElementById('howItWorksCards');
+            var prevBtn = document.getElementById('howPrev');
+            var nextBtn = document.getElementById('howNext');
+            if (!cardsEl || !prevBtn || !nextBtn) return;
+
+            function getCardSize() { return window.innerWidth >= 640 ? 365 : 290; }
+
+            function render() {
+                var cardSize = getCardSize();
+                var len = list.length;
+                var half = len % 2 ? (len + 1) / 2 : len / 2;
+                var html = '';
+                for (var i = 0; i < len; i++) {
+                    var pos = i - half;
+                    var isCenter = pos === 0;
+                    var tx = (cardSize / 1.5) * pos;
+                    var ty = isCenter ? -65 : (pos % 2 ? 15 : -15);
+                    var rot = isCenter ? 0 : (pos % 2 ? 2.5 : -2.5);
+                    var cls = 'how-it-works-card' + (isCenter ? ' center' : '');
+                    html += '<div class="' + cls + '" data-pos="' + pos + '" style="width:' + cardSize + 'px;height:' + cardSize + 'px;transform:translate(-50%,-50%) translateX(' + tx + 'px) translateY(' + ty + 'px) rotate(' + rot + 'deg)">' +
+                        '<div class="how-icon"><i class="fas ' + list[i].icon + '"></i></div>' +
+                        '<h3>' + list[i].title + '</h3>' +
+                        '<p class="byline">' + list[i].text + '</p></div>';
+                }
+                cardsEl.innerHTML = html;
+                cardsEl.querySelectorAll('.how-it-works-card').forEach(function(el) {
+                    el.addEventListener('click', function() { handleMove(parseInt(el.getAttribute('data-pos'), 10)); });
+                });
+            }
+
+            function handleMove(steps) {
+                if (steps > 0) {
+                    for (var i = steps; i > 0; i--) {
+                        var item = list.shift();
+                        if (!item) return;
+                        list.push({ tempId: Math.random(), title: item.title, text: item.text, icon: item.icon });
+                    }
+                } else if (steps < 0) {
+                    for (var i = steps; i < 0; i++) {
+                        var item = list.pop();
+                        if (!item) return;
+                        list.unshift({ tempId: Math.random(), title: item.title, text: item.text, icon: item.icon });
+                    }
+                }
+                render();
+            }
+
+            prevBtn.addEventListener('click', function() { handleMove(-1); });
+            nextBtn.addEventListener('click', function() { handleMove(1); });
+            window.addEventListener('resize', render);
+            render();
         })();
     </script>
 </body>

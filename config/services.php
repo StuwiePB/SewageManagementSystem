@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        'zai_endpoint' => env('ZAI_API_ENDPOINT', 'https://api.z.ai/api/paas/v4/chat/completions'),
+    ],
+
 ];

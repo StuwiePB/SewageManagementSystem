@@ -66,7 +66,7 @@ class PublicReportController extends Controller
         $report = Report::create($validated);
 
         return redirect()
-            ->route('submitreport')
+            ->to(route('home') . '#report')
             ->with('report_success', true)
             ->with('report_number', $report->report_number);
     }
