@@ -186,9 +186,7 @@
         reportsData: @json($reportsData),
         maintenanceData: @json($maintenanceData),
         resolvedData: @json($resolvedData),
-        resolvedPercentage: {{ $resolvedPercentage }},
-        inProgressPercentage: {{ $inProgressPercentage }},
-        pendingPercentage: {{ $pendingPercentage }}
+        statusPieCounts: @json($statusPieCounts),
     };
 </script>
 @vite(['resources/js/admin-dashboard.js'])

@@ -596,6 +596,11 @@
                                 @endforeach
                             </div>
                         @endif
+                        @if (session('error'))
+                            <div class="form-errors" style="margin-top: -1.5rem; margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; border-radius: 0.5rem; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #fca5a5; font-size: 0.65rem; font-family: 'Poppins', sans-serif;">
+                                {{ session('error') }}
+                            </div>
+                        @endif
                         <form id="login-form" class="signup-form" action="{{ route('login.store') }}" method="post">
                             @csrf
                             <input type="email" class="glass-input" name="email" placeholder="{{ __('email') }}" autocomplete="email" id="login-email" value="{{ old('email') }}">

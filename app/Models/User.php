@@ -36,6 +36,7 @@ class User extends Authenticatable
         'preference_language',
         'preference_anonymous',
         'crew_id',
+        'is_active',
     ];
 
     public const ROLE_SUPER_ADMIN = 'super_admin';
@@ -71,6 +72,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 

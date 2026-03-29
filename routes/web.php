@@ -149,6 +149,15 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::delete('/admin/work-orders/{workOrder}/photos/{photo}', [AdminWorkOrderController::class, 'destroyPhoto'])->name('admin.work-orders.photos.destroy');
 
     Route::get('/admin/staff', [AdminController::class, 'staffDirectory'])->name('admin.staff.index');
+    Route::get('/admin/staff/users/{user}', [AdminController::class, 'showStaffUser'])
+        ->whereNumber('user')
+        ->name('admin.staff.users.show');
+    Route::post('/admin/staff/users/{user}/deactivate', [AdminController::class, 'deactivateStaffUser'])
+        ->whereNumber('user')
+        ->name('admin.staff.users.deactivate');
+    Route::post('/admin/staff/users/{user}/activate', [AdminController::class, 'activateStaffUser'])
+        ->whereNumber('user')
+        ->name('admin.staff.users.activate');
 
     Route::get('/admin/workers/create', [AdminController::class, 'createWorker'])->name('admin.workers.create');
     Route::post('/admin/workers', [AdminController::class, 'storeWorker'])->name('admin.workers.store');

@@ -241,14 +241,31 @@
         if (pct <= 80) return intensityColors[3];
         return intensityColors[4];
     }
+    function escapeHtml(s) {
+        if (s === null || s === undefined) return '';
+        var d = document.createElement('div');
+        d.textContent = String(s);
+        return d.innerHTML;
+    }
     var reportsByDistrict = @json($reportsByDistrictObj ?? []);
     var workOrdersByDistrict = @json($workOrdersByDistrictObj ?? []);
+    var reportMapPoints = @json($stats['report_map_points'] ?? []);
+    var workOrderMapPoints = @json($stats['work_order_map_points'] ?? []);
 
     var map = L.map('hotspot-map').setView([4.5, 114.7], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
 
+    // Pane above district fill so point markers stay clickable (polygons would cover them otherwise)
+    var HOTSPOT_MARKER_PANE = 'hotspotPointMarkers';
+    if (!map.getPane(HOTSPOT_MARKER_PANE)) {
+        map.createPane(HOTSPOT_MARKER_PANE);
+    }
+    map.getPane(HOTSPOT_MARKER_PANE).style.zIndex = 650;
+    map.getPane(HOTSPOT_MARKER_PANE).style.pointerEvents = 'auto';
+
     var currentMetric = 'reports';
     var layer = null;
+    var markersLayer = L.layerGroup().addTo(map);
 
     function getCounts() { return currentMetric === 'reports' ? reportsByDistrict : workOrdersByDistrict; }
 
@@ -278,13 +295,84 @@
         layer.bindPopup('<strong>' + displayName + '</strong><br>Count: ' + count);
     }
 
+    function fitMapToPointLayer() {
+        var pts = currentMetric === 'reports' ? reportMapPoints : workOrderMapPoints;
+        var coords = [];
+        pts.forEach(function (p) {
+            var lat = Number(p.lat);
+            var lng = Number(p.lng);
+            if (Number.isFinite(lat) && Number.isFinite(lng)) coords.push([lat, lng]);
+        });
+        if (!coords.length) return;
+        var b = L.latLngBounds(coords);
+        if (b.isValid()) map.fitBounds(b, { padding: [40, 40], maxZoom: 11 });
+    }
+
+    function renderPointMarkers() {
+        markersLayer.clearLayers();
+        var pts = currentMetric === 'reports' ? reportMapPoints : workOrderMapPoints;
+        var fill = currentMetric === 'reports' ? '#6A96FF' : '#f97316';
+        pts.forEach(function (p) {
+            var lat = Number(p.lat);
+            var lng = Number(p.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+            var popup = '<strong>' + escapeHtml(p.label) + '</strong>';
+            if (p.detail) popup += '<br>' + escapeHtml(p.detail);
+            if (p.status) popup += '<br><span style="opacity:0.9">' + escapeHtml(p.status) + '</span>';
+            if (p.address) popup += '<br><small>' + escapeHtml(p.address) + '</small>';
+            L.circleMarker([lat, lng], {
+                pane: HOTSPOT_MARKER_PANE,
+                radius: 8,
+                fillColor: fill,
+                color: '#ffffff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.9
+            }).bindPopup(popup).addTo(markersLayer);
+        });
+    }
+
+    function refreshDistrictStyles() {
+        if (!layer) return;
+        layer.eachLayer(function (lyr) {
+            if (!lyr.feature) return;
+            lyr.setStyle(style(lyr.feature));
+            var name = lyr.feature.properties.NAME_1;
+            var slug = nameToSlug[name] || name.toLowerCase().replace(/\s+/g, '-');
+            var counts = getCounts();
+            var count = counts[slug] || 0;
+            var displayName = name === 'BruneiandMuara' ? 'Brunei-Muara' : name;
+            lyr.bindPopup('<strong>' + displayName + '</strong><br>Count: ' + count);
+        });
+    }
+
     function updateChoropleth() {
-        if (layer) map.removeLayer(layer);
-        fetch('{{ asset("geojson/brunei-districts.json") }}')
-            .then(function(r) { return r.json(); })
-            .then(function(geojson) {
+        if (layer) {
+            refreshDistrictStyles();
+            renderPointMarkers();
+            return;
+        }
+        fetch('{{ asset("geojson/brunei-districts.json") }}', { credentials: 'same-origin' })
+            .then(function (r) {
+                if (!r.ok) throw new Error('GeoJSON ' + r.status);
+                return r.json();
+            })
+            .then(function (geojson) {
                 layer = L.geoJSON(geojson, { style: style, onEachFeature: onEachFeature }).addTo(map);
+                if (typeof layer.bringToBack === 'function') {
+                    layer.bringToBack();
+                }
                 map.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 10 });
+                renderPointMarkers();
+                fitMapToPointLayer();
+            })
+            .catch(function (err) {
+                console.error('Hotspot map: district GeoJSON failed (file must exist at public/geojson/brunei-districts.json)', err);
+                renderPointMarkers();
+                fitMapToPointLayer();
+                if (!reportMapPoints.length && !workOrderMapPoints.length) {
+                    map.setView([4.5, 114.7], 9);
+                }
             });
     }
 

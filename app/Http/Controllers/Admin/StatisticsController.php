@@ -214,12 +214,40 @@ class StatisticsController extends Controller
             ->take(20)
             ->get();
 
+        $reportMapPoints = OperationsReport::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get(['latitude', 'longitude', 'report_number', 'issue_type', 'status', 'location_address']);
+
+        $workOrderMapPoints = WorkOrder::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get(['latitude', 'longitude', 'work_order_number', 'type', 'status', 'location_address']);
+
         return [
             'title' => 'Geographic Statistics (Hotspots)',
             'reports_by_district' => $reportsByDistrict,
             'work_orders_by_district' => $workOrdersByDistrict,
             'reports_by_mukim' => $reportsByMukim,
             'work_orders_by_mukim' => $workOrdersByMukim,
+            'report_map_points' => $reportMapPoints->map(fn ($r) => [
+                'lat' => (float) $r->latitude,
+                'lng' => (float) $r->longitude,
+                'label' => $r->report_number,
+                'detail' => ucfirst(str_replace('_', ' ', (string) $r->issue_type)),
+                'status' => (string) $r->status,
+                'address' => $r->location_address,
+            ])->values()->all(),
+            'work_order_map_points' => $workOrderMapPoints->map(fn ($w) => [
+                'lat' => (float) $w->latitude,
+                'lng' => (float) $w->longitude,
+                'label' => $w->work_order_number,
+                'detail' => (string) $w->type,
+                'status' => (string) $w->status,
+                'address' => $w->location_address,
+            ])->values()->all(),
         ];
     }
 

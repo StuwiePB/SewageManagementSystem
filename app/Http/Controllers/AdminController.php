@@ -49,20 +49,28 @@ class AdminController extends Controller
 
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
-            $months[] = $date->format('M');
-            $reportsData[] = WorkOrder::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count();
-            $maintenanceData[] = round($reportsData[count($reportsData) - 1] * 0.7);
+            $months[] = $date->format("M 'y");
+            $reportsData[] = OperationsReport::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
+                ->count();
+            $maintenanceData[] = WorkOrder::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
+                ->where('type', 'like', '%Maintenance%')
+                ->count();
             $resolvedData[] = WorkOrder::where('status', 'completed')
                 ->whereYear('completed_at', $date->year)
                 ->whereMonth('completed_at', $date->month)
                 ->count();
         }
 
-        $totalWorkOrders = WorkOrder::whereNot('status', 'cancelled')->count();
-        $totalForPercentage = max($totalWorkOrders, 1);
-        $resolvedPercentage = round(($resolvedReports / $totalForPercentage) * 100);
-        $inProgressPercentage = round(($workInProgress / $totalForPercentage) * 100);
-        $pendingPercentage = max(0, 100 - $resolvedPercentage - $inProgressPercentage);
+        // Pie chart: mutually exclusive buckets (pending is not lumped into "in progress")
+        $pieBase = WorkOrder::query()->where('status', '!=', 'cancelled');
+        $statusPieResolved = (clone $pieBase)->where('status', 'completed')->count();
+        $statusPiePending = (clone $pieBase)->where('status', 'pending')->count();
+        $statusPieInProgress = (clone $pieBase)->whereIn('status', [
+            'assigned', 'in_progress', 'on_the_way', 'on_site', 'pending_approval',
+        ])->count();
+        $statusPieCounts = [$statusPieResolved, $statusPieInProgress, $statusPiePending];
 
         // User counts by role (use users.role column to avoid Spatie role guard errors)
         $civilianUsers = User::where('role', User::ROLE_CUSTOMER)->count();
@@ -133,9 +141,7 @@ class AdminController extends Controller
             'reportsData',
             'maintenanceData',
             'resolvedData',
-            'resolvedPercentage',
-            'inProgressPercentage',
-            'pendingPercentage',
+            'statusPieCounts',
             'civilianUsers',
             'adminUsers',
             'operationsUsers',
@@ -288,24 +294,152 @@ class AdminController extends Controller
     /**
      * List admin and super_admin accounts, and operator accounts (Spatie role and/or users.role column).
      */
-    public function staffDirectory(): View
+    public function staffDirectory(Request $request): View
     {
-        $adminIds = User::role([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
-        $adminIdsColumn = User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
-        $adminUsers = User::query()
-            ->whereIn('id', $adminIds->merge($adminIdsColumn)->unique())
-            ->orderBy('name')
-            ->get();
+        $request->validate([
+            'role' => ['sometimes', 'in:all,admin,operator'],
+            'q' => ['nullable', 'string', 'max:255'],
+        ]);
 
-        $operationIds = User::role(User::ROLE_OPERATOR)->pluck('id');
-        $operationIdsColumn = User::where('role', User::ROLE_OPERATOR)->pluck('id');
-        $operationUsers = User::query()
-            ->whereIn('id', $operationIds->merge($operationIdsColumn)->unique())
-            ->orderBy('name')
-            ->with('crew')
-            ->get();
+        $roleFilter = $request->query('role', 'all');
+        $search = trim((string) $request->query('q', ''));
+        $searchLike = $search !== '' ? '%'.addcslashes($search, '%_\\').'%' : null;
 
-        return view('r_admin.staff.index', compact('adminUsers', 'operationUsers'));
+        $adminUsers = collect();
+        $operationUsers = collect();
+
+        if (in_array($roleFilter, ['all', 'admin'], true)) {
+            $adminIds = User::role([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
+            $adminIdsColumn = User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
+            $adminQuery = User::query()
+                ->whereIn('id', $adminIds->merge($adminIdsColumn)->unique())
+                ->orderBy('name');
+            if ($searchLike !== null) {
+                $adminQuery->where('name', 'like', $searchLike);
+            }
+            $adminUsers = $adminQuery->get();
+        }
+
+        if (in_array($roleFilter, ['all', 'operator'], true)) {
+            $operationIds = User::role(User::ROLE_OPERATOR)->pluck('id');
+            $operationIdsColumn = User::where('role', User::ROLE_OPERATOR)->pluck('id');
+            $operationQuery = User::query()
+                ->whereIn('id', $operationIds->merge($operationIdsColumn)->unique())
+                ->orderBy('name')
+                ->with('crew');
+            if ($searchLike !== null) {
+                $operationQuery->where('name', 'like', $searchLike);
+            }
+            $operationUsers = $operationQuery->get();
+        }
+
+        return view('r_admin.staff.index', compact('adminUsers', 'operationUsers', 'roleFilter', 'search'));
+    }
+
+    /**
+     * Admin console: view a staff account (admin, super admin, or operator only).
+     */
+    public function showStaffUser(Request $request, User $user): View
+    {
+        if (! $this->userIsStaffDirectoryMember($user)) {
+            abort(404);
+        }
+
+        $user->load('crew');
+        $actor = $request->user();
+
+        return view('r_admin.staff.show', [
+            'staffUser' => $user,
+            'staffRoleLabel' => $this->staffUserRoleLabel($user),
+            'canManageStaffActivation' => $this->canManageStaffAccountActivation($actor, $user),
+        ]);
+    }
+
+    public function deactivateStaffUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageStaffAccountActivation($request->user(), $user)) {
+            abort(403);
+        }
+
+        if (! ($user->is_active ?? true)) {
+            return $this->redirectToStaffUser($user, $request)->with('success', 'Account is already deactivated.');
+        }
+
+        $user->forceFill(['is_active' => false])->save();
+
+        return $this->redirectToStaffUser($user, $request)->with('success', 'Account deactivated. They can no longer sign in.');
+    }
+
+    public function activateStaffUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageStaffAccountActivation($request->user(), $user)) {
+            abort(403);
+        }
+
+        if ($user->is_active ?? true) {
+            return $this->redirectToStaffUser($user, $request)->with('success', 'Account is already active.');
+        }
+
+        $user->forceFill(['is_active' => true])->save();
+
+        return $this->redirectToStaffUser($user, $request)->with('success', 'Account activated. They can sign in again.');
+    }
+
+    protected function redirectToStaffUser(User $user, Request $request): RedirectResponse
+    {
+        $query = array_filter([
+            'q' => $request->input('q'),
+            'role' => $request->input('role'),
+        ], fn ($v) => $v !== null && $v !== '');
+
+        return redirect()->route('admin.staff.users.show', array_merge(['user' => $user], $query));
+    }
+
+    protected function canManageStaffAccountActivation(?User $actor, User $target): bool
+    {
+        if ($actor === null) {
+            return false;
+        }
+
+        if (! $this->userIsStaffDirectoryMember($target)) {
+            return false;
+        }
+
+        if ($actor->id === $target->id) {
+            return false;
+        }
+
+        if ($actor->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($actor->hasRole(User::ROLE_ADMIN) && ! $actor->isSuperAdmin()) {
+            return $target->hasRole(User::ROLE_OPERATOR)
+                && ! $target->hasRole(User::ROLE_SUPER_ADMIN)
+                && ! $target->hasRole(User::ROLE_ADMIN);
+        }
+
+        return false;
+    }
+
+    protected function userIsStaffDirectoryMember(User $user): bool
+    {
+        return $user->hasRole([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, User::ROLE_OPERATOR]);
+    }
+
+    protected function staffUserRoleLabel(User $user): string
+    {
+        if ($user->hasRole(User::ROLE_SUPER_ADMIN)) {
+            return 'Super admin';
+        }
+        if ($user->hasRole(User::ROLE_ADMIN)) {
+            return 'Admin';
+        }
+        if ($user->hasRole(User::ROLE_OPERATOR)) {
+            return 'Operator';
+        }
+
+        return 'Staff';
     }
 
     public function createStaffUser(Request $request): View
@@ -366,6 +500,7 @@ class AdminController extends Controller
             'role' => $role,
             'email_verified_at' => now(),
             'crew_id' => $crewId,
+            'is_active' => true,
         ]);
         $user->assignRole($role);
 
