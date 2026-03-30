@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Work Order {{ $workOrder->work_order_number }} – SewageOps</title>
+    <title>Work Order {{ $workOrder->work_order_number }} – DMS Ops</title>
     <style>
         body { font-family: system-ui, sans-serif; padding: 24px; color: #1f2937; max-width: 800px; margin: 0 auto; }
-        h1 { margin: 0 0 4px; font-size: 22px; color: #0056A6; }
+        h1 { margin: 0 0 4px; font-size: 22px; color: #0d9488; }
         .meta { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
         .section { margin-bottom: 24px; }
         .section h2 { font-size: 14px; color: #6b7280; font-weight: 600; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.02em; }
@@ -33,7 +33,7 @@
 </head>
 <body>
     <div class="no-print" style="margin-bottom:20px;">
-        <button onclick="window.print()" style="padding:8px 16px; background:#0056A6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:500;">Print / Save as PDF</button>
+        <button onclick="window.print()" style="padding:8px 16px; background:#0d9488; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:500;">Print / Save as PDF</button>
     </div>
 
     <h1>Work Order {{ $workOrder->work_order_number }}</h1>

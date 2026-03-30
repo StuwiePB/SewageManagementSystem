@@ -41,7 +41,7 @@
                 <p class="info-value-small">{{ $workOrder->district_display }}{{ $workOrder->mukim_display ? ' • ' . $workOrder->mukim_display : '' }}</p>
             @endif
             @if($workOrder->latitude && $workOrder->longitude)
-                <p class="info-value-small" style="color:#9ca3af;">{{ $workOrder->latitude }}, {{ $workOrder->longitude }}</p>
+                <p class="info-value-small">{{ $workOrder->latitude }}, {{ $workOrder->longitude }}</p>
             @endif
         </div>
 
@@ -87,7 +87,7 @@
         </div>
         @endif
 
-        <form action="{{ route('operations.work-orders.update-status', $workOrder) }}" method="POST" style="margin-top:20px; padding-top:20px; border-top:1px solid #e5e7eb;">
+        <form action="{{ route('operations.work-orders.update-status', $workOrder) }}" method="POST" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(106, 150, 255, 0.15);">
             @csrf
             @method('PATCH')
             
@@ -106,7 +106,7 @@
             </div>
 
             @if(!in_array($workOrder->status, ['pending_approval', 'completed', 'cancelled']))
-                <p style="margin:12px 0 8px; font-size:12px; color:#6b7280;">Or send to higher ups:</p>
+                <p style="margin:12px 0 8px; font-size:12px; color:var(--text-secondary);">Or send to higher ups:</p>
                 <form action="{{ route('operations.work-orders.submit-approval', $workOrder) }}" method="POST" style="margin-bottom:12px;">
                     @csrf
                     <button type="submit" style="
@@ -138,7 +138,7 @@
             <input type="file" name="photos[]" accept="image/*" multiple class="form-control" id="site-photos-input" style="width:auto;">
             <button type="submit" class="btn-submit" style="width:auto;">Upload 2–3 photos</button>
         </div>
-        <p style="margin:6px 0 0; font-size:12px; color:#6b7280;">Select 2 or 3 images at once. Each max 10MB.</p>
+        <p style="margin:6px 0 0; font-size:12px; color:var(--text-secondary);">Select 2 or 3 images at once. Each max 10MB.</p>
         @error('photos')
             <p style="color:#ef4444; font-size:12px; margin-top:6px;">{{ $message }}</p>
         @enderror
@@ -148,16 +148,16 @@
     </form>
 
     @if($workOrder->photos->isEmpty())
-        <p style="margin:0; font-size:14px; color:#9ca3af;">No photos yet.</p>
+        <p style="margin:0; font-size:14px; color:var(--text-secondary);">No photos yet.</p>
     @else
         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:16px;">
             @foreach($workOrder->photos as $photo)
-                <div style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+                <div style="border:1px solid rgba(106, 150, 255, 0.2); border-radius:8px; overflow:hidden;">
                     <a href="{{ \Illuminate\Support\Facades\Storage::url($photo->path) }}" target="_blank" rel="noopener" style="display:block;">
                         <img src="{{ \Illuminate\Support\Facades\Storage::url($photo->path) }}" alt="Site photo" style="width:100%; height:120px; object-fit:cover;">
                     </a>
                     <div style="padding:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:11px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $photo->original_name ?? 'Photo' }}</span>
+                        <span style="font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $photo->original_name ?? 'Photo' }}</span>
                         <form action="{{ route('operations.work-orders.photos.destroy', [$workOrder, $photo]) }}" method="POST" onsubmit="return confirm('Remove this photo?');">
                             @csrf
                             @method('DELETE')

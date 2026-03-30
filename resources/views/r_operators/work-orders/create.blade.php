@@ -15,7 +15,7 @@
         @csrf
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Link to Report (Optional)</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Link to Report (Optional)</label>
             <select name="report_id" style="
                 width:100%;
                 padding:10px 12px;
@@ -30,11 +30,11 @@
                     </option>
                 @endforeach
             </select>
-            <p style="margin:4px 0 0; font-size:12px; color:#6b7280;">Only shows reports with "new" status</p>
+            <p style="margin:4px 0 0; font-size:12px; color:var(--text-secondary);">Only shows reports with "new" status</p>
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Type *</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Type *</label>
             <input type="text" name="type" value="{{ old('type') }}" placeholder="e.g., Blockage Removal, Maintenance, Emergency Response" required style="
                 width:100%;
                 padding:10px 12px;
@@ -48,7 +48,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Priority *</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Priority *</label>
             <select name="priority" required style="
                 width:100%;
                 padding:10px 12px;
@@ -68,7 +68,7 @@
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">District (Brunei)</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">District (Brunei)</label>
                 <select name="district" id="district" style="
                     width:100%;
                     padding:10px 12px;
@@ -86,7 +86,7 @@
                 @enderror
             </div>
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Mukim (whereabouts)</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Mukim (whereabouts)</label>
                 <select name="mukim" id="mukim" style="
                     width:100%;
                     padding:10px 12px;
@@ -108,7 +108,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Location / Street address *</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Location / Street address *</label>
             <input type="text" name="location_address" value="{{ old('location_address') }}" required placeholder="e.g. Jalan Gadong, Kampung Sengkurong" style="
                 width:100%;
                 padding:10px 12px;
@@ -123,7 +123,7 @@
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Latitude</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Latitude</label>
                 <input type="number" step="any" name="latitude" value="{{ old('latitude') }}" placeholder="e.g., 4.9031" style="
                     width:100%;
                     padding:10px 12px;
@@ -133,7 +133,7 @@
                 ">
             </div>
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Longitude</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Longitude</label>
                 <input type="number" step="any" name="longitude" value="{{ old('longitude') }}" placeholder="e.g., 114.9398" style="
                     width:100%;
                     padding:10px 12px;
@@ -145,7 +145,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Description</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Description</label>
             <textarea name="description" rows="3" style="
                 width:100%;
                 padding:10px 12px;
@@ -160,7 +160,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Notes</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Notes</label>
             <textarea name="notes" rows="2" style="
                 width:100%;
                 padding:10px 12px;
@@ -172,24 +172,8 @@
         </div>
 
         <div style="display:flex; gap:12px;">
-            <button type="submit" style="
-                background:#0056A6;
-                color:white;
-                padding:10px 24px;
-                border:none;
-                border-radius:8px;
-                font-weight:500;
-                cursor:pointer;
-            ">Create Work Order</button>
-            <a href="{{ route('operations.work-orders.index') }}" style="
-                background:#f3f4f6;
-                color:#374151;
-                padding:10px 24px;
-                border-radius:8px;
-                text-decoration:none;
-                font-weight:500;
-                display:inline-block;
-            ">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create Work Order</button>
+            <a href="{{ route('operations.work-orders.index') }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

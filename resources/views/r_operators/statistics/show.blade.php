@@ -17,23 +17,23 @@
 
 @if($type === 'reports')
 <div class="card" style="margin-bottom:20px;">
-    <p style="margin:0; font-size:14px; color:#6b7280;">Total Reports</p>
-    <h3 style="margin:8px 0 0;">{{ $stats['total'] ?? 0 }}</h3>
+    <p style="margin:0; font-size:14px; color:var(--text-secondary);">Total Reports</p>
+    <h3 style="margin:8px 0 0; color:var(--text-primary);">{{ $stats['total'] ?? 0 }}</h3>
 </div>
 
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:20px;">
     <div class="card">
-        <h3 style="margin:0 0 16px;">By Status</h3>
+        <h3 style="margin:0 0 16px; color:var(--text-primary);">By Status</h3>
         <div style="height:260px;"><canvas id="chart-reports-status"></canvas></div>
     </div>
     <div class="card">
-        <h3 style="margin:0 0 16px;">By Issue Type</h3>
+        <h3 style="margin:0 0 16px; color:var(--text-primary);">By Issue Type</h3>
         <div style="height:260px;"><canvas id="chart-reports-issue"></canvas></div>
     </div>
 </div>
 
 <div class="card">
-    <h3 style="margin:0 0 16px;">Daily Trend</h3>
+    <h3 style="margin:0 0 16px; color:var(--text-primary);">Daily Trend</h3>
     <div style="height:280px;"><canvas id="chart-reports-daily"></canvas></div>
 </div>
 @endif
@@ -60,17 +60,17 @@
 
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:20px;">
     <div class="card">
-        <h3 style="margin:0 0 16px;">By Status</h3>
+        <h3 style="margin:0 0 16px; color:var(--text-primary);">By Status</h3>
         <div style="height:260px;"><canvas id="chart-wo-status"></canvas></div>
     </div>
     <div class="card">
-        <h3 style="margin:0 0 16px;">By Priority</h3>
+        <h3 style="margin:0 0 16px; color:var(--text-primary);">By Priority</h3>
         <div style="height:260px;"><canvas id="chart-wo-priority"></canvas></div>
     </div>
 </div>
 
 <div class="card">
-    <h3 style="margin:0 0 16px;">Daily Trend</h3>
+    <h3 style="margin:0 0 16px; color:var(--text-primary);">Daily Trend</h3>
     <div style="height:280px;"><canvas id="chart-wo-daily"></canvas></div>
 </div>
 @endif
@@ -78,17 +78,17 @@
 @if($type === 'geographic')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <div class="card" style="margin-bottom:20px; padding:0; overflow:hidden;">
-    <div style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-        <h3 style="margin:0;">Hotspot Map – Report / Work Order Intensity</h3>
-        <select id="hotspot-metric" style="padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px;">
+    <div style="padding:16px 20px; border-bottom:1px solid rgba(106, 150, 255, 0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <h3 style="margin:0; color:var(--text-primary);">Hotspot Map – Report / Work Order Intensity</h3>
+        <select id="hotspot-metric" style="padding:8px 12px; border:1px solid rgba(106, 150, 255, 0.3); border-radius:8px; font-size:14px; background:#1A1D2B; color:#fff;">
             <option value="reports">Reports</option>
             <option value="work_orders">Work Orders</option>
         </select>
     </div>
     <div style="position:relative;">
         <div id="hotspot-map" style="height:500px; width:100%;"></div>
-        <div id="hotspot-legend" style="position:absolute; bottom:24px; right:24px; background:white; padding:12px 16px; border-radius:8px; border:1px solid #e5e7eb; box-shadow:0 2px 8px rgba(0,0,0,0.08); z-index:1000; font-size:12px;">
-        <div style="font-weight:600; margin-bottom:8px; color:#374151;">Intensity</div>
+        <div id="hotspot-legend" style="position:absolute; bottom:24px; right:24px; background:#272B3C; padding:12px 16px; border-radius:8px; border:1px solid rgba(106, 150, 255, 0.2); box-shadow:0 4px 24px rgba(0,0,0,0.35); z-index:1000; font-size:12px; color:#e5e7eb;">
+        <div style="font-weight:600; margin-bottom:8px; color:#fff;">Intensity</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;"><span style="display:inline-block; width:16px; height:16px; border-radius:2px; background:#166534;"></span> Very Low (0% – 20%)</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;"><span style="display:inline-block; width:16px; height:16px; border-radius:2px; background:#22c55e;"></span> Low (21% – 40%)</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;"><span style="display:inline-block; width:16px; height:16px; border-radius:2px; background:#eab308;"></span> Medium (41% – 60%)</div>
@@ -99,12 +99,12 @@
 </div>
 
 <div class="card" style="margin-bottom:20px;">
-    <h3 style="margin:0 0 16px;">Top Mukims – Reports</h3>
+    <h3 style="margin:0 0 16px; color:var(--text-primary);">Top Mukims – Reports</h3>
     <div style="height:320px;"><canvas id="chart-geo-mukim-reports"></canvas></div>
 </div>
 
 <div class="card">
-    <h3 style="margin:0 0 16px;">Top Mukims – Work Orders</h3>
+    <h3 style="margin:0 0 16px; color:var(--text-primary);">Top Mukims – Work Orders</h3>
     <div style="height:320px;"><canvas id="chart-geo-mukim-wo"></canvas></div>
 </div>
 @endif
@@ -112,30 +112,47 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function() {
-    const blue = '#0056A6';
-    const colors = ['#0056A6', '#0d9488', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#65a30d'];
+    const primary = '#6A96FF';
+    const colors = ['#6A96FF', '#56FF8B', '#22d3ee', '#d97706', '#dc2626', '#A86AFF', '#0891b2', '#65a30d'];
+    const darkTick = '#B0B0B0';
+    const darkGrid = 'rgba(106, 150, 255, 0.08)';
+    const lineScales = {
+        y: { beginAtZero: true, ticks: { stepSize: 1, color: darkTick }, grid: { color: darkGrid } },
+        x: { ticks: { color: darkTick }, grid: { color: darkGrid } }
+    };
 
     function makeChart(id, type, labels, data, options) {
         const el = document.getElementById(id);
         if (!el) return;
         if (!labels.length && !data.length) {
-            el.parentElement.innerHTML = '<p style="color:#9ca3af; padding:40px; text-align:center;">No data</p>';
+            el.parentElement.innerHTML = '<p style="color:var(--text-secondary); padding:40px; text-align:center;">No data</p>';
             return;
         }
+        const defaultOpts = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: type !== 'line',
+                    labels: { color: darkTick }
+                }
+            },
+            scales: (type === 'line' || type === 'bar') ? lineScales : {}
+        };
         new Chart(el, {
             type: type,
             data: {
                 labels: labels,
                 datasets: [{
                     data: data,
-                    backgroundColor: type === 'bar' || type === 'line' ? blue : colors.slice(0, data.length),
-                    borderColor: blue,
+                    backgroundColor: type === 'bar' || type === 'line' ? primary : colors.slice(0, data.length),
+                    borderColor: primary,
                     borderWidth: type === 'line' ? 2 : 0,
                     fill: type === 'line',
                     tension: type === 'line' ? 0.4 : 0,
                 }]
             },
-            options: options || { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: type !== 'line' } }, scales: type === 'line' || type === 'bar' ? { y: { beginAtZero: true, ticks: { stepSize: 1 } } } : {} }
+            options: options || defaultOpts
         });
     }
 
@@ -145,7 +162,10 @@
             maintainAspectRatio: false,
             indexAxis: 'y',
             plugins: { legend: { display: false } },
-            scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            scales: {
+                x: { beginAtZero: true, ticks: { stepSize: 1, color: darkTick }, grid: { color: darkGrid } },
+                y: { ticks: { color: darkTick }, grid: { color: darkGrid } }
+            }
         };
     }
 
@@ -167,7 +187,7 @@
     @endphp
     makeChart('chart-reports-status', 'doughnut', @json($statusLabels), @json($statusData));
     makeChart('chart-reports-issue', 'doughnut', @json($issueLabels), @json($issueData));
-    makeChart('chart-reports-daily', 'line', @json($dayLabels), @json($dayData), { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } });
+    makeChart('chart-reports-daily', 'line', @json($dayLabels), @json($dayData), { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: lineScales });
     @endif
 
     @if($type === 'work_orders')
@@ -188,7 +208,7 @@
     @endphp
     makeChart('chart-wo-status', 'doughnut', @json($woStatusLabels), @json($woStatusData));
     makeChart('chart-wo-priority', 'doughnut', @json($woPriorityLabels), @json($woPriorityData));
-    makeChart('chart-wo-daily', 'line', @json($woDayLabels), @json($woDayData), { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } });
+    makeChart('chart-wo-daily', 'line', @json($woDayLabels), @json($woDayData), { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: lineScales });
     @endif
 
     @if($type === 'geographic')
@@ -296,7 +316,7 @@
     function renderPointMarkers() {
         markersLayer.clearLayers();
         var pts = currentMetric === 'reports' ? reportMapPoints : workOrderMapPoints;
-        var fill = currentMetric === 'reports' ? '#2563eb' : '#f97316';
+        var fill = currentMetric === 'reports' ? '#6A96FF' : '#f97316';
         pts.forEach(function (p) {
             var lat = Number(p.lat);
             var lng = Number(p.lng);

@@ -16,7 +16,7 @@
         @method('PUT')
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Type *</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Type *</label>
             <input type="text" name="type" value="{{ old('type', $workOrder->type) }}" placeholder="e.g., Blockage Removal, Maintenance" required style="
                 width:100%;
                 padding:10px 12px;
@@ -30,7 +30,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Priority *</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Priority *</label>
             <select name="priority" required style="
                 width:100%;
                 padding:10px 12px;
@@ -50,7 +50,7 @@
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">District (Brunei)</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">District (Brunei)</label>
                 <select name="district" id="district" style="
                     width:100%;
                     padding:10px 12px;
@@ -65,7 +65,7 @@
                 </select>
             </div>
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Mukim</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Mukim</label>
                 <select name="mukim" id="mukim" style="
                     width:100%;
                     padding:10px 12px;
@@ -84,7 +84,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Location / Street address *</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Location / Street address *</label>
             <input type="text" name="location_address" value="{{ old('location_address', $workOrder->location_address) }}" required placeholder="e.g. Jalan Gadong" style="
                 width:100%;
                 padding:10px 12px;
@@ -99,7 +99,7 @@
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Latitude</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Latitude</label>
                 <input type="number" step="any" name="latitude" value="{{ old('latitude', $workOrder->latitude) }}" placeholder="e.g., 4.9031" style="
                     width:100%;
                     padding:10px 12px;
@@ -109,7 +109,7 @@
                 ">
             </div>
             <div>
-                <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Longitude</label>
+                <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Longitude</label>
                 <input type="number" step="any" name="longitude" value="{{ old('longitude', $workOrder->longitude) }}" placeholder="e.g., 114.9398" style="
                     width:100%;
                     padding:10px 12px;
@@ -121,7 +121,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Description / Situation details</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Description / Situation details</label>
             <textarea name="description" rows="4" placeholder="Explain details of the situation at site..." style="
                 width:100%;
                 padding:10px 12px;
@@ -136,7 +136,7 @@
         </div>
 
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:6px; font-weight:500; color:#374151;">Notes</label>
+            <label style="display:block; margin-bottom:6px; font-weight:500; color:var(--text-primary);">Notes</label>
             <textarea name="notes" rows="2" style="
                 width:100%;
                 padding:10px 12px;
@@ -148,24 +148,8 @@
         </div>
 
         <div style="display:flex; gap:12px;">
-            <button type="submit" style="
-                background:#0056A6;
-                color:white;
-                padding:10px 24px;
-                border:none;
-                border-radius:8px;
-                font-weight:500;
-                cursor:pointer;
-            ">Save changes</button>
-            <a href="{{ route('operations.work-orders.show', $workOrder) }}" style="
-                background:#f3f4f6;
-                color:#374151;
-                padding:10px 24px;
-                border-radius:8px;
-                text-decoration:none;
-                font-weight:500;
-                display:inline-block;
-            ">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            <a href="{{ route('operations.work-orders.show', $workOrder) }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

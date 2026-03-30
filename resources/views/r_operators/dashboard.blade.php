@@ -112,8 +112,8 @@
             datasets: [{
                 label: 'Incidents',
                 data: chartData,
-                borderColor: '#0056A6',
-                backgroundColor: 'rgba(0, 86, 166, 0.1)',
+                borderColor: '#6A96FF',
+                backgroundColor: 'rgba(106, 150, 255, 0.12)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4
@@ -124,7 +124,15 @@
             maintainAspectRatio: true,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                x: {
+                    ticks: { color: '#B0B0B0' },
+                    grid: { color: 'rgba(106, 150, 255, 0.08)' }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, color: '#B0B0B0' },
+                    grid: { color: 'rgba(106, 150, 255, 0.08)' }
+                }
             }
         }
     });

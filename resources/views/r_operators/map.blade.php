@@ -63,12 +63,12 @@
     }).addTo(map);
 
     reports.forEach(function (r) {
-        L.marker([r.lat, r.lng], { icon: L.divIcon({ className: 'report-marker', html: '<span style="background:#0056A6;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>' }) })
+        L.marker([r.lat, r.lng], { icon: L.divIcon({ className: 'report-marker', html: '<span style="background:#6A96FF;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>' }) })
             .addTo(map)
             .bindPopup('<strong>' + (r.number || 'Report') + '</strong><br>' + (r.address || ''));
     });
     workOrders.forEach(function (w) {
-        L.marker([w.lat, w.lng], { icon: L.divIcon({ className: 'wo-marker', html: '<span style="background:#0d9488;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>' }) })
+        L.marker([w.lat, w.lng], { icon: L.divIcon({ className: 'wo-marker', html: '<span style="background:#22d3ee;color:#0f172a;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>' }) })
             .addTo(map)
             .bindPopup('<strong>' + (w.number || 'Work Order') + '</strong><br>' + (w.address || ''));
     });
