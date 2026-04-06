@@ -251,6 +251,45 @@
         var reportUrl = '{{ route("customer.rproblem", ["name" => $user->profileSlug()]) }}';
         var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
+        var cachedUserLat = null;
+        var cachedUserLng = null;
+        (function prefetchLocation() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    cachedUserLat = pos.coords.latitude;
+                    cachedUserLng = pos.coords.longitude;
+                },
+                function() {},
+                { enableHighAccuracy: false, maximumAge: 180000, timeout: 12000 }
+            );
+        })();
+
+        function attachLocationForChat(payload, text, callback) {
+            if (cachedUserLat != null && cachedUserLng != null) {
+                payload.latitude = cachedUserLat;
+                payload.longitude = cachedUserLng;
+                callback(payload);
+                return;
+            }
+            var wantsNearby = /near|nearest|dekat|closest|around\s*(me|here)|nearby|sekitar|berhampiran|terdekat|radius/i.test(text || '');
+            if (wantsNearby && navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) {
+                        cachedUserLat = pos.coords.latitude;
+                        cachedUserLng = pos.coords.longitude;
+                        payload.latitude = cachedUserLat;
+                        payload.longitude = cachedUserLng;
+                        callback(payload);
+                    },
+                    function() { callback(payload); },
+                    { enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 }
+                );
+                return;
+            }
+            callback(payload);
+        }
+
         function appendBotReply(rawReply) {
             var text = String(rawReply || '');
             var showReportButton = text.indexOf('SHOW_REPORT_BUTTON') !== -1;
@@ -321,34 +360,34 @@
             chatBox.appendChild(typing);
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            fetch(chatUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                },
-                body: JSON.stringify({
-                    message: text || null,
-                    image: imageToSend || null,
-                }),
-            })
-            .then(function(r) {
-                return r.json().then(function(data) {
-                    return { ok: r.ok, data: data };
+            var payload = { message: text || null, image: imageToSend || null };
+            attachLocationForChat(payload, text, function(finalPayload) {
+                fetch(chatUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify(finalPayload),
+                })
+                .then(function(r) {
+                    return r.json().then(function(data) {
+                        return { ok: r.ok, data: data };
+                    });
+                })
+                .then(function(res) {
+                    if (typing.parentNode) chatBox.removeChild(typing);
+                    appendBotReply(res.ok && res.data.reply ? res.data.reply : (res.data.error || mockReplies[0]));
+                })
+                .catch(function(err) {
+                    if (typing.parentNode) chatBox.removeChild(typing);
+                    var botMsg = document.createElement('div');
+                    botMsg.className = 'msg-bot';
+                    botMsg.textContent = 'Something went wrong. Please try again.';
+                    chatBox.appendChild(botMsg);
+                    chatBox.scrollTop = chatBox.scrollHeight;
                 });
-            })
-            .then(function(res) {
-                if (typing.parentNode) chatBox.removeChild(typing);
-                appendBotReply(res.ok && res.data.reply ? res.data.reply : (res.data.error || mockReplies[0]));
-            })
-            .catch(function(err) {
-                if (typing.parentNode) chatBox.removeChild(typing);
-                var botMsg = document.createElement('div');
-                botMsg.className = 'msg-bot';
-                botMsg.textContent = 'Something went wrong. Please try again.';
-                chatBox.appendChild(botMsg);
-                chatBox.scrollTop = chatBox.scrollHeight;
             });
         }
 

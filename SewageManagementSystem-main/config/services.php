@@ -35,22 +35,4 @@ return [
         ],
     ],
 
-    'openai' => [
-        'api_key' => env('OPENAI_API_KEY'),
-        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
-    ],
-
-    'ziqah' => [
-        'database_schema' => env('ZIQAH_AI_DATABASE_SCHEMA', true),
-        'database_tools' => env('ZIQAH_AI_DATABASE_TOOLS', true),
-        'max_tool_rounds' => (int) env('ZIQAH_AI_DB_MAX_ROUNDS', 4),
-        'max_select_rows' => (int) env('ZIQAH_AI_DB_MAX_ROWS', 50),
-        'location_catalog' => env('ZIQAH_AI_LOCATION_CATALOG', true),
-        'location_catalog_per_source' => (int) env('ZIQAH_AI_LOCATION_PER_SOURCE', 60),
-        'location_catalog_max_chars' => (int) env('ZIQAH_AI_LOCATION_MAX_CHARS', 14000),
-        'nearest_issues' => env('ZIQAH_AI_NEAREST_ISSUES', true),
-        'nearest_issues_limit' => (int) env('ZIQAH_AI_NEAREST_ISSUES_LIMIT', 8),
-        'nearest_issues_candidates_per_table' => (int) env('ZIQAH_AI_NEAREST_ISSUES_CANDIDATES', 200),
-    ],
-
 ];
