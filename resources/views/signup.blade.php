@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>BruDMS</title>
         @include('partials.favicon')
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -557,6 +558,15 @@
                             @csrf
                             <input type="text" class="glass-input" name="name" placeholder="{{ __('username') }}" autocomplete="name" id="username" value="{{ old('name') }}">
                             <input type="email" class="glass-input" name="email" placeholder="you@example.com" autocomplete="email" id="email" value="{{ old('email') }}">
+                            <div style="position: relative;">
+                                <input type="tel" class="glass-input" name="phone" placeholder="+673 123 4567" autocomplete="tel" id="signup-phone" value="{{ old('phone') }}" style="padding-right: 7rem;">
+                                <button type="button" id="signup-phone-otp-send-btn" class="btn-create-account btn-disabled" style="position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%); width: 6.2rem; max-width: 6.2rem; margin: 0; padding: 0.32rem 0.55rem; font-size: 0.64rem; line-height: 1.05; border-radius: 9999px;" disabled>{{ __('Send OTP') }}</button>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; margin-top: -0.45rem;">
+                                <input type="text" class="glass-input" id="signup-phone-otp-code" placeholder="123456" inputmode="numeric" maxlength="6" style="max-width: 8.8rem; padding: 0.44rem 0.62rem; font-size: 0.72rem; text-align: center; letter-spacing: 0.08em; border: 1px solid rgba(255, 255, 255, 0.32); background: rgba(255, 255, 255, 0.12);" />
+                                <button type="button" id="signup-phone-otp-verify-btn" class="btn-create-account btn-disabled" style="max-width: 6.6rem; margin: 0; padding: 0.46rem 0.66rem; font-size: 0.7rem; line-height: 1.05; background: #0ea5e9; color: #fff;" disabled>{{ __('Verify') }}</button>
+                            </div>
+                            <div id="signup-phone-otp-msg" class="email-invalid-msg" aria-live="polite"><span></span></div>
                             <div class="email-invalid-msg" id="email-invalid-msg" data-msg="{{ __('validation_email_invalid') }}" aria-live="polite"><span></span></div>
                             <div class="password-wrap">
                                 <input type="password" class="glass-input" name="password" placeholder="{{ __('password') }}" autocomplete="new-password" id="password">
@@ -575,6 +585,7 @@
                             </div>
                         </form>
                         <div class="password-match-msg" id="password-match-msg" data-msg="{{ __('validation_password_match') }}" aria-live="polite"><span></span></div>
+                        <div id="signup-phone-otp-config" class="hidden" data-send-url="{{ route('register.phone-otp.send') }}" data-verify-url="{{ route('register.phone-otp.verify') }}" data-clear-url="{{ route('register.phone-otp.clear') }}"></div>
                         <p class="login-prompt"><a href="{{ route('login') }}" class="login-link" id="show-login">{{ __('already_have_account') }}</a></p>
                         <button type="submit" form="signup-form" class="btn-create-account btn-disabled" id="btn-create-account" disabled>{{ __('create_account_btn') }}</button>
                     </div>
@@ -689,8 +700,61 @@
                 var emailInvalidText = emailInvalidEl ? emailInvalidEl.getAttribute('data-msg') : '';
                 var strengthEl = document.getElementById('password-strength');
                 var strengthSpan = strengthEl ? strengthEl.querySelector('span') : null;
-                var inputs = ['username', 'email', 'password', 'password_confirmation'];
+                var otpCfg = document.getElementById('signup-phone-otp-config');
+                var otpSendBtn = document.getElementById('signup-phone-otp-send-btn');
+                var otpVerifyBtn = document.getElementById('signup-phone-otp-verify-btn');
+                var otpCodeEl = document.getElementById('signup-phone-otp-code');
+                var otpMsgEl = document.getElementById('signup-phone-otp-msg');
+                var otpMsgSpan = otpMsgEl ? otpMsgEl.querySelector('span') : null;
+                var phoneEl = document.getElementById('signup-phone');
+                var inputs = ['username', 'email', 'signup-phone', 'password', 'password_confirmation'];
                 var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                var phoneOtpVerified = false;
+                var phoneOtpDigits = '';
+
+                function phoneDigits(v) {
+                    return (v || '').replace(/\D/g, '');
+                }
+                function isValidBruneiPhone(v) {
+                    var s = (v || '').trim();
+                    if (!/^\+?[0-9\s\-()]+$/.test(s)) return false;
+                    var digits = phoneDigits(s);
+                    return digits.indexOf('673') === 0 && digits.length === 10;
+                }
+                function otpHeaders() {
+                    var token = document.querySelector('meta[name="csrf-token"]');
+                    var tokenVal = token ? token.getAttribute('content') : '';
+                    return {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': tokenVal,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    };
+                }
+                function parseJsonResponse(r) {
+                    return r.text().then(function(text) {
+                        var body = {};
+                        try { body = text ? JSON.parse(text) : {}; } catch (e) {}
+                        return { ok: r.ok, body: body };
+                    });
+                }
+                function setOtpMessage(text, isError) {
+                    if (!otpMsgEl || !otpMsgSpan) return;
+                    otpMsgSpan.textContent = text || '';
+                    if (text) {
+                        otpMsgEl.classList.add('visible');
+                        otpMsgSpan.style.color = isError ? 'rgba(255,120,120,0.95)' : '#6ee7b7';
+                    } else {
+                        otpMsgEl.classList.remove('visible');
+                        otpMsgSpan.style.color = '';
+                    }
+                }
+                function clearOtpServerState() {
+                    if (!otpCfg) return;
+                    var clearUrl = otpCfg.getAttribute('data-clear-url');
+                    if (!clearUrl) return;
+                    fetch(clearUrl, { method: 'POST', headers: otpHeaders(), credentials: 'same-origin', body: '{}' });
+                }
 
                 function getStrength(password) {
                     if (!password || password.length < 8) return 'weak';
@@ -740,6 +804,7 @@
                     var filled = allFilled();
                     var match = passwordsMatch();
                     var emailOk = emailValid();
+                    var phoneOk = phoneEl ? isValidBruneiPhone(phoneEl.value) : false;
                     var emailEl = document.getElementById('email');
                     var emailHasValue = emailEl && (emailEl.value || '').trim().length > 0;
                     var passwordEl = document.getElementById('password');
@@ -762,6 +827,17 @@
                         if (msgEl) { msgEl.classList.remove('visible'); }
                     }
 
+                    if (otpSendBtn) {
+                        var canSend = phoneOk && !phoneOtpVerified;
+                        otpSendBtn.disabled = !canSend;
+                        otpSendBtn.classList.toggle('btn-disabled', !canSend);
+                    }
+                    if (otpVerifyBtn && otpCodeEl) {
+                        var canVerify = phoneOk && otpCodeEl.value.replace(/\D/g, '').length === 6 && !phoneOtpVerified;
+                        otpVerifyBtn.disabled = !canVerify;
+                        otpVerifyBtn.classList.toggle('btn-disabled', !canVerify);
+                    }
+
                     if (emailHasValue && !emailOk) {
                         btn.disabled = true;
                         btn.classList.add('btn-disabled');
@@ -769,10 +845,72 @@
                         btn.disabled = true;
                         btn.classList.add('btn-disabled');
                     } else {
-                        var ok = filled && match && emailOk;
+                        var ok = filled && match && emailOk && phoneOk && phoneOtpVerified;
                         btn.disabled = !ok;
                         btn.classList.toggle('btn-disabled', !ok);
                     }
+                }
+
+                if (otpSendBtn && otpVerifyBtn && otpCodeEl && phoneEl && otpCfg) {
+                    var sendUrl = otpCfg.getAttribute('data-send-url');
+                    var verifyUrl = otpCfg.getAttribute('data-verify-url');
+                    otpSendBtn.addEventListener('click', function() {
+                        var phone = (phoneEl.value || '').trim();
+                        if (!isValidBruneiPhone(phone)) return;
+                        setOtpMessage('Sending OTP...', false);
+                        otpSendBtn.disabled = true;
+                        fetch(sendUrl, { method: 'POST', headers: otpHeaders(), credentials: 'same-origin', body: JSON.stringify({ phone: phone }) })
+                            .then(function(r) { return parseJsonResponse(r); })
+                            .then(function(res) {
+                                if (!res.ok) {
+                                    setOtpMessage((res.body && res.body.message) ? res.body.message : 'Could not send OTP.', true);
+                                    updateButton();
+                                    return;
+                                }
+                                setOtpMessage('OTP sent. Enter the 6-digit code.', false);
+                                updateButton();
+                            })
+                            .catch(function() {
+                                setOtpMessage('Network error while sending OTP.', true);
+                                updateButton();
+                            });
+                    });
+                    otpVerifyBtn.addEventListener('click', function() {
+                        var phone = (phoneEl.value || '').trim();
+                        var code = otpCodeEl.value.replace(/\D/g, '');
+                        if (!isValidBruneiPhone(phone) || code.length !== 6) return;
+                        otpVerifyBtn.disabled = true;
+                        fetch(verifyUrl, { method: 'POST', headers: otpHeaders(), credentials: 'same-origin', body: JSON.stringify({ phone: phone, code: code }) })
+                            .then(function(r) { return parseJsonResponse(r); })
+                            .then(function(res) {
+                                if (!res.ok) {
+                                    setOtpMessage((res.body && res.body.message) ? res.body.message : 'Invalid OTP code.', true);
+                                    otpVerifyBtn.disabled = false;
+                                    updateButton();
+                                    return;
+                                }
+                                phoneOtpVerified = true;
+                                phoneOtpDigits = phoneDigits(phone);
+                                setOtpMessage('Phone verified. You can now create account.', false);
+                                updateButton();
+                            })
+                            .catch(function() {
+                                setOtpMessage('Network error while verifying OTP.', true);
+                                otpVerifyBtn.disabled = false;
+                                updateButton();
+                            });
+                    });
+                    phoneEl.addEventListener('input', function() {
+                        if (phoneOtpVerified && phoneDigits(phoneEl.value) !== phoneOtpDigits) {
+                            phoneOtpVerified = false;
+                            phoneOtpDigits = '';
+                            otpCodeEl.value = '';
+                            setOtpMessage('', false);
+                            clearOtpServerState();
+                        }
+                        updateButton();
+                    });
+                    otpCodeEl.addEventListener('input', updateButton);
                 }
 
                 inputs.forEach(function(id) {

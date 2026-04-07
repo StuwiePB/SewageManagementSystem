@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Support\BruneiPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class ReportController extends Controller
                 'max:30',
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     $value = (string) $value;
-                    if (! $this->isValidPhone($value)) {
+                    if (! BruneiPhone::isValid($value)) {
                         $fail('Please enter a valid Brunei phone number (+673...).');
                     }
                 },
@@ -58,7 +59,7 @@ class ReportController extends Controller
             'reference_code' => Report::generateReferenceCode(),
             'user_id' => $user?->id,
             'reporter_name' => $request->filled('reporter_name') ? $request->reporter_name : null,
-            'phone' => $request->filled('phone') ? $this->normalizePhone($request->phone) : null,
+            'phone' => $request->filled('phone') ? BruneiPhone::normalize((string) $request->phone) : null,
             'problem_type' => $request->problem_type,
             'severity' => $request->filled('severity') ? $request->severity : null,
             'description' => $request->description,
@@ -95,29 +96,5 @@ class ReportController extends Controller
         return redirect()
             ->route('customer.dashboard', ['name' => $user->profileSlug()])
             ->with('status', 'report-submitted');
-    }
-
-    private function normalizePhone(string $phone): string
-    {
-        $digits = preg_replace('/\D+/', '', trim($phone)) ?? '';
-        return '+'.$digits;
-    }
-
-    private function isValidPhone(string $phone): bool
-    {
-        $trimmed = trim($phone);
-        if ($trimmed === '') {
-            return false;
-        }
-
-        // Allow only common phone chars and optional leading plus.
-        if (! preg_match('/^\+?[0-9\s\-()]+$/', $trimmed)) {
-            return false;
-        }
-
-        $digits = preg_replace('/\D+/', '', $trimmed) ?? '';
-
-        // Brunei numbers: must be +673 followed by 7 digits.
-        return str_starts_with($digits, '673') && strlen($digits) === 10;
     }
 }

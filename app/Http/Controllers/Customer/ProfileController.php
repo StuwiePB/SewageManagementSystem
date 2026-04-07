@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Support\BruneiPhone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
@@ -23,7 +24,7 @@ class ProfileController extends Controller
         }
 
         $path = $request->file('photo')->store(
-            'profile-photos/' . $user->id,
+            'profile-photos/'.$user->id,
             'public'
         );
 
@@ -46,10 +47,14 @@ class ProfileController extends Controller
     public function updatePhone(Request $request)
     {
         $request->validate([
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => $this->bruneiPhoneRules(),
         ]);
 
-        $request->user()->update(['phone' => $request->phone ?: null]);
+        $user = $request->user();
+        $incomingTrim = $this->trimmedPhone($request->input('phone'));
+        $incomingNorm = $incomingTrim !== '' ? BruneiPhone::normalize($incomingTrim) : null;
+
+        $user->update(['phone' => $incomingNorm]);
 
         return back()->with('status', 'profile-phone-updated');
     }
@@ -58,7 +63,7 @@ class ProfileController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => $this->bruneiPhoneRules(),
         ];
         if ($request->hasFile('photo')) {
             $rules['photo'] = ['image', 'max:2048', File::types(['jpg', 'jpeg', 'png', 'gif', 'webp'])];
@@ -66,28 +71,55 @@ class ProfileController extends Controller
         $request->validate($rules);
 
         $user = $request->user();
+        $incomingTrim = $this->trimmedPhone($request->input('phone'));
+        $incomingNorm = $incomingTrim !== '' ? BruneiPhone::normalize($incomingTrim) : null;
 
         if ($request->hasFile('photo')) {
             if ($user->profile_photo_path) {
                 Storage::disk('public')->delete($user->profile_photo_path);
             }
             $path = $request->file('photo')->store(
-                'profile-photos/' . $user->id,
+                'profile-photos/'.$user->id,
                 'public'
             );
             $user->update([
                 'name' => $request->name,
-                'phone' => $request->phone ?: null,
+                'phone' => $incomingNorm,
                 'profile_photo_path' => $path,
             ]);
         } else {
             $user->update([
                 'name' => $request->name,
-                'phone' => $request->phone ?: null,
+                'phone' => $incomingNorm,
             ]);
         }
 
         return redirect()->route('customer.general', ['name' => $user->profileSlug()])
             ->with('status', 'profile-updated');
+    }
+
+    /**
+     * @return list<string|\Closure>
+     */
+    private function bruneiPhoneRules(): array
+    {
+        return [
+            'nullable',
+            'string',
+            'max:30',
+            function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($value === null || trim((string) $value) === '') {
+                    return;
+                }
+                if (! BruneiPhone::isValid((string) $value)) {
+                    $fail(__('Please enter a valid Brunei phone number (+673…).'));
+                }
+            },
+        ];
+    }
+
+    private function trimmedPhone(mixed $phone): string
+    {
+        return is_string($phone) ? trim($phone) : '';
     }
 }

@@ -63,6 +63,9 @@
                 <input type="text" id="username-input" name="name" value="{{ old('name', $user->name ?? '') }}" placeholder="Muhammad Ali" style="width: 100%; height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); color: white; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box;">
                 <label for="phone-input" style="display: block; color: rgba(255, 255, 255, 0.6); font-size: 11px; font-weight: 400; font-family: Poppins, sans-serif; margin-bottom: 6px; margin-left: 10px; margin-top: 10px;">Phone Number</label>
                 <input type="tel" id="phone-input" name="phone" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 012 3456" style="width: 100%; height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); color: white; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box;">
+                @if($errors->has('phone'))
+                <p id="profile-phone-error" style="margin: 8px 0 0 10px; color: #fca5a5; font-size: 12px; font-family: Poppins, sans-serif;">{{ $errors->first('phone') }}</p>
+                @endif
             </form>
         </div>
     </div>
@@ -114,6 +117,7 @@
                     checkChanges();
                 }
             });
+            checkChanges();
         })();
         document.querySelectorAll('.delayed-nav').forEach(function(el) {
             el.style.transition = 'transform 0.1s ease';

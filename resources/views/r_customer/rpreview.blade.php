@@ -261,6 +261,21 @@
                 <input type="tel" id="preview-phone-text" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 123 1234" autocomplete="tel" inputmode="tel" pattern="^\+673\s\d{3}\s\d{4}$" style="flex: 1; min-width: 0; background: transparent; border: none; padding: 0; margin: 0; color: white; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 600; outline: none;" />
             </div>
         </div>
+        <div id="phone-otp-panel" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11px; font-family: Poppins, sans-serif; font-weight: 700; color: #fca5a5; letter-spacing: 0.02em;">{{ __('Phone verification required') }}</span>
+                <span id="phone-otp-badge" style="font-size: 10px; font-family: Poppins, sans-serif; color: rgba(255,255,255,0.75); padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2);">{{ __('Not verified') }}</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                <button type="button" id="phone-otp-send-btn" class="press-btn" style="padding: 8px 14px; border-radius: 10px; border: none; background: rgba(4, 188, 255, 0.35); color: white; font-family: Poppins, sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; opacity: 0.5;" disabled>{{ __('Send code') }}</button>
+                <span id="phone-otp-status" style="font-size: 11px; font-family: Poppins, sans-serif; color: rgba(255,255,255,0.78); flex: 1; min-width: 120px;"></span>
+            </div>
+            <div id="phone-otp-verify-row" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                <input type="text" id="phone-otp-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit code" style="width: 150px; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.2); color: white; font-family: Poppins, sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em;" />
+                <button type="button" id="phone-otp-verify-btn" class="press-btn" style="padding: 8px 14px; border-radius: 10px; border: none; background: rgba(34, 211, 238, 0.4); color: white; font-family: Poppins, sans-serif; font-size: 12px; font-weight: 700; cursor: pointer;">{{ __('Verify code') }}</button>
+            </div>
+        </div>
+        <div id="phone-otp-config" class="hidden" data-send-url="{{ route('phone-otp.send') }}" data-verify-url="{{ route('phone-otp.verify') }}" data-clear-url="{{ route('phone-otp.clear') }}"></div>
         <div class="preview-info-row" id="preview-location-row">
             <img src="{{ asset('images/Vectors/all_location.svg') }}" alt="" />
             <span id="preview-location-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
@@ -545,6 +560,161 @@
             }
         })();
 
+        var reportPhoneOtpVerified = true;
+        var reportOtpVerifiedDigits = '';
+        function phoneDigitsForOtp(s) {
+            return (s || '').replace(/\D/g, '');
+        }
+        function invalidateReportPhoneOtpIfNeeded() {
+            var el = document.getElementById('preview-phone-text');
+            if (!el || !reportPhoneOtpVerified) {
+                return;
+            }
+            if (phoneDigitsForOtp(el.value) !== reportOtpVerifiedDigits) {
+                reportPhoneOtpVerified = false;
+                reportOtpVerifiedDigits = '';
+                var cfg = document.getElementById('phone-otp-config');
+                var clearUrl = cfg && cfg.getAttribute('data-clear-url');
+                var token = document.querySelector('meta[name="csrf-token"]');
+                var tokenVal = token ? token.getAttribute('content') : '';
+                if (clearUrl) {
+                    fetch(clearUrl, { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': tokenVal, 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin', body: '{}' });
+                }
+                var st = document.getElementById('phone-otp-status');
+                if (st) {
+                    st.textContent = '';
+                }
+                var badge = document.getElementById('phone-otp-badge');
+                if (badge) {
+                    badge.textContent = '{{ __('Not verified') }}';
+                    badge.style.color = 'rgba(255,255,255,0.75)';
+                    badge.style.borderColor = 'rgba(255,255,255,0.2)';
+                }
+                var vr = document.getElementById('phone-otp-verify-row');
+                if (vr) {
+                    vr.style.display = 'flex';
+                }
+                var codeEl = document.getElementById('phone-otp-code');
+                if (codeEl) {
+                    codeEl.value = '';
+                }
+            }
+        }
+        function reportOtpCsrfHeaders() {
+            var token = document.querySelector('meta[name="csrf-token"]');
+            var tokenVal = token ? token.getAttribute('content') : '';
+            return {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': tokenVal,
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+        }
+        function initReportPhoneOtpUi() {
+            var cfg = document.getElementById('phone-otp-config');
+            var sendBtn = document.getElementById('phone-otp-send-btn');
+            var verifyBtn = document.getElementById('phone-otp-verify-btn');
+            var codeEl = document.getElementById('phone-otp-code');
+            var statusEl = document.getElementById('phone-otp-status');
+            var verifyRow = document.getElementById('phone-otp-verify-row');
+            if (!cfg || !sendBtn || !verifyBtn || !codeEl) {
+                return;
+            }
+            var sendUrl = cfg.getAttribute('data-send-url');
+            var verifyUrl = cfg.getAttribute('data-verify-url');
+            var badgeEl = document.getElementById('phone-otp-badge');
+            function parseJsonResponse(r) {
+                return r.text().then(function(text) {
+                    var body = {};
+                    try {
+                        body = text ? JSON.parse(text) : {};
+                    } catch (e) {
+                        body = {};
+                    }
+                    return { ok: r.ok, body: body };
+                });
+            }
+            sendBtn.addEventListener('click', function() {
+                var phoneEl = document.getElementById('preview-phone-text');
+                var phone = phoneEl ? phoneEl.value.trim() : '';
+                if (!isValidPhoneInput(phone)) {
+                    return;
+                }
+                statusEl.textContent = '{{ __('Sending…') }}';
+                sendBtn.disabled = true;
+                sendBtn.dataset.cooldown = '1';
+                fetch(sendUrl, {
+                    method: 'POST',
+                    headers: reportOtpCsrfHeaders(),
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ phone: phone })
+                }).then(function(r) { return parseJsonResponse(r); }).then(function(res) {
+                    if (!res.ok) {
+                        statusEl.textContent = (res.body && res.body.message) ? res.body.message : '{{ __('Could not send code.') }}';
+                        sendBtn.dataset.cooldown = '0';
+                        if (badgeEl) {
+                            badgeEl.textContent = '{{ __('Not verified') }}';
+                        }
+                        syncPreviewSubmitState();
+                        return;
+                    }
+                    statusEl.textContent = '{{ __('Code sent. Check your SMS.') }}';
+                    verifyRow.style.display = 'flex';
+                    codeEl.value = '';
+                    window.setTimeout(function() {
+                        var b = document.getElementById('phone-otp-send-btn');
+                        if (b) {
+                            b.dataset.cooldown = '0';
+                        }
+                        syncPreviewSubmitState();
+                    }, 45000);
+                    syncPreviewSubmitState();
+                }).catch(function() {
+                    statusEl.textContent = '{{ __('Network error.') }}';
+                    sendBtn.dataset.cooldown = '0';
+                    syncPreviewSubmitState();
+                });
+            });
+            verifyBtn.addEventListener('click', function() {
+                var phoneEl = document.getElementById('preview-phone-text');
+                var phone = phoneEl ? phoneEl.value.trim() : '';
+                var code = (codeEl.value || '').replace(/\D/g, '');
+                if (!isValidPhoneInput(phone) || code.length !== 6) {
+                    return;
+                }
+                verifyBtn.disabled = true;
+                fetch(verifyUrl, {
+                    method: 'POST',
+                    headers: reportOtpCsrfHeaders(),
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ phone: phone, code: code })
+                }).then(function(r) { return parseJsonResponse(r); }).then(function(res) {
+                    verifyBtn.disabled = false;
+                    if (!res.ok) {
+                        statusEl.textContent = (res.body && res.body.message) ? res.body.message : '{{ __('Invalid code.') }}';
+                        return;
+                    }
+                    reportPhoneOtpVerified = true;
+                    reportOtpVerifiedDigits = phoneDigitsForOtp(phone);
+                    statusEl.textContent = '{{ __('Phone verified.') }}';
+                    if (badgeEl) {
+                        badgeEl.textContent = '{{ __('Verified') }}';
+                        badgeEl.style.color = '#86efac';
+                        badgeEl.style.borderColor = 'rgba(134, 239, 172, 0.5)';
+                    }
+                    syncPreviewSubmitState();
+                }).catch(function() {
+                    verifyBtn.disabled = false;
+                    statusEl.textContent = '{{ __('Network error.') }}';
+                });
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initReportPhoneOtpUi);
+        } else {
+            initReportPhoneOtpUi();
+        }
+
         function isValidPhoneInput(value) {
             var s = (value || '').trim();
             if (!s) return false;
@@ -590,7 +760,14 @@
             var nameOk = nameEl && nameEl.value.trim() !== '';
             var phoneOk = phoneEl && isValidPhoneInput(phoneEl.value);
             var locOk = locEl && locEl.textContent.trim() !== '';
-            btn.disabled = !(nameOk && phoneOk && locOk);
+            var sendBtn = document.getElementById('phone-otp-send-btn');
+            if (sendBtn) {
+                var cooling = sendBtn.dataset.cooldown === '1';
+                sendBtn.disabled = !phoneOk || cooling;
+                sendBtn.style.opacity = sendBtn.disabled ? '0.5' : '1';
+            }
+            var canSubmit = nameOk && phoneOk && locOk;
+            btn.disabled = !canSubmit;
         }
         (function() {
             function showPhoto() {
@@ -664,6 +841,7 @@
                 } catch (e) {}
             }
             previewPhoneInput.addEventListener('input', function() {
+                invalidateReportPhoneOtpIfNeeded();
                 previewPhoneInput.value = formatBruneiPhone(previewPhoneInput.value);
                 if ((previewPhoneInput.value || '').trim() === '') {
                     previewPhoneInput.value = PHONE_PREFIX;

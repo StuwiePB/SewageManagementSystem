@@ -40,6 +40,26 @@ return [
         'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
     ],
 
+    'twilio' => [
+        'sid' => env('TWILIO_ACCOUNT_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+        /** Set to a 6-digit string in tests only; when set, SMS is not sent and this code is used. */
+        'fake_otp' => env('TWILIO_FAKE_OTP'),
+        'otp_session_minutes' => (int) env('TWILIO_OTP_SESSION_MINUTES', 30),
+    ],
+
+    'sms' => [
+        // twilio | http | log
+        'driver' => env('SMS_DRIVER', 'twilio'),
+        'http' => [
+            'url' => env('SMS_HTTP_URL'),
+            'api_key' => env('SMS_HTTP_API_KEY'),
+            'sender' => env('SMS_HTTP_SENDER'),
+            'method' => env('SMS_HTTP_METHOD', 'POST'),
+        ],
+    ],
+
     'ziqah' => [
         'database_schema' => env('ZIQAH_AI_DATABASE_SCHEMA', true),
         'database_tools' => env('ZIQAH_AI_DATABASE_TOOLS', true),
