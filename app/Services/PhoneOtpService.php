@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Support\BruneiPhone;
 use App\Support\PhoneVerificationSession;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -75,7 +76,7 @@ class PhoneOtpService
 
     private function generateCode(): string
     {
-        $fake = config('services.twilio.fake_otp');
+        $fake = config('services.sms.fake_otp');
         if (is_string($fake) && strlen($fake) === 6 && ctype_digit($fake)) {
             return $fake;
         }
@@ -85,8 +86,8 @@ class PhoneOtpService
 
     private function dispatchSms(string $toE164, string $code): void
     {
-        if (config('services.twilio.fake_otp')) {
-            Log::info('Phone OTP (fake mode)', ['to' => $toE164, 'code' => $code]);
+        if (config('services.sms.fake_otp')) {
+            Log::info('Phone OTP (fake mode — no SMS sent; clear SMS_FAKE_OTP and TWILIO_FAKE_OTP for real delivery)', ['to' => $toE164, 'code' => $code]);
 
             return;
         }
@@ -94,6 +95,12 @@ class PhoneOtpService
         $driver = (string) config('services.sms.driver', 'twilio');
         if ($driver === 'http') {
             $this->sendViaHttpProvider($toE164, $code);
+
+            return;
+        }
+
+        if ($driver === 'telesign') {
+            $this->sendViaTelesign($toE164, $code);
 
             return;
         }
@@ -157,6 +164,125 @@ class PhoneOtpService
         if (! $response->successful()) {
             throw new \RuntimeException('sms_delivery_failed');
         }
+    }
+
+    /**
+     * Telesign SMS Verify with our 6-digit code (see Telesign "verify with own OTP" flow).
+     *
+     * @see https://developer.telesign.com/enterprise/docs/sms-verify-api-get-started
+     */
+    private function sendViaTelesign(string $toE164, string $code): void
+    {
+        $customerId = (string) config('services.telesign.customer_id');
+        $apiKey = (string) config('services.telesign.api_key');
+        $host = rtrim((string) config('services.telesign.host', 'https://rest-ww.telesign.com'), '/');
+
+        if ($customerId === '' || $apiKey === '') {
+            throw new \RuntimeException('sms_not_configured');
+        }
+
+        $phoneNumber = preg_replace('/\D+/', '', $toE164) ?? '';
+        if ($phoneNumber === '') {
+            throw new \RuntimeException('sms_delivery_failed');
+        }
+
+        $body = [
+            'phone_number' => $phoneNumber,
+            'verify_code' => $code,
+            'ucid' => (string) config('services.telesign.ucid', 'BACS'),
+        ];
+
+        if ($ip = $this->publicClientIp()) {
+            $body['originating_ip'] = $ip;
+        }
+
+        $response = Http::timeout(20)
+            ->withBasicAuth($customerId, $apiKey)
+            ->asForm()
+            ->acceptJson()
+            ->post($host.'/v1/verify/sms', $body);
+
+        $this->assertTelesignSendSucceeded($response);
+    }
+
+    private function publicClientIp(): ?string
+    {
+        $ip = request()?->ip();
+        if (! is_string($ip) || $ip === '') {
+            return null;
+        }
+
+        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return null;
+        }
+
+        return $ip;
+    }
+
+    /**
+     * @throws \RuntimeException telesign_trial_destination|sms_delivery_failed
+     */
+    private function assertTelesignSendSucceeded(Response $response): void
+    {
+        $json = $response->json();
+        $errors = data_get($json, 'errors', []);
+
+        foreach ($this->telesignErrorRows($errors) as $row) {
+            $errCode = (int) ($row['code'] ?? 0);
+            if ($errCode === -10033) {
+                Log::notice('Telesign -10033: trial number not authorized. Complete portal verification (SMS/call code) for this exact number; see support.telesign.com test numbers article.');
+
+                throw new \RuntimeException('telesign_trial_destination');
+            }
+            if ($errCode === -20002) {
+                throw new \RuntimeException('telesign_product_disabled');
+            }
+        }
+
+        if (! $response->successful()) {
+            Log::warning('Telesign Verify SMS failed', [
+                'status' => $response->status(),
+                'body' => $json ?? $response->body(),
+            ]);
+            throw new \RuntimeException('sms_delivery_failed');
+        }
+
+        if (is_array($errors) && $errors !== []) {
+            Log::warning('Telesign Verify SMS errors in response', ['errors' => $errors]);
+
+            throw new \RuntimeException('sms_delivery_failed');
+        }
+
+        $statusCode = data_get($json, 'status.code');
+        if ($statusCode !== null && (int) $statusCode >= 400) {
+            Log::warning('Telesign Verify SMS non-success status', ['status' => data_get($json, 'status')]);
+
+            throw new \RuntimeException('sms_delivery_failed');
+        }
+
+        Log::info('Telesign Verify SMS accepted', [
+            'reference_id' => data_get($json, 'reference_id'),
+            'status' => data_get($json, 'status'),
+        ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function telesignErrorRows(mixed $errors): array
+    {
+        if (! is_array($errors)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($errors as $row) {
+            if (is_array($row)) {
+                $out[] = $row;
+            }
+        }
+
+        return $out;
     }
 
     private function cacheKey(string $normalized): string

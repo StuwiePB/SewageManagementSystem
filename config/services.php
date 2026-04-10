@@ -44,14 +44,27 @@ return [
         'sid' => env('TWILIO_ACCOUNT_SID'),
         'token' => env('TWILIO_AUTH_TOKEN'),
         'from' => env('TWILIO_FROM'),
-        /** Set to a 6-digit string in tests only; when set, SMS is not sent and this code is used. */
-        'fake_otp' => env('TWILIO_FAKE_OTP'),
+        /** @deprecated Use services.sms.fake_otp (SMS_FAKE_OTP). Kept for config cache compatibility. */
+        'fake_otp' => env('SMS_FAKE_OTP', env('TWILIO_FAKE_OTP')),
         'otp_session_minutes' => (int) env('TWILIO_OTP_SESSION_MINUTES', 30),
     ],
 
+    'telesign' => [
+        'customer_id' => env('TELESIGN_CUSTOMER_ID'),
+        'api_key' => env('TELESIGN_API_KEY'),
+        'host' => env('TELESIGN_HOST', 'https://rest-ww.telesign.com'),
+        /** Use case ID for Verify SMS (e.g. BACS = account creation, BACF = bulk/fraud-sensitive signup). */
+        'ucid' => env('TELESIGN_UCID', 'BACS'),
+    ],
+
     'sms' => [
-        // twilio | http | log
+        // twilio | telesign | http | log
         'driver' => env('SMS_DRIVER', 'twilio'),
+        /**
+         * 6-digit code = no real SMS (any driver). Leave empty for real Telesign/Twilio.
+         * TWILIO_FAKE_OTP still works for backward compatibility.
+         */
+        'fake_otp' => env('SMS_FAKE_OTP', env('TWILIO_FAKE_OTP')),
         'http' => [
             'url' => env('SMS_HTTP_URL'),
             'api_key' => env('SMS_HTTP_API_KEY'),

@@ -31,6 +31,6 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
-        <env name="TWILIO_FAKE_OTP" value="123456"/>
+        <env name="SMS_FAKE_OTP" value="123456"/>
     </php>
 </phpunit>

@@ -51,10 +51,19 @@ class PhoneVerificationController extends Controller
                 'phone' => [__('Please enter a valid Brunei phone number (+673…).')],
             ]);
         } catch (\RuntimeException $e) {
-            if ($e->getMessage() === 'sms_not_configured') {
-                return response()->json(['message' => __('SMS is not configured.')], 503);
-            }
-            throw $e;
+            return match ($e->getMessage()) {
+                'sms_not_configured' => response()->json(['message' => __('SMS is not configured.')], 503),
+                'telesign_trial_destination' => response()->json([
+                    'message' => __(
+                        'Telesign trial error -10033: this number is not authorized yet. In the portal (Numbers and senders → test numbers) you must complete verification—Telesign texts or calls you a code; enter that code in the portal. Listing the number alone is not enough. Check that your .env Customer ID matches this portal and the app uses the exact same number.'
+                    ),
+                ], 422),
+                'telesign_product_disabled' => response()->json([
+                    'message' => __('SMS Verify is not enabled for this Telesign customer. Enable “SMS Verify” (or contact Telesign support) in your portal, then try again.'),
+                ], 503),
+                'sms_delivery_failed' => response()->json(['message' => __('Unable to send SMS. Try again later.')], 503),
+                default => throw $e,
+            };
         } catch (\Throwable $e) {
             report($e);
 
