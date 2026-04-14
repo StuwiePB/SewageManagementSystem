@@ -24,6 +24,10 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+<<<<<<< HEAD
+=======
+            'username' => null,
+>>>>>>> 3wayfusionn-(use-this)
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

@@ -4,11 +4,26 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+<<<<<<< HEAD
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+=======
+use App\Http\Responses\LoginResponse;
+use App\Http\Responses\RegisterResponse;
+use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
+>>>>>>> 3wayfusionn-(use-this)
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -18,7 +33,12 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+<<<<<<< HEAD
         //
+=======
+        $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
+        $this->app->singleton(RegisterResponseContract::class, RegisterResponse::class);
+>>>>>>> 3wayfusionn-(use-this)
     }
 
     /**
@@ -26,11 +46,38 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+<<<<<<< HEAD
+=======
+        $this->configureAuthentication();
+>>>>>>> 3wayfusionn-(use-this)
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
     }
 
+<<<<<<< HEAD
+=======
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request) {
+            $field = Fortify::username();
+            $user = User::where($field, $request->input($field))->first();
+
+            if (! $user || ! Hash::check($request->input('password'), $user->password)) {
+                return null;
+            }
+
+            if (! ($user->is_active ?? true)) {
+                throw ValidationException::withMessages([
+                    $field => [__('This account has been deactivated. Contact an administrator.')],
+                ]);
+            }
+
+            return $user;
+        });
+    }
+
+>>>>>>> 3wayfusionn-(use-this)
     /**
      * Configure Fortify actions.
      */
@@ -45,11 +92,19 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureViews(): void
     {
+<<<<<<< HEAD
         Fortify::loginView(fn () => view('pages::auth.login'));
         Fortify::verifyEmailView(fn () => view('pages::auth.verify-email'));
         Fortify::twoFactorChallengeView(fn () => view('pages::auth.two-factor-challenge'));
         Fortify::confirmPasswordView(fn () => view('pages::auth.confirm-password'));
         Fortify::registerView(fn () => view('pages::auth.register'));
+=======
+        Fortify::loginView(fn () => view('signup', ['showLogin' => true]));
+        Fortify::verifyEmailView(fn () => view('pages::auth.verify-email'));
+        Fortify::twoFactorChallengeView(fn () => view('pages::auth.two-factor-challenge'));
+        Fortify::confirmPasswordView(fn () => view('pages::auth.confirm-password'));
+        Fortify::registerView(fn () => view('signup'));
+>>>>>>> 3wayfusionn-(use-this)
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
         Fortify::requestPasswordResetLinkView(fn () => view('pages::auth.forgot-password'));
     }

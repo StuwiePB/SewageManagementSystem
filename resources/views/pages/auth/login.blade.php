@@ -2,6 +2,17 @@
     <div class="flex flex-col gap-6">
         <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
 
+<<<<<<< HEAD
+=======
+        @if ($errors->any())
+            <div class="rounded-lg border border-red-500/50 bg-red-500/20 px-3 py-2.5 text-sm text-red-200" style="font-family: Poppins, sans-serif; margin-top: -0.75rem;">
+                @foreach ($errors->all() as $err)
+                    <p class="m-0">{{ $err }}</p>
+                @endforeach
+            </div>
+        @endif
+
+>>>>>>> 3wayfusionn-(use-this)
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
 

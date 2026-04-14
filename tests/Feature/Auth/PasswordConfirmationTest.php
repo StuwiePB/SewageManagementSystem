@@ -1,5 +1,6 @@
 <?php
 
+<<<<<<< HEAD
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
@@ -19,3 +20,14 @@ class PasswordConfirmationTest extends TestCase
         $response->assertOk();
     }
 }
+=======
+use App\Models\User;
+
+test('confirm password screen can be rendered', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('password.confirm'));
+
+    $response->assertOk();
+});
+>>>>>>> 3wayfusionn-(use-this)

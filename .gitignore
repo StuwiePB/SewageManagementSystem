@@ -9,6 +9,12 @@
 .env
 .env.backup
 .env.production
+<<<<<<< HEAD
+=======
+
+# Google Cloud service account keys (same idea as .env — do not commit)
+/storage/app/google/*.json
+>>>>>>> 3wayfusionn-(use-this)
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

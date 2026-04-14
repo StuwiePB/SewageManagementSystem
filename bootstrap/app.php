@@ -8,10 +8,29 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
+<<<<<<< HEAD
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         //
+=======
+        channels: __DIR__.'/../routes/channels.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        // Trust Herd Share / tunnel proxies so session & CSRF work when accessing from phone
+        $middleware->trustProxies(at: '*');
+
+        $middleware->web(append: [
+            \App\Http\Middleware\LogoutBeforeLoginSwitch::class,
+            \App\Http\Middleware\EnsureAccountIsActive::class,
+            \App\Http\Middleware\SetLocale::class,
+        ]);
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'customer.name' => \App\Http\Middleware\EnsureCustomerNameInUrl::class,
+        ]);
+>>>>>>> 3wayfusionn-(use-this)
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

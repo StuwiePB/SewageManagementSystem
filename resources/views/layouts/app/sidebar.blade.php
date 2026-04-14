@@ -30,14 +30,21 @@
                 </flux:sidebar.item>
             </flux:sidebar.nav>
 
+<<<<<<< HEAD
             @auth
                 <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
             @endauth
+=======
+            <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+>>>>>>> 3wayfusionn-(use-this)
         </flux:sidebar>
 
 
         <!-- Mobile User Menu -->
+<<<<<<< HEAD
         @auth
+=======
+>>>>>>> 3wayfusionn-(use-this)
         <flux:header class="lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
@@ -91,7 +98,10 @@
                 </flux:menu>
             </flux:dropdown>
         </flux:header>
+<<<<<<< HEAD
         @endauth
+=======
+>>>>>>> 3wayfusionn-(use-this)
 
         {{ $slot }}
 

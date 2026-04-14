@@ -57,6 +57,7 @@ jobs:
         run: npm run build
 
       - name: Run Tests
+<<<<<<< HEAD
         run: ./vendor/bin/phpunit
 
       - name: Set Directory Permissions
@@ -77,3 +78,6 @@ jobs:
           php artisan config:clear
           php artisan cache:clear
 
+=======
+        run: ./vendor/bin/pest
+>>>>>>> 3wayfusionn-(use-this)

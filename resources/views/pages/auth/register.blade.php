@@ -27,7 +27,11 @@
                 type="email"
                 required
                 autocomplete="email"
+<<<<<<< HEAD
                 placeholder="email@example.com"
+=======
+                placeholder="you@example.com"
+>>>>>>> 3wayfusionn-(use-this)
             />
 
             <!-- Password -->

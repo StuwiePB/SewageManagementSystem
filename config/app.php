@@ -13,7 +13,11 @@ return [
     |
     */
 
+<<<<<<< HEAD
     'name' => env('APP_NAME', 'Laravel'),
+=======
+    'name' => env('APP_NAME', 'BruDMS'),
+>>>>>>> 3wayfusionn-(use-this)
 
     /*
     |--------------------------------------------------------------------------

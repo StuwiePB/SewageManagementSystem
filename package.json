@@ -4,14 +4,26 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+<<<<<<< HEAD
         "dev": "vite"
+=======
+        "dev": "concurrently -n vite,reverb -c cyan,magenta \"vite\" \"php artisan reverb:start\""
+>>>>>>> 3wayfusionn-(use-this)
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.1.11",
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.4",
+<<<<<<< HEAD
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0",
+=======
+        "chart.js": "^4.5.1",
+        "concurrently": "^9.0.1",
+        "laravel-echo": "^2.3.1",
+        "laravel-vite-plugin": "^2.0",
+        "pusher-js": "^8.4.3",
+>>>>>>> 3wayfusionn-(use-this)
         "tailwindcss": "^4.0.7",
         "vite": "^7.0.4"
     },

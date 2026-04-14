@@ -1,5 +1,6 @@
 <?php
 
+<<<<<<< HEAD
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,3 +17,10 @@ class ExampleTest extends TestCase
         $response->assertOk();
     }
 }
+=======
+test('returns a successful response', function () {
+    $response = $this->get(route('home'));
+
+    $response->assertOk();
+});
+>>>>>>> 3wayfusionn-(use-this)
