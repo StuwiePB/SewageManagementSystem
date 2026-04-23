@@ -25,7 +25,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'username',
+        'staffname',
         'name',
         'email',
         'phone',
@@ -148,4 +148,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(SupportMessage::class);
     }
+
 }

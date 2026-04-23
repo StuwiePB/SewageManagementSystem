@@ -21,20 +21,29 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         Validator::make($input, [
-            ...$this->profileRules(),
-            'email' => [
+            'name' => $this->nameRules(),
+            'phone' => [
                 'required',
                 'string',
-                'email',
-                'max:255',
+                'max:13',
+                'regex:/^\+673\s\d{3}\s\d{4}$/',
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
         ])->validate();
 
+        $inputPhone = (string) ($input['phone'] ?? '');
+        $phoneDigits = preg_replace('/\D+/', '', $inputPhone);
+        if (str_starts_with($phoneDigits, '673')) {
+            $phoneDigits = substr($phoneDigits, 3);
+        }
+        $phoneDigits = substr($phoneDigits ?: '', 0, 7);
+        $normalizedPhone = '+673 '.substr($phoneDigits, 0, 3).' '.substr($phoneDigits, 3, 4);
+
         $user = User::create([
             'name' => $input['name'],
-            'email' => $input['email'],
+            'email' => null,
+            'phone' => $normalizedPhone,
             'password' => $input['password'],
             'role' => User::ROLE_CUSTOMER,
         ]);

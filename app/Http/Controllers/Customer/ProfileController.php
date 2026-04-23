@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
 
 class ProfileController extends Controller
@@ -59,6 +61,7 @@ class ProfileController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($request->user()->id)],
         ];
         if ($request->hasFile('photo')) {
             $rules['photo'] = ['image', 'max:2048', File::types(['jpg', 'jpeg', 'png', 'gif', 'webp'])];
@@ -78,12 +81,14 @@ class ProfileController extends Controller
             $user->update([
                 'name' => $request->name,
                 'phone' => $request->phone ?: null,
+                'email' => $request->filled('email') ? $request->email : null,
                 'profile_photo_path' => $path,
             ]);
         } else {
             $user->update([
                 'name' => $request->name,
                 'phone' => $request->phone ?: null,
+                'email' => $request->filled('email') ? $request->email : null,
             ]);
         }
 

@@ -95,9 +95,9 @@
             <form method="POST" action="{{ route('admin.staff.users.store') }}">
                 @csrf
                 <div class="form-group">
-                    <label for="username">Username (unique)</label>
-                    <input type="text" name="username" id="username" value="{{ old('username') }}" required pattern="[a-zA-Z0-9._-]+" maxlength="50">
-                    @error('username') <div class="text-danger">{{ $message }}</div> @enderror
+                    <label for="staffname">Staffname (unique)</label>
+                    <input type="text" name="staffname" id="staffname" value="{{ old('staffname') }}" required pattern="[a-zA-Z0-9._-]+" maxlength="50">
+                    @error('staffname') <div class="text-danger">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
                     <label for="name">Name</label>

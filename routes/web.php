@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminWorkOrderController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\Operations\StatisticsController as OperationsStatisticsController;
 use App\Http\Controllers\OperationsController;
+use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\WorkOrderController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +69,11 @@ Route::get('/auth/session', function () {
         ],
     ]);
 })->name('auth.session');
+
+Route::post('/password/check-customer-email', [PasswordPanelController::class, 'checkCustomerEmail'])
+    ->name('password.check-customer-email');
+Route::post('/password/update-customer', [PasswordPanelController::class, 'updateCustomerPassword'])
+    ->name('password.update-customer');
 
 Route::get('/locale/{lang}', function (string $lang) {
     if (in_array($lang, ['en', 'ms'], true)) {

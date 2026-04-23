@@ -250,6 +250,22 @@
             if (e.persisted) window.location.reload();
         });
     </script>
+    <script>
+        (function () {
+            try {
+                [
+                    'rpicture',
+                    'rproblem_photo',
+                    'rproblem_choice',
+                    'rproblem_address',
+                    'rproblem_lat',
+                    'rproblem_lng',
+                    'rproblem_severity',
+                    'rproblem_description'
+                ].forEach(function (k) { sessionStorage.removeItem(k); });
+            } catch (e) {}
+        })();
+    </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     @unless($guestMode ?? false)
     {{-- Request location permission as soon as dashboard loads so browser prompts user --}}
@@ -257,12 +273,7 @@
         (function() {
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(
-                function(pos) {
-                    try {
-                        sessionStorage.setItem('rproblem_lat', String(pos.coords.latitude));
-                        sessionStorage.setItem('rproblem_lng', String(pos.coords.longitude));
-                    } catch (e) {}
-                },
+                function() {},
                 function() {},
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
             );

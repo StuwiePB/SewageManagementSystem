@@ -57,7 +57,7 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Username</th>
+                        <th>Staffname</th>
                         <th>Email</th>
                         <th>Role</th>
                         <th style="width: 5rem;"></th>
@@ -72,7 +72,7 @@
                                     <span class="badge" style="margin-left: 0.35rem; background: rgba(255, 91, 91, 0.2); color: var(--accent-red); font-size: 0.65rem;">Inactive</span>
                                 @endif
                             </td>
-                            <td class="cell-muted">{{ $user->username ?? '—' }}</td>
+                            <td class="cell-muted">{{ $user->staffname ?? '—' }}</td>
                             <td>{{ $user->email }}</td>
                             <td>
                                 @if($user->hasRole(\App\Models\User::ROLE_SUPER_ADMIN))
@@ -106,7 +106,7 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Username</th>
+                        <th>Staffname</th>
                         <th>Email</th>
                         <th>Crew</th>
                         <th style="width: 5rem;"></th>
@@ -121,7 +121,7 @@
                                     <span class="badge" style="margin-left: 0.35rem; background: rgba(255, 91, 91, 0.2); color: var(--accent-red); font-size: 0.65rem;">Inactive</span>
                                 @endif
                             </td>
-                            <td class="cell-muted">{{ $user->username ?? '—' }}</td>
+                            <td class="cell-muted">{{ $user->staffname ?? '—' }}</td>
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->crew?->name ?? '—' }}</td>
                             <td>

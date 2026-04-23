@@ -464,7 +464,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'role' => ['required', Rule::in([User::ROLE_ADMIN, User::ROLE_OPERATOR])],
-            'username' => ['required', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._-]+$/', Rule::unique('users', 'username')],
+            'staffname' => ['required', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._-]+$/', Rule::unique('users', 'staffname')],
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -493,7 +493,7 @@ class AdminController extends Controller
         $crewId = $role === User::ROLE_OPERATOR ? ($validated['crew_id'] ?? null) : null;
 
         $user = User::create([
-            'username' => $validated['username'],
+            'staffname' => $validated['staffname'],
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),

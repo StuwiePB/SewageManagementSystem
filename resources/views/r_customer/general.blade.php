@@ -37,7 +37,7 @@
             @endif
             <div style="flex: 1; min-width: 0; margin-top: -12px;">
                 <p style="color: white; font-size: 13px; font-weight: 600; font-family: Poppins, sans-serif; margin: 0; line-height: 1.3;">{{ $user->name ?? 'User' }}</p>
-                <p style="color: rgba(255, 255, 255, 0.6); font-size: 9px; font-weight: 300; font-family: Poppins, sans-serif; margin: 0; line-height: 1.3;">{{ $user->email ?? '' }}</p>
+                <p style="color: rgba(255, 255, 255, 0.6); font-size: 9px; font-weight: 300; font-family: Poppins, sans-serif; margin: 2px 0 0 0; line-height: 1.3;">+673 134 1341</p>
             </div>
             <a href="{{ route('customer.profilesettings', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="position: absolute; bottom: 12px; right: 16px; padding: 6px 12px; border-radius: 9999px; border: 0.7px solid rgba(255, 255, 255, 0.21); background: rgba(255, 255, 255, 0.08); color: white; font-size: 11px; font-weight: 500; font-family: Poppins, sans-serif; cursor: pointer; text-decoration: none;">{{ __('Edit Profile') }}</a>
         </div>

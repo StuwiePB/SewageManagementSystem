@@ -2,7 +2,7 @@
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <style>
-            #username-input::placeholder, #phone-input::placeholder { color: rgba(255, 255, 255, 0.5); }
+            #username-input::placeholder, #phone-input::placeholder, #email-input::placeholder { color: rgba(255, 255, 255, 0.5); }
             #save-profile-btn { background: rgba(66, 106, 120, 0.35) !important; border: 2px solid rgba(255, 255, 255, 0.25) !important; color: rgba(255, 255, 255, 0.65) !important; cursor: not-allowed; transition: transform 0.1s ease; }
             #save-profile-btn.has-changes { background: #22d3ee !important; border: none !important; color: black !important; cursor: pointer; }
             .bottom-bar-btn { transition: transform 0.1s ease; }
@@ -60,9 +60,11 @@
                 @csrf
                 <input type="file" id="profile-photo-input" name="photo" accept="image/*" style="display: none;">
                 <label for="username-input" style="display: block; color: rgba(255, 255, 255, 0.6); font-size: 11px; font-weight: 400; font-family: Poppins, sans-serif; margin-bottom: 6px; margin-left: 10px;">Username</label>
-                <input type="text" id="username-input" name="name" value="{{ old('name', $user->name ?? '') }}" placeholder="Muhammad Ali" style="width: 100%; height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); color: white; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box;">
+                <input type="text" id="username-input" name="name" value="{{ old('name', $user->name ?? '') }}" placeholder="Muhammad Ali" style="width: 100%; height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(66, 106, 120, 0.16); border: 1.2px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); color: white; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box;">
                 <label for="phone-input" style="display: block; color: rgba(255, 255, 255, 0.6); font-size: 11px; font-weight: 400; font-family: Poppins, sans-serif; margin-bottom: 6px; margin-left: 10px; margin-top: 10px;">Phone Number</label>
-                <input type="tel" id="phone-input" name="phone" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 012 3456" style="width: 100%; height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); color: white; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box;">
+                <input type="tel" id="phone-input" name="phone" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 012 3456" style="width: 100%; height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(66, 106, 120, 0.16); border: 1.2px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); color: white; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box;">
+                <label for="email-input" style="display: block; color: rgba(255, 255, 255, 0.6); font-size: 11px; font-weight: 400; font-family: Poppins, sans-serif; margin-bottom: 6px; margin-left: 10px; margin-top: 10px;">Email</label>
+                <input type="email" id="email-input" name="email" value="{{ old('email', $user->email ?? '') }}" placeholder="you@example.com" style="width: 100%; height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(66, 106, 120, 0.16); border: 1.2px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); color: white; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 500; outline: none; box-sizing: border-box;">
             </form>
         </div>
     </div>
@@ -78,17 +80,20 @@
         (function() {
             var nameInput = document.getElementById('username-input');
             var phoneInput = document.getElementById('phone-input');
+            var emailInput = document.getElementById('email-input');
             var photoInput = document.getElementById('profile-photo-input');
             var saveBtn = document.getElementById('save-profile-btn');
             var circle2Camera = document.getElementById('circle-2-camera');
             var circle2Preview = document.getElementById('circle-2-preview');
             var originalName = nameInput.value;
             var originalPhone = phoneInput.value || '';
+            var originalEmail = emailInput.value || '';
             function checkChanges() {
                 var nameChanged = nameInput.value !== originalName;
                 var phoneChanged = (phoneInput.value || '') !== originalPhone;
+                var emailChanged = (emailInput.value || '') !== originalEmail;
                 var photoChanged = photoInput.files && photoInput.files.length > 0;
-                if (nameChanged || phoneChanged || photoChanged) {
+                if (nameChanged || phoneChanged || emailChanged || photoChanged) {
                     saveBtn.classList.add('has-changes');
                     saveBtn.disabled = false;
                 } else {
@@ -100,6 +105,8 @@
             nameInput.addEventListener('change', checkChanges);
             phoneInput.addEventListener('input', checkChanges);
             phoneInput.addEventListener('change', checkChanges);
+            emailInput.addEventListener('input', checkChanges);
+            emailInput.addEventListener('change', checkChanges);
             photoInput.addEventListener('change', function() {
                 if (this.files && this.files.length > 0) {
                     var url = URL.createObjectURL(this.files[0]);

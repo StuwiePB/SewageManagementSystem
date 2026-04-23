@@ -32,8 +32,8 @@
             <p class="info-value">{{ $staffUser->name }}</p>
         </div>
         <div class="detail-row">
-            <p class="info-label">Username</p>
-            <p class="info-value">{{ $staffUser->username ?? '—' }}</p>
+            <p class="info-label">Staffname</p>
+            <p class="info-value">{{ $staffUser->staffname ?? '—' }}</p>
         </div>
         <div class="detail-row">
             <p class="info-label">Email</p>

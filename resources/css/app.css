@@ -45,6 +45,31 @@
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
     }
+
+    a,
+    button,
+    input,
+    textarea,
+    select,
+    [role='button'] {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    a:focus,
+    a:focus-visible,
+    button:focus,
+    button:focus-visible,
+    input:focus,
+    input:focus-visible,
+    textarea:focus,
+    textarea:focus-visible,
+    select:focus,
+    select:focus-visible,
+    [role='button']:focus,
+    [role='button']:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+    }
 }
 
 [data-flux-field]:not(ui-radio, ui-checkbox) {

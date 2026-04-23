@@ -11,7 +11,7 @@ class SuperAdminSeeder extends Seeder
     /**
      * Default super admin (change password after first login).
      *
-     * Username: brudms.root
+     * Staffname: brudms.root
      * Email: superadmin@admin.brudms.jkr.bn
      * Password: override with SUPER_ADMIN_PASSWORD in .env
      */
@@ -22,7 +22,7 @@ class SuperAdminSeeder extends Seeder
         }
 
         $user = User::create([
-            'username' => 'brudms.root',
+            'staffname' => 'brudms.root',
             'name' => 'BruDMS Super Administrator',
             'email' => 'superadmin@admin.brudms.jkr.bn',
             'password' => Hash::make(env('SUPER_ADMIN_PASSWORD', 'Brudms#SuperRoot2026!')),
