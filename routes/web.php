@@ -268,6 +268,7 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         ]);
     })->name('customer.preference');
     Route::get('/{name}/profilesettings', fn () => view('r_customer.profilesettings'))->name('customer.profilesettings');
+    Route::get('/{name}/email-bind-otp', fn () => view('r_customer.email-bind-otp'))->name('customer.email.bind.otp');
     Route::get('/{name}/myhistory', fn () => view('r_customer.myhistory'))->name('customer.myhistory');
     Route::get('/{name}/rproblem', fn () => view('r_customer.rproblem'))->name('customer.rproblem');
     Route::get('/{name}/rpicture', fn () => view('r_customer.rpicture'))->name('customer.rpicture');
@@ -324,6 +325,9 @@ Route::post('/customer/profile/phone', [App\Http\Controllers\Customer\ProfileCon
 
 Route::post('/customer/profile', [App\Http\Controllers\Customer\ProfileController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.update');
+
+Route::post('/customer/profile/bind-email', [App\Http\Controllers\Customer\ProfileController::class, 'bindEmail'])
+    ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.bind-email');
 
 Route::post('/customer/preference', [App\Http\Controllers\Customer\PreferenceController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.preference.update');

@@ -134,6 +134,9 @@
                 #right-panel-code .create-account-header {
                     top: 17% !important;
                 }
+                #right-panel-signup-code .create-account-header {
+                    top: 15% !important;
+                }
                 #right-panel-verified .create-account-header {
                     top: 17% !important;
                 }
@@ -768,6 +771,29 @@
                         <button type="submit" form="signup-form" class="btn-create-account btn-disabled" id="btn-create-account" disabled>{{ __('create_account_btn') }}</button>
                     </div>
                 </div>
+                <div id="right-panel-signup-code" class="right-panel-code right-panel-signup-code">
+                    <div class="create-account-header" style="position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 0.4rem;">
+                        <div class="create-account-text" style="font-family: 'Poppins', sans-serif; font-size: 2.1rem; font-weight: 600; color: #fff; white-space: nowrap;">
+                            Enter your code
+                        </div>
+                        <p class="tagline" style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 0.78rem; font-weight: 400; font-style: italic; color: rgba(255, 255, 255, 0.9); text-align: center;">
+                            "Everybody does, enter your email"
+                        </p>
+                    </div>
+                    <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 32%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
+                        <form id="signup-code-form" class="signup-form" action="#" method="post" onsubmit="return false;">
+                            <div class="code-input-row" id="signup-code-input-row" aria-label="6 digit code">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-2" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-3" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-4" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-5" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-6" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                            </div>
+                            <div class="email-invalid-msg" id="signup-code-invalid-msg" data-msg="Invalid code." aria-live="polite"><span></span></div>
+                        </form>
+                    </div>
+                </div>
                 <div id="right-panel-login" class="right-panel-login{{ request()->is('login') ? ' visible' : '' }}">
                     <div class="create-account-header" style="position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 0.4rem;">
                         <div class="create-account-text" style="font-family: 'Poppins', sans-serif; font-size: 2.1rem; font-weight: 600; color: #fff; white-space: nowrap;">
@@ -879,6 +905,7 @@
                         </form>
                         <div class="password-match-msg" id="verified-password-match-msg" data-msg="{{ __('validation_password_match') }}" aria-live="polite"><span></span></div>
                         <div class="email-invalid-msg" id="verified-reset-msg" aria-live="polite"><span></span></div>
+                        <div style="height: 1.4rem;"></div>
                         <button type="submit" form="change-password-form" class="btn-create-account btn-disabled" id="btn-confirm" disabled>CONFIRM</button>
                     </div>
                 </div>
@@ -904,7 +931,7 @@
                         return;
                     }
 
-                    var activePanel = document.querySelector('.right-panel-signup:not(.hidden), .right-panel-login.visible, .right-panel-forgot.visible, .right-panel-code.visible, .right-panel-verified.visible');
+                    var activePanel = document.querySelector('.right-panel-signup:not(.hidden), .right-panel-signup-code.visible, .right-panel-login.visible, .right-panel-forgot.visible, .right-panel-code.visible, .right-panel-verified.visible');
                     if (!activePanel) return;
 
                     var anchor = null;
@@ -927,6 +954,8 @@
                             anchor = activePanel.querySelector('#btn-create-account');
                         } else if (activePanel.id === 'right-panel-login') {
                             anchor = activePanel.querySelector('#btn-login');
+                        } else if (activePanel.id === 'right-panel-signup-code') {
+                            anchor = activePanel.querySelector('.code-input-row');
                         } else if (activePanel.id === 'right-panel-forgot') {
                             anchor = activePanel.querySelector('#btn-forgot');
                         } else if (activePanel.id === 'right-panel-code') {
@@ -977,6 +1006,7 @@
 
             (function() {
                 var signupPanel = document.getElementById('right-panel-signup');
+                var signupCodePanel = document.getElementById('right-panel-signup-code');
                 var loginPanel = document.getElementById('right-panel-login');
                 var forgotPanel = document.getElementById('right-panel-forgot');
                 var codePanel = document.getElementById('right-panel-code');
@@ -984,6 +1014,7 @@
                 var showLogin = document.getElementById('show-login');
                 var showSignup = document.getElementById('show-signup');
                 var showForgot = document.getElementById('show-forgot');
+                var showSignupCodeFromSignup = document.getElementById('btn-create-account');
                 var showLoginFromForgot = document.getElementById('show-login-from-forgot');
                 var showCodeFromForgot = document.getElementById('btn-forgot');
                 var showVerifiedFromCode = document.getElementById('show-verified-from-code');
@@ -1064,6 +1095,10 @@
                     bindPanelSwitch(showForgot, loginPanel, forgotPanel, '{{ route("password.request") }}');
                 }
 
+                function goToSignupCode() {
+                    bindPanelSwitch(showSignupCodeFromSignup, signupPanel, signupCodePanel, null);
+                }
+
                 function goToCode() {
                     bindPanelSwitch(showCodeFromForgot, forgotPanel, codePanel, null);
                 }
@@ -1081,6 +1116,7 @@
                     var path = window.location.pathname;
                     if (path === '{{ route("home", [], false) }}') {
                         hidePanel(loginPanel);
+                        hidePanel(signupCodePanel);
                         hidePanel(forgotPanel);
                         hidePanel(codePanel);
                         hidePanel(verifiedPanel);
@@ -1090,6 +1126,7 @@
                     if (path === '{{ route("password.request", [], false) }}') {
                         hidePanel(signupPanel);
                         hidePanel(loginPanel);
+                        hidePanel(signupCodePanel);
                         hidePanel(codePanel);
                         hidePanel(verifiedPanel);
                         showPanel(forgotPanel);
@@ -1098,6 +1135,7 @@
                     if (path === '{{ route("login", [], false) }}') {
                         hidePanel(signupPanel);
                         hidePanel(forgotPanel);
+                        hidePanel(signupCodePanel);
                         hidePanel(codePanel);
                         hidePanel(verifiedPanel);
                         showPanel(loginPanel);
@@ -1107,18 +1145,21 @@
                 if (window.location.pathname === '{{ route("password.request", [], false) }}') {
                     hidePanel(signupPanel);
                     hidePanel(loginPanel);
+                    hidePanel(signupCodePanel);
                     hidePanel(codePanel);
                     hidePanel(verifiedPanel);
                     showPanel(forgotPanel);
                 } else if (window.location.pathname === '{{ route("login", [], false) }}') {
                     hidePanel(signupPanel);
                     hidePanel(forgotPanel);
+                    hidePanel(signupCodePanel);
                     hidePanel(codePanel);
                     hidePanel(verifiedPanel);
                     showPanel(loginPanel);
                 } else {
                     hidePanel(loginPanel);
                     hidePanel(forgotPanel);
+                    hidePanel(signupCodePanel);
                     hidePanel(codePanel);
                     hidePanel(verifiedPanel);
                     showPanel(signupPanel);
@@ -1127,6 +1168,7 @@
                 goToLogin();
                 goToSignup();
                 goToForgot();
+                goToSignupCode();
                 goToCode();
                 goToVerified();
 
@@ -1383,7 +1425,90 @@
             })();
 
             (function() {
-                var codeDigits = Array.prototype.slice.call(document.querySelectorAll('.code-digit'));
+                var codeDigits = Array.prototype.slice.call(document.querySelectorAll('.signup-code-digit'));
+                var codeInvalidEl = document.getElementById('signup-code-invalid-msg');
+                var codeInvalidSpan = codeInvalidEl ? codeInvalidEl.querySelector('span') : null;
+                var codeInvalidText = codeInvalidEl ? codeInvalidEl.getAttribute('data-msg') : '';
+                var signupForm = document.getElementById('signup-form');
+                var DUMMY_SIGNUP_CODE = '251206';
+
+                function sanitizeDigit(value) {
+                    return (value || '').replace(/\D/g, '').slice(0, 1);
+                }
+
+                function currentCode() {
+                    return codeDigits.map(function(input) {
+                        return sanitizeDigit(input.value);
+                    }).join('');
+                }
+
+                function clearCodeError() {
+                    if (codeInvalidSpan) { codeInvalidSpan.textContent = ''; }
+                    if (codeInvalidEl) { codeInvalidEl.classList.remove('visible'); }
+                }
+
+                function showCodeError() {
+                    if (codeInvalidSpan) { codeInvalidSpan.textContent = codeInvalidText; }
+                    if (codeInvalidEl) { codeInvalidEl.classList.add('visible'); }
+                }
+
+                function trySubmitWithDummyCode() {
+                    if (codeDigits.length !== 6) return;
+                    var code = currentCode();
+                    if (code.length < 6) return;
+                    if (code === DUMMY_SIGNUP_CODE) {
+                        clearCodeError();
+                        if (signupForm) signupForm.submit();
+                        return;
+                    }
+                    showCodeError();
+                }
+
+                codeDigits.forEach(function(input, index) {
+                    input.addEventListener('input', function() {
+                        this.value = sanitizeDigit(this.value);
+                        clearCodeError();
+                        if (this.value && index < codeDigits.length - 1) {
+                            codeDigits[index + 1].focus();
+                        }
+                        trySubmitWithDummyCode();
+                    });
+
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Backspace' && !this.value && index > 0) {
+                            codeDigits[index - 1].focus();
+                        }
+                        if (e.key === 'ArrowLeft' && index > 0) {
+                            e.preventDefault();
+                            codeDigits[index - 1].focus();
+                        }
+                        if (e.key === 'ArrowRight' && index < codeDigits.length - 1) {
+                            e.preventDefault();
+                            codeDigits[index + 1].focus();
+                        }
+                    });
+                });
+
+                var codeInputRow = document.getElementById('signup-code-input-row');
+                if (codeInputRow) {
+                    codeInputRow.addEventListener('paste', function(e) {
+                        var pasted = (e.clipboardData && e.clipboardData.getData('text')) || '';
+                        var digits = pasted.replace(/\D/g, '').slice(0, codeDigits.length).split('');
+                        if (!digits.length) return;
+                        e.preventDefault();
+                        codeDigits.forEach(function(input, index) {
+                            input.value = digits[index] || '';
+                        });
+                        var focusIndex = Math.min(digits.length, codeDigits.length - 1);
+                        codeDigits[focusIndex].focus();
+                        clearCodeError();
+                        trySubmitWithDummyCode();
+                    });
+                }
+            })();
+
+            (function() {
+                var codeDigits = Array.prototype.slice.call(document.querySelectorAll('#code-input-row .code-digit'));
                 var codeInvalidEl = document.getElementById('code-invalid-msg');
                 var codeInvalidSpan = codeInvalidEl ? codeInvalidEl.querySelector('span') : null;
                 var codeInvalidText = codeInvalidEl ? codeInvalidEl.getAttribute('data-msg') : '';

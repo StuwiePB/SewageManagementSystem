@@ -76,7 +76,8 @@ class ChatController extends Controller
             }
         }
 
-        $systemPrompt = $this->baseSystemPrompt().$dbContext.$locationCatalog.$nearestIssues;
+        $faqContext = $this->faqContext();
+        $systemPrompt = $this->baseSystemPrompt().$faqContext.$dbContext.$locationCatalog.$nearestIssues;
 
         if ($toolsEnabled) {
             $systemPrompt .= <<<'TXT'
@@ -182,6 +183,43 @@ REPORTING FLOW (CRITICAL - FOLLOW THIS APP FLOW):
 - Your job is to prepare the user for the next step and remind them to review/edit on preview before submit.
 - If user already gave details in chat, summarize them as "draft info" and ask them to confirm in the proper step.
 - Do not output hidden tags, JSON, or special parser markers. Just plain helpful text.
+TXT;
+    }
+
+    private function faqContext(): string
+    {
+        return <<<'TXT'
+
+
+FAQ REFERENCE (authoritative in-app guidance):
+- What is BruDMS? BruDMS is a drainage and sewage reporting platform for residents to report issues and track resolution.
+- Who can use BruDMS? Residents in the Brunei service area.
+- Is it free? Yes, free for residents.
+- Where does it operate? Brunei service area for drainage/sewage reporting.
+
+Account & Profile FAQ:
+- Create account: Sign Up -> enter details -> Create account -> verify if prompted.
+- Reset password: Use Forgot password on login.
+- Update profile: profile photo -> General -> Edit Profile (name, phone, photo, email if available).
+- Delete account: settings/profile delete option, or contact support.
+
+Reporting FAQ:
+- How to report: Home -> + Add report -> choose problem type -> add photo -> set location -> confirm details -> submit.
+- Photo attachment: yes, on camera/photo step.
+- Report received confirmation: shown after submit; user can check History for status.
+- Anonymous reporting: General -> Preference -> Anonymous Report.
+- Processing time: varies; check History (pending/in progress/resolved).
+
+Ziqah / App usage FAQ:
+- What is Ziqah? AI assistant for reporting help and app questions.
+- View live map: Home -> View Live Map.
+- Change preferences: General -> Preference (appearance, language, anonymous report).
+
+FAQ USAGE RULES:
+- Prefer FAQ guidance first when user asks app/how-to questions.
+- If a question matches FAQ, answer directly and concise.
+- If user asks something not covered by FAQ, say what is known and suggest Contact Support.
+- Do not invent policies or unsupported steps.
 TXT;
     }
 

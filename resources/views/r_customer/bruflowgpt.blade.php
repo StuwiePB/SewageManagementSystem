@@ -110,32 +110,31 @@
                 font-weight: 300;
                 animation: blink 1s ease-in-out infinite;
             }
-            .msg-action-wrap {
-                align-self: flex-start;
-                margin-top: -6px;
-                margin-bottom: 2px;
-            }
             .msg-action-btn {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 height: 34px;
                 padding: 0 14px;
-                border-radius: 9999px;
-                background: rgba(4, 188, 255, 0.18);
-                outline: 1.4px solid rgba(4, 188, 255, 0.55);
-                color: #bfefff;
+                border-radius: 10px;
+                background: #04BCFF;
+                color: #0a1628;
                 text-decoration: none;
                 font-size: 11px;
                 font-family: Poppins, sans-serif;
-                font-weight: 600;
-                transition: transform 0.1s ease, background 0.2s ease;
+                font-weight: 700;
+                box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);
+                transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
+                width: 100%;
+                margin-top: 10px;
+                box-sizing: border-box;
             }
             .msg-action-btn:active {
                 transform: scale(0.96);
             }
             .msg-action-btn:hover {
-                background: rgba(4, 188, 255, 0.26);
+                background: #2acbff;
+                box-shadow: 0 3px 10px rgba(4, 188, 255, 0.38);
             }
             @keyframes msgPop {
                 from { opacity: 0; transform: translateY(8px); }
@@ -302,14 +301,11 @@
             chatBox.appendChild(botMsg);
 
             if (showReportButton) {
-                var wrap = document.createElement('div');
-                wrap.className = 'msg-action-wrap';
                 var a = document.createElement('a');
                 a.className = 'msg-action-btn';
                 a.href = reportUrl;
                 a.textContent = 'Go to report';
-                wrap.appendChild(a);
-                chatBox.appendChild(wrap);
+                botMsg.appendChild(a);
             }
             chatBox.scrollTop = chatBox.scrollHeight;
         }
