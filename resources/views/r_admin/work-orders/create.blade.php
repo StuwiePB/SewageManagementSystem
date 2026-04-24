@@ -26,7 +26,7 @@
                     </option>
                 @endforeach
             </select>
-            <p class="info-value-small" style="margin: 0.25rem 0 0;">Only shows reports with "new" status</p>
+            <p class="info-value-small" style="margin: 0.25rem 0 0;">Only shows reports with "pending" status</p>
         </div>
 
         <div class="form-group">

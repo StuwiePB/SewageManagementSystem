@@ -30,7 +30,10 @@ Route::get('/explore', function () {
     }
 
     return view('r_customer.dashboard', [
-        'reports' => \App\Models\Report::with('user')->latest()->get(),
+        'reports' => \App\Models\Report::with('user')
+            ->whereHas('operationsReport')
+            ->latest()
+            ->get(),
         'guestMode' => true,
     ]);
 })->name('guest.explore');
@@ -251,7 +254,19 @@ Route::get('/debug-role', function () {
 
 Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group(function () {
     Route::get('/{name}', fn () => redirect()->route('customer.dashboard', ['name' => request()->route('name')]));
-    Route::get('/{name}/dashboard', fn () => view('r_customer.dashboard', ['reports' => \App\Models\Report::with('user')->latest()->get()]))->name('customer.dashboard');
+    Route::get('/{name}/dashboard', function () {
+        $user = auth()->user();
+
+        return view('r_customer.dashboard', [
+            'reports' => \App\Models\Report::with(['user', 'operationsReport'])
+                ->where(function ($q) use ($user) {
+                    $q->whereHas('operationsReport')
+                        ->orWhere('user_id', $user->id);
+                })
+                ->latest()
+                ->get(),
+        ]);
+    })->name('customer.dashboard');
     Route::get('/{name}/brudmsgpt', fn () => view('r_customer.bruflowgpt'))->name('customer.brudmsgpt');
     Route::get('/{name}/bruflowgpt', fn () => redirect()->route('customer.brudmsgpt', ['name' => request()->route('name')]));
     Route::get('/{name}/general', fn () => view('r_customer.general'))->name('customer.general');

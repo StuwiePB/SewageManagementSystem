@@ -57,6 +57,31 @@
     @endunless
 
     @fluxScripts
+    <script>
+        (function () {
+            function clearPersistedAiChats() {
+                try {
+                    for (var i = localStorage.length - 1; i >= 0; i--) {
+                        var key = localStorage.key(i);
+                        if (!key) continue;
+                        if (key.indexOf('brudms_ai_chat_') === 0) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            document.addEventListener('submit', function (e) {
+                var form = e.target;
+                if (!form || form.tagName !== 'FORM') return;
+                var action = (form.getAttribute('action') || '').toLowerCase();
+                if (!action) return;
+                if (action.indexOf('/logout') !== -1) {
+                    clearPersistedAiChats();
+                }
+            }, true);
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>

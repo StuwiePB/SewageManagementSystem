@@ -19,7 +19,7 @@
             <label class="form-label" for="status">Status</label>
             <select id="status" name="status" class="form-control">
                 <option value="">All Statuses</option>
-                <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>New</option>
+                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                 <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                 <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
                 <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
@@ -29,10 +29,8 @@
             <label class="form-label" for="severity">Severity</label>
             <select id="severity" name="severity" class="form-control">
                 <option value="">All Severities</option>
-                <option value="low" {{ request('severity') == 'low' ? 'selected' : '' }}>Low</option>
-                <option value="medium" {{ request('severity') == 'medium' ? 'selected' : '' }}>Medium</option>
-                <option value="high" {{ request('severity') == 'high' ? 'selected' : '' }}>High</option>
-                <option value="critical" {{ request('severity') == 'critical' ? 'selected' : '' }}>Critical</option>
+                <option value="urgent" {{ request('severity') == 'urgent' ? 'selected' : '' }}>Urgent</option>
+                <option value="nonurgent" {{ request('severity') == 'nonurgent' ? 'selected' : '' }}>Non-Urgent</option>
             </select>
         </div>
         <div class="form-group">
@@ -86,14 +84,14 @@
                         <td>{{ $report->mukim_display ?? '—' }}</td>
                         <td>{{ $report->location_address }}</td>
                         <td>
-                            <span class="badge badge-{{ $report->severity === 'critical' ? 'critical' : ($report->severity === 'high' ? 'high' : ($report->severity === 'medium' ? 'medium' : 'low')) }}">
-                                {{ ucfirst($report->severity) }}
+                            <span class="badge badge-{{ $report->severity === 'urgent' ? 'high' : 'low' }}">
+                                {{ $report->severity === 'urgent' ? 'Urgent' : 'Non-Urgent' }}
                             </span>
                         </td>
                         <td>
                             @php
                                 $reportStatusClass = match($report->status) {
-                                    'new' => 'badge-report-new',
+                                    'pending' => 'badge-report-new',
                                     'in_progress' => 'badge-report-progress',
                                     'resolved' => 'badge-report-resolved',
                                     'closed' => 'badge-report-closed',

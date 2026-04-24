@@ -11,8 +11,8 @@ class OperationsController extends Controller
 {
     public function dashboard()
     {
-        $activeIncidents = OperationsReport::whereIn('status', ['new', 'in_progress'])->count();
-        $previousActiveIncidents = OperationsReport::whereIn('status', ['new', 'in_progress'])
+        $activeIncidents = OperationsReport::whereIn('status', ['pending', 'in_progress'])->count();
+        $previousActiveIncidents = OperationsReport::whereIn('status', ['pending', 'in_progress'])
             ->whereDate('created_at', '<', now()->subDay())
             ->count();
         $incidentChange = $previousActiveIncidents > 0
@@ -114,7 +114,7 @@ class OperationsController extends Controller
     {
         $reports = OperationsReport::whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->whereIn('status', ['new', 'in_progress'])
+            ->whereIn('status', ['pending', 'in_progress'])
             ->get();
 
         $workOrders = WorkOrder::whereNotNull('latitude')

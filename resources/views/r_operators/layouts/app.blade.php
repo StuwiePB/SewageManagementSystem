@@ -268,7 +268,7 @@
         .badge-status-teal { background: rgba(34, 211, 238, 0.25); color: #22d3ee; }
         .badge-status-green { background: rgba(86, 255, 139, 0.2); color: var(--accent-green); }
         .badge-status-red { background: rgba(255, 91, 91, 0.25); color: var(--accent-red); }
-        .badge-report-new { background: rgba(106, 150, 255, 0.2); color: var(--accent-blue); }
+        .badge-report-new { background: rgba(255, 91, 91, 0.25); color: var(--accent-red); }
         .badge-report-progress { background: rgba(255, 165, 0, 0.2); color: #FFA500; }
         .badge-report-resolved { background: rgba(86, 255, 139, 0.2); color: var(--accent-green); }
         .badge-report-closed { background: rgba(106, 150, 255, 0.1); color: var(--text-secondary); }

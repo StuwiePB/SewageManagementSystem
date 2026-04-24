@@ -27,8 +27,8 @@ class StatisticsSeeder extends Seeder
         ];
 
         $issueTypes = ['blockage', 'overflow', 'odor', 'maintenance', 'other'];
-        $severities = ['low', 'medium', 'high', 'critical'];
-        $reportStatuses = ['new', 'new', 'in_progress', 'in_progress', 'resolved', 'resolved', 'resolved'];
+        $severities = ['urgent', 'nonurgent'];
+        $reportStatuses = ['pending', 'pending', 'in_progress', 'in_progress', 'resolved', 'resolved', 'resolved'];
 
         $locationsByDistrict = [
             'brunei-muara' => [

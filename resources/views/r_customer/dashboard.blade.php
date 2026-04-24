@@ -141,9 +141,25 @@
                 $statusColors = ['pending' => '#ff0000', 'in_progress' => '#FFAE00', 'under_review' => '#FFAE00', 'resolved' => '#00FF26'];
             @endphp
             @foreach($reports ?? [] as $i => $report)
+            @php
+                $isOwner = !$guestMode && $user && $report->user_id === $user->id;
+                $isNotSentToOperations = !($report->operationsReport ?? null);
+                $isOwnerUnderReview = $isNotSentToOperations && $isOwner;
+                if ($isNotSentToOperations && !$isOwner) {
+                    continue;
+                }
+            @endphp
             <div class="incident-card" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
                 @if($report->photo_path)
-                <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; border-top-left-radius: 9px; border-top-right-radius: 9px; outline: 0.7px solid rgba(255, 255, 255, 0.21);" />
+                <div style="position: relative; width: 100%; height: 75px; min-width: 0; border-top-left-radius: 9px; border-top-right-radius: 9px; overflow: hidden; outline: 0.7px solid rgba(255, 255, 255, 0.21);">
+                    <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; filter: {{ $isOwnerUnderReview ? 'brightness(0.42) blur(1.6px)' : 'none' }};" />
+                    @if($isOwnerUnderReview)
+                    <div style="position: absolute; inset: 0; background: rgba(6, 10, 22, 0.38); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px;">
+                        <img src="{{ asset('images/Vectors/dashboard_pending.svg') }}" alt="" style="width: 36px; height: 36px; object-fit: contain; transform: translateY(3px);" />
+                        <span style="color: rgba(255,255,255,0.72); font-size: 7px; font-weight: 300; font-family: Poppins, sans-serif; text-align: center; line-height: 1.25; transform: translateY(6px);">Currently under review</span>
+                    </div>
+                    @endif
+                </div>
                 @else
                 <div style="width: 100%; height: 75px; background: rgba(139, 105, 20, 0.5); border-top-left-radius: 9px; border-top-right-radius: 9px; outline: 0.7px solid rgba(255, 255, 255, 0.21);"></div>
                 @endif
@@ -165,7 +181,7 @@
                             <span style="color: rgba(255,255,255,0.6); font-size: 7px; font-weight: 400; font-family: Poppins, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; top: 2px;">{{ $reportUser->name ?? 'Unknown' }}</span>
                         </div>
                         @php $st = $report->status ?? 'pending'; $glowClass = ($st === 'resolved') ? '' : (($st === 'in_progress' || $st === 'under_review') ? ' status-yellow' : ' status-red'); @endphp
-                        <div class="status-dot{{ $glowClass }}" style="width: 6px; height: 6px; border-radius: 9999px; background: {{ $statusColors[$st] ?? '#ff0000' }}; flex-shrink: 0;"></div>
+                        <div class="status-dot{{ $isOwnerUnderReview ? '' : $glowClass }}" style="width: 6px; height: 6px; border-radius: 9999px; background: {{ $isOwnerUnderReview ? '#9CA3AF' : ($statusColors[$st] ?? '#ff0000') }}; flex-shrink: 0; animation: {{ $isOwnerUnderReview ? 'none' : '' }};"></div>
                     </div>
                     </div>
                 </div>

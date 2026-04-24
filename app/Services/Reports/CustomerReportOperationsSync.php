@@ -41,7 +41,7 @@ final class CustomerReportOperationsSync
             'mukim' => null,
             'latitude' => $report->latitude,
             'longitude' => $report->longitude,
-            'status' => 'new',
+            'status' => 'pending',
         ]);
     }
 }

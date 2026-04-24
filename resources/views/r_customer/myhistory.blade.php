@@ -26,7 +26,13 @@
         <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
     </div>
 
-    @php $user = auth()->user(); @endphp
+    @php
+        $user = auth()->user();
+        $visibleReports = $user->reports()
+            ->whereHas('operationsReport')
+            ->latest()
+            ->get();
+    @endphp
 
     {{-- Header: logo + BruDMS + profile photo --}}
     <div style="position: fixed; top: 4vh; left: 20px; right: 20px; z-index: 10; display: flex; align-items: center; justify-content: space-between;">
@@ -68,9 +74,9 @@
     <div style="position: fixed; top: 22vh; left: 22px; right: 22px; bottom: 0; z-index: 10; display: flex; flex-direction: column;">
         <span style="color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; flex-shrink: 0; margin-left: 8px;">My Reports History</span>
         <div class="history-scroll" style="margin-top: 24px; flex: 1; overflow-y: auto; min-height: 0;">
-            @if($user->reports()->exists())
+            @if($visibleReports->isNotEmpty())
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    @foreach($user->reports()->latest()->get() as $report)
+                    @foreach($visibleReports as $report)
                         @php $photoUrl = $report->photo_path ? \Illuminate\Support\Facades\Storage::url($report->photo_path) : null; @endphp
                         @if($photoUrl)
 <div style="position: relative; width: 100%; height: 105px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; flex-direction: row; align-items: center; padding: 5px; gap: 12px;">
