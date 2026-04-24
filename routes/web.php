@@ -291,7 +291,11 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
     Route::get('/{name}/rdetails', fn () => view('r_customer.rdetails'))->name('customer.rdetails');
     Route::get('/{name}/rpreview', fn () => view('r_customer.rpreview'))->name('customer.rpreview');
     Route::get('/{name}/livemap', function () {
-        $reports = \App\Models\Report::whereNotNull('latitude')->whereNotNull('longitude')->latest()->get();
+        $reports = \App\Models\Report::whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereHas('operationsReport')
+            ->latest()
+            ->get();
 
         return view('r_customer.livemap', [
             'reports' => $reports->map(fn ($r) => [
