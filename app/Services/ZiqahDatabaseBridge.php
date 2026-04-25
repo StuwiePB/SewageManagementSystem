@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -104,23 +105,33 @@ class ZiqahDatabaseBridge
 
         $lines = [
             "\n\nLOCATION DATA (from your database; samples below — use `database_select` to search, filter, or list coordinates):",
-            '- `reports`: column `address` (text), plus `latitude` / `longitude` when set.',
+            '- `reports`: column `address` (text), plus `latitude` / `longitude` when set. For public/nearby context, consider only reports already linked to `operations_reports` (sent to operations).',
             '- `operations_reports`: `location_address`, `district`, `mukim` (slugs matching Brunei config), `latitude`, `longitude`.',
             '- `work_orders`: same geographic columns as operations reports.',
         ];
 
         try {
             if ($schema->hasTable('reports') && $schema->hasColumn('reports', 'address')) {
-                $addrs = $connection->table('reports')
+                $reportQuery = $connection->table('reports')
                     ->whereNotNull('address')
                     ->where('address', '!=', '')
-                    ->distinct()
+                    ->when(
+                        $schema->hasTable('operations_reports') && $schema->hasColumn('operations_reports', 'customer_report_id'),
+                        function ($q): void {
+                            $q->whereExists(function ($sub): void {
+                                $sub->selectRaw('1')
+                                    ->from('operations_reports')
+                                    ->whereColumn('operations_reports.customer_report_id', 'reports.id');
+                            });
+                        }
+                    );
+                $addrs = $reportQuery->distinct()
                     ->orderBy('address')
                     ->limit($perSourceLimit)
                     ->pluck('address');
                 $samples = $this->stringListFromIterable($addrs);
                 if ($samples !== []) {
-                    $lines[] = 'Distinct customer report addresses (`reports.address`, sample up to '.$perSourceLimit.'):';
+                    $lines[] = 'Distinct customer report addresses already sent to operations (`reports.address`, sample up to '.$perSourceLimit.'):';
                     foreach ($samples as $s) {
                         $lines[] = '  • '.$s;
                     }
@@ -253,6 +264,17 @@ class ZiqahDatabaseBridge
                 $rows = $connection->table('reports')->select($cols)
                     ->whereNotNull('latitude')
                     ->whereNotNull('longitude')
+                    // Exclude private "under review"/unsent customer submissions from nearby context.
+                    ->when(
+                        $schema->hasTable('operations_reports') && $schema->hasColumn('operations_reports', 'customer_report_id'),
+                        function ($q): void {
+                            $q->whereExists(function ($sub): void {
+                                $sub->selectRaw('1')
+                                    ->from('operations_reports')
+                                    ->whereColumn('operations_reports.customer_report_id', 'reports.id');
+                            });
+                        }
+                    )
                     ->orderByDesc('id')
                     ->limit($maxCandidatesPerTable)
                     ->get();
@@ -458,7 +480,7 @@ class ZiqahDatabaseBridge
     /**
      * @return list<string>
      */
-    private function listTables(\Illuminate\Database\Connection $connection, string $driver): array
+    private function listTables(Connection $connection, string $driver): array
     {
         if ($driver === 'sqlite') {
             $rows = $connection->select(
@@ -500,7 +522,7 @@ class ZiqahDatabaseBridge
     /**
      * @return list<string>
      */
-    private function listColumns(\Illuminate\Database\Connection $connection, string $driver, string $table): array
+    private function listColumns(Connection $connection, string $driver, string $table): array
     {
         if (! preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
             return [];
