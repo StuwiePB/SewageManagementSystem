@@ -6,6 +6,16 @@
 @if(session('success'))
     <div class="alert-success" style="margin-bottom: 1.25rem;">{{ session('success') }}</div>
 @endif
+@if($errors->any())
+    <div class="alert-success" style="margin-bottom: 1.25rem; background: rgba(255, 91, 91, 0.12); color: #ffb4b4; border: 1px solid rgba(255, 91, 91, 0.35);">
+        <strong style="display: block; margin-bottom: 0.35rem;">Could not remove report</strong>
+        <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.875rem;">
+            @foreach ($errors->all() as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
 <div class="header">
     <div>
@@ -18,11 +28,7 @@
             @csrf
             <button type="submit" class="btn-submit">Send to operations</button>
         </form>
-        <form method="post" action="{{ route('admin.customer-reports.destroy', $report) }}" style="display: inline;" onsubmit="return confirm('Delete this customer report permanently?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="btn btn-danger">Delete</button>
-        </form>
+        <button type="button" class="btn btn-danger js-open-delete-report" data-delete-url="{{ route('admin.customer-reports.destroy', $report) }}">Delete</button>
     </div>
 </div>
 
@@ -104,4 +110,6 @@
         @endif
     </section>
 </div>
+
+@include('r_admin.customer-reports.partials.delete-report-modal')
 @endsection

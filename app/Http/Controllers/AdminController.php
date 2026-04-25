@@ -18,7 +18,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -155,7 +154,19 @@ class AdminController extends Controller
      */
     public function customerReports(Request $request): View
     {
-        $query = Report::query()->with('user')->latest('created_at');
+        $query = Report::query()
+            ->with(['user', 'operationsReport'])
+            ->latest('created_at');
+
+        $sentFilter = $request->string('sent')->toString();
+        if (! in_array($sentFilter, ['unsent', 'sent', 'all'], true)) {
+            $sentFilter = 'unsent';
+        }
+        if ($sentFilter === 'sent') {
+            $query->whereHas('operationsReport');
+        } elseif ($sentFilter === 'unsent') {
+            $query->whereDoesntHave('operationsReport');
+        }
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -185,6 +196,8 @@ class AdminController extends Controller
         $unscannedWithPhotoCount = Report::query()
             ->whereNotNull('photo_path')
             ->whereNull('drainage_ai_verdict')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
             ->count();
 
         return view('r_admin.customer-reports.index', compact('reports', 'unscannedWithPhotoCount'));
@@ -193,9 +206,16 @@ class AdminController extends Controller
     /** JSON: IDs of customer reports that have a photo but no AI drainage verdict yet. */
     public function customerReportsUnscannedIds(): JsonResponse
     {
+        $sentFilter = request()->string('sent')->toString();
+        if (! in_array($sentFilter, ['unsent', 'sent', 'all'], true)) {
+            $sentFilter = 'unsent';
+        }
+
         $ids = Report::query()
             ->whereNotNull('photo_path')
             ->whereNull('drainage_ai_verdict')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
             ->orderBy('id')
             ->pluck('id');
 
@@ -247,16 +267,22 @@ class AdminController extends Controller
             ->with('success', $message);
     }
 
-    public function customerReportDestroy(Report $report): RedirectResponse
+    public function customerReportDestroy(Request $request, Report $report): RedirectResponse
     {
-        if ($report->photo_path) {
-            Storage::disk('public')->delete($report->photo_path);
-        }
+        $allowedReasons = array_keys(Report::deletionReasonOptions());
+        $validated = $request->validate([
+            'deletion_reason' => ['required', 'string', Rule::in($allowedReasons)],
+        ]);
+
+        $report->deletion_reason = $validated['deletion_reason'];
+        $report->deletion_notes = null;
+        $report->save();
+
         $report->delete();
 
         return redirect()
             ->route('admin.customer-reports.index')
-            ->with('success', 'Customer report deleted.');
+            ->with('success', 'Customer report removed from the queue.');
     }
 
     /** GIS Map: interactive map view of incidents (reports) and work orders. */

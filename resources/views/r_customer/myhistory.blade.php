@@ -28,10 +28,7 @@
 
     @php
         $user = auth()->user();
-        $visibleReports = $user->reports()
-            ->whereHas('operationsReport')
-            ->latest()
-            ->get();
+        $visibleReports = $visibleReports ?? collect();
     @endphp
 
     {{-- Header: logo + BruDMS + profile photo --}}
@@ -77,20 +74,34 @@
             @if($visibleReports->isNotEmpty())
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     @foreach($visibleReports as $report)
-                        @php $photoUrl = $report->photo_path ? \Illuminate\Support\Facades\Storage::url($report->photo_path) : null; @endphp
-                        @if($photoUrl)
-<div style="position: relative; width: 100%; height: 105px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; flex-direction: row; align-items: center; padding: 5px; gap: 12px;">
-                            <img src="{{ $photoUrl }}" alt="" style="width: 120px; height: 93px; object-fit: cover; border-radius: 5px; border: 0.7px solid rgba(255, 255, 255, 0.21); flex-shrink: 0;" />
-                            <span style="color: rgba(255, 255, 255, 0.4); font-family: Poppins, sans-serif; font-weight: 700; font-size: 14px; position: relative; top: -33px;">{{ $report->problem_type ?? 'Report' }}</span>
-                            <div style="position: absolute; left: 137px; top: 31px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px;">
-                                @php
-                                    $st = $report->status ?? 'pending';
-                                    $statusText = ($st === 'resolved') ? 'Resolved' : (in_array($st, ['in_progress', 'under_review']) ? 'In progress' : 'Active');
-                                    $statusColor = ($st === 'resolved') ? '#00ff73' : (in_array($st, ['in_progress', 'under_review']) ? '#ffae00' : '#e00808');
-                                @endphp
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <img src="{{ asset('images/Vectors/all_reportstatus.svg') }}" alt="" style="width: 12px; height: 12px; object-fit: contain; opacity: 0.6;" />
-                                    <span style="color: {{ $statusColor }}; font-family: Poppins, sans-serif; font-weight: 600; font-size: 10px;">{{ $statusText }}</span>
+                        @php
+                            $photoUrl = null;
+                            if ($report->photo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($report->photo_path)) {
+                                $photoUrl = \Illuminate\Support\Facades\Storage::url($report->photo_path);
+                            }
+                            $isRejected = $report->wasRejectedByAdmin();
+                            if ($isRejected) {
+                                $statusText = 'Rejected - '.$report->customerDeletionReasonShortLabel();
+                                $statusColor = '#9CA3AF';
+                            } else {
+                                $st = $report->status ?? 'pending';
+                                $statusText = ($st === 'resolved') ? 'Resolved' : (in_array($st, ['in_progress', 'under_review'], true) ? 'In progress' : 'Active');
+                                $statusColor = ($st === 'resolved') ? '#00ff73' : (in_array($st, ['in_progress', 'under_review'], true) ? '#ffae00' : '#e00808');
+                            }
+                        @endphp
+                        <div style="position: relative; width: 100%; min-height: 105px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; flex-direction: row; align-items: center; padding: 5px; gap: 12px;">
+                            @if($photoUrl)
+                                <img src="{{ $photoUrl }}" alt="" style="width: 120px; height: 93px; object-fit: cover; border-radius: 5px; border: 0.7px solid rgba(255, 255, 255, 0.21); flex-shrink: 0;" />
+                            @else
+                                <div style="width: 120px; height: 93px; border-radius: 5px; border: 0.7px solid rgba(255, 255, 255, 0.21); flex-shrink: 0; background: rgba(55, 65, 81, 0.65); display: flex; align-items: center; justify-content: center;">
+                                    <img src="{{ asset('images/Vectors/all_reportstatus.svg') }}" alt="" style="width: 28px; height: 28px; opacity: 0.35;" />
+                                </div>
+                            @endif
+                            <span style="color: rgba(255, 255, 255, 0.4); font-family: Poppins, sans-serif; font-weight: 700; font-size: 14px; position: absolute; left: 137px; top: 8px; right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $report->problem_type ?? 'Report' }}</span>
+                            <div style="position: absolute; left: 137px; top: 31px; right: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px;">
+                                <div style="display: flex; align-items: flex-start; gap: 6px; min-width: 0; width: 100%;">
+                                    <img src="{{ asset('images/Vectors/all_reportstatus.svg') }}" alt="" style="width: 12px; height: 12px; object-fit: contain; opacity: 0.6; flex-shrink: 0; margin-top: 2px;" />
+                                    <span style="color: {{ $statusColor }}; font-family: Poppins, sans-serif; font-weight: 600; font-size: 10px; line-height: 1.35; white-space: normal;">{{ $statusText }}</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <img src="{{ asset('images/Vectors/all_calempty.svg') }}" alt="" style="width: 12px; height: 12px; object-fit: contain; opacity: 0.6;" />
@@ -98,19 +109,20 @@
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <img src="{{ asset('images/Vectors/all_calcomplete.svg') }}" alt="" style="width: 12px; height: 12px; object-fit: contain; opacity: 0.6;" />
-                                    @if($st === 'resolved')
+                                    @if($isRejected)
+                                        <span style="color: rgba(255, 255, 255, 0.55); font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px;">N/A</span>
+                                    @elseif(!$isRejected && ($report->status ?? '') === 'resolved')
                                         <span style="color: white; font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px;">{{ $report->updated_at ? $report->updated_at->format('jS M Y') : '—' }}</span>
                                     @else
                                         <span style="color: rgba(255, 255, 255, 0.45); font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px;">In Progress<span class="in-progress-dots">...</span></span>
                                     @endif
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%;">
                                     <img src="{{ asset('images/Vectors/all_location.svg') }}" alt="" style="width: 12px; height: 12px; object-fit: contain; opacity: 0.6; flex-shrink: 0;" />
                                     <span style="color: white; font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ Str::limit($report->address ?? '—', 27) }}</span>
                                 </div>
                             </div>
                         </div>
-                        @endif
                     @endforeach
                 </div>
             @else

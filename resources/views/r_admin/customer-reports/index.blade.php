@@ -108,7 +108,8 @@
     }
     .cust-rep-menu.is-open { display: block; }
     .cust-rep-menu a,
-    .cust-rep-menu button[type="submit"] {
+    .cust-rep-menu button[type="submit"],
+    .cust-rep-menu button[type="button"] {
         display: block;
         width: 100%;
         text-align: left;
@@ -122,7 +123,8 @@
         text-decoration: none;
     }
     .cust-rep-menu a:hover,
-    .cust-rep-menu button[type="submit"]:hover { background: rgba(106, 150, 255, 0.12); }
+    .cust-rep-menu button[type="submit"]:hover,
+    .cust-rep-menu button[type="button"]:hover { background: rgba(106, 150, 255, 0.12); }
     .cust-rep-menu .cust-rep-menu-danger { color: var(--accent-red); }
     .cust-rep-ai-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
     .cust-rep-ai--drainage { color: var(--accent-green); }
@@ -172,6 +174,16 @@
 @if(session('success'))
     <div class="alert-success" style="margin-bottom: 1.25rem;">{{ session('success') }}</div>
 @endif
+@if($errors->any())
+    <div class="alert-success" style="margin-bottom: 1.25rem; background: rgba(255, 91, 91, 0.12); color: #ffb4b4; border: 1px solid rgba(255, 91, 91, 0.35);">
+        <strong style="display: block; margin-bottom: 0.35rem;">Could not remove report</strong>
+        <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.875rem;">
+            @foreach ($errors->all() as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 <div class="header">
     <div>
         <h1>Customer reports</h1>
@@ -183,9 +195,14 @@
 </div>
 
 <section class="card card-mb" aria-label="Filters">
-    <form method="GET" action="{{ route('admin.customer-reports.index') }}" class="search-filter-bar">
-        <input type="search" name="search" value="{{ request('search') }}" placeholder="Reference, address, reporter, phone, email…" class="form-control" style="flex:1; min-width:220px;">
-        <select name="status" class="form-control" style="max-width:200px;">
+    <form id="customer-reports-filter-form" method="GET" action="{{ route('admin.customer-reports.index') }}" class="search-filter-bar">
+        <input id="customer-reports-search" type="search" name="search" value="{{ request('search') }}" placeholder="Reference, address, reporter, phone, email…" class="form-control" style="flex:1; min-width:220px;">
+        <select id="customer-reports-sent" name="sent" class="form-control" style="max-width:180px;">
+            <option value="unsent" {{ request('sent', 'unsent') === 'unsent' ? 'selected' : '' }}>Unsent only</option>
+            <option value="sent" {{ request('sent') === 'sent' ? 'selected' : '' }}>Sent only</option>
+            <option value="all" {{ request('sent') === 'all' ? 'selected' : '' }}>All</option>
+        </select>
+        <select id="customer-reports-status" name="status" class="form-control" style="max-width:200px;">
             <option value="">All statuses</option>
             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
             <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In progress</option>
@@ -193,7 +210,7 @@
             <option value="resolved" {{ request('status') === 'resolved' ? 'selected' : '' }}>Resolved</option>
         </select>
         <button type="submit" class="btn-submit">Filter</button>
-        @if(request()->hasAny(['search', 'status']))
+        @if(request()->hasAny(['search', 'status', 'sent']))
             <a href="{{ route('admin.customer-reports.index') }}" class="btn btn-secondary">Clear</a>
         @endif
     </form>
@@ -210,12 +227,13 @@
             @foreach ($reports as $report)
                 @php
                     $photoUrl = $report->photo_path ? \Illuminate\Support\Facades\Storage::url($report->photo_path) : null;
+                    $isSent = (bool) $report->operationsReport;
                     $st = $report->status ?? 'pending';
                     $statusText = ($st === 'resolved') ? 'Resolved' : (in_array($st, ['in_progress', 'under_review'], true) ? 'In progress' : 'Active');
                     $statusColor = ($st === 'resolved') ? 'var(--accent-green)' : (in_array($st, ['in_progress', 'under_review'], true) ? '#FFA500' : 'var(--accent-red)');
                     $who = $report->user?->name ?? $report->reporter_name ?? 'Guest';
                 @endphp
-                <div class="cust-rep-card">
+                <div class="cust-rep-card" style="{{ $isSent ? 'background: rgba(86, 255, 139, 0.11); border-color: rgba(86, 255, 139, 0.35);' : '' }}">
                     @php
                         $aiV = $report->drainage_ai_verdict;
                         $aiClass = match ($aiV) {
@@ -232,23 +250,28 @@
                         };
                     @endphp
                     <div class="cust-rep-card-tools">
-                        <div class="cust-rep-ai {{ $aiClass }}" title="AI drainage check (Google Vision)">
-                            <span class="cust-rep-ai-dot" aria-hidden="true"></span>
-                            <span>{{ $aiLabel }}</span>
-                        </div>
+                        @if($isSent)
+                            <div class="cust-rep-ai cust-rep-ai--drainage" title="Already sent to operations">
+                                <span class="cust-rep-ai-dot" aria-hidden="true"></span>
+                                <span>Sent to operations</span>
+                            </div>
+                        @else
+                            <div class="cust-rep-ai {{ $aiClass }}" title="AI drainage check (Google Vision)">
+                                <span class="cust-rep-ai-dot" aria-hidden="true"></span>
+                                <span>{{ $aiLabel }}</span>
+                            </div>
+                        @endif
                         <div class="cust-rep-menu-wrap">
                             <button type="button" class="cust-rep-menu-btn" aria-expanded="false" aria-haspopup="true" title="More actions">⋮</button>
                             <div class="cust-rep-menu" role="menu">
                                 <a href="{{ route('admin.customer-reports.show', $report) }}" role="menuitem">Review</a>
-                                <form method="post" action="{{ route('admin.customer-reports.send-to-operations', $report) }}">
-                                    @csrf
-                                    <button type="submit" role="menuitem">Send to operations</button>
-                                </form>
-                                <form method="post" action="{{ route('admin.customer-reports.destroy', $report) }}" onsubmit="return confirm('Delete this customer report permanently?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="cust-rep-menu-danger" role="menuitem">Delete</button>
-                                </form>
+                                @unless($isSent)
+                                    <form method="post" action="{{ route('admin.customer-reports.send-to-operations', $report) }}">
+                                        @csrf
+                                        <button type="submit" role="menuitem">Send to operations</button>
+                                    </form>
+                                @endunless
+                                <button type="button" class="cust-rep-menu-danger js-open-delete-report" role="menuitem" data-delete-url="{{ route('admin.customer-reports.destroy', $report) }}">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -308,6 +331,8 @@
     @endif
 </section>
 
+@include('r_admin.customer-reports.partials.delete-report-modal')
+
 <div class="drain-scan-overlay" id="drain-scan-overlay" aria-hidden="true">
     <div class="drain-scan-modal" role="dialog" aria-labelledby="drain-scan-title" aria-modal="true">
         <div class="drain-scan-spinner" aria-hidden="true"></div>
@@ -344,12 +369,42 @@
     });
 })();
 (function () {
+    var filterForm = document.getElementById('customer-reports-filter-form');
+    var sentSelect = document.getElementById('customer-reports-sent');
+    var statusSelect = document.getElementById('customer-reports-status');
+    var searchInput = document.getElementById('customer-reports-search');
+    if (filterForm) {
+        var submitTimer = null;
+        var submitForm = function () {
+            if (submitTimer) {
+                clearTimeout(submitTimer);
+                submitTimer = null;
+            }
+            filterForm.submit();
+        };
+        if (sentSelect) sentSelect.addEventListener('change', submitForm);
+        if (statusSelect) statusSelect.addEventListener('change', submitForm);
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                if (submitTimer) clearTimeout(submitTimer);
+                submitTimer = setTimeout(function () { filterForm.submit(); }, 450);
+            });
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitForm();
+                }
+            });
+        }
+    }
+})();
+(function () {
     var btn = document.getElementById('drain-scan-start');
     var overlay = document.getElementById('drain-scan-overlay');
     var titleEl = document.getElementById('drain-scan-title');
     var detailEl = document.getElementById('drain-scan-detail');
     var csrf = @json(csrf_token());
-    var unscannedUrl = @json(route('admin.customer-reports.unscanned-ids'));
+    var unscannedUrl = @json(route('admin.customer-reports.unscanned-ids', ['sent' => request('sent', 'unsent')]));
     var scanBase = @json(rtrim(url('/'), '/') . '/admin/customer-reports/');
 
     if (!btn || !overlay) return;
