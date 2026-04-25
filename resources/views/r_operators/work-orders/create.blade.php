@@ -30,7 +30,7 @@
                     </option>
                 @endforeach
             </select>
-            <p style="margin:4px 0 0; font-size:12px; color:var(--text-secondary);">Only shows reports with "new" status</p>
+            <p style="margin:4px 0 0; font-size:12px; color:var(--text-secondary);">Only shows reports with "pending" status</p>
         </div>
 
         <div style="margin-bottom:20px;">

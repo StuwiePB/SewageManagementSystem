@@ -110,32 +110,31 @@
                 font-weight: 300;
                 animation: blink 1s ease-in-out infinite;
             }
-            .msg-action-wrap {
-                align-self: flex-start;
-                margin-top: -6px;
-                margin-bottom: 2px;
-            }
             .msg-action-btn {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 height: 34px;
                 padding: 0 14px;
-                border-radius: 9999px;
-                background: rgba(4, 188, 255, 0.18);
-                outline: 1.4px solid rgba(4, 188, 255, 0.55);
-                color: #bfefff;
+                border-radius: 10px;
+                background: #04BCFF;
+                color: #0a1628;
                 text-decoration: none;
                 font-size: 11px;
                 font-family: Poppins, sans-serif;
-                font-weight: 600;
-                transition: transform 0.1s ease, background 0.2s ease;
+                font-weight: 700;
+                box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);
+                transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
+                width: 100%;
+                margin-top: 10px;
+                box-sizing: border-box;
             }
             .msg-action-btn:active {
                 transform: scale(0.96);
             }
             .msg-action-btn:hover {
-                background: rgba(4, 188, 255, 0.26);
+                background: #2acbff;
+                box-shadow: 0 3px 10px rgba(4, 188, 255, 0.38);
             }
             @keyframes msgPop {
                 from { opacity: 0; transform: translateY(8px); }
@@ -202,7 +201,7 @@
         <span style="color: white; font-size: 14px; font-weight: 600; font-family: Poppins, sans-serif; text-align: center;">Ziqah (AI) 1.0 <span style="font-weight: 300; font-size: 11px; opacity: 0.6;">(Beta)</span></span>
 
         {{-- Chat messages area --}}
-        <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 16px 0; display: flex; flex-direction: column; gap: 12px; scrollbar-width: none;">
+        <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 10px 0; margin-top: 8px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: none;">
             <div class="msg-bot">Ziqah handles the flow. What's clogged, leaking, or overflowing? Show me.</div>
         </div>
 
@@ -240,6 +239,7 @@
         var chatBox = document.getElementById('chat-messages');
         var chatInput = document.getElementById('chat-input');
         var chatSend = document.getElementById('chat-send');
+        var chatStateKey = 'brudms_ai_chat_{{ $user->id }}';
 
         var mockReplies = [
             "I'm still learning! This is a placeholder response.",
@@ -250,6 +250,19 @@
         var chatUrl = '{{ route("customer.chat") }}';
         var reportUrl = '{{ route("customer.rproblem", ["name" => $user->profileSlug()]) }}';
         var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+        function saveChatState() {
+            try {
+                if (!chatBox) return;
+                var clone = chatBox.cloneNode(true);
+                clone.querySelectorAll('.msg-typing').forEach(function(el) { el.remove(); });
+                var payload = {
+                    html: clone.innerHTML || '',
+                    pendingImage: pendingImage || null,
+                };
+                localStorage.setItem(chatStateKey, JSON.stringify(payload));
+            } catch (e) {}
+        }
 
         var cachedUserLat = null;
         var cachedUserLng = null;
@@ -302,16 +315,14 @@
             chatBox.appendChild(botMsg);
 
             if (showReportButton) {
-                var wrap = document.createElement('div');
-                wrap.className = 'msg-action-wrap';
                 var a = document.createElement('a');
                 a.className = 'msg-action-btn';
                 a.href = reportUrl;
                 a.textContent = 'Go to report';
-                wrap.appendChild(a);
-                chatBox.appendChild(wrap);
+                botMsg.appendChild(a);
             }
             chatBox.scrollTop = chatBox.scrollHeight;
+            saveChatState();
         }
 
         function sendMessage() {
@@ -353,6 +364,7 @@
             pendingImage = null;
             document.getElementById('chat-preview').style.display = 'none';
             chatBox.scrollTop = chatBox.scrollHeight;
+            saveChatState();
 
             var typing = document.createElement('div');
             typing.className = 'msg-typing';
@@ -387,6 +399,7 @@
                     botMsg.textContent = 'Something went wrong. Please try again.';
                     chatBox.appendChild(botMsg);
                     chatBox.scrollTop = chatBox.scrollHeight;
+                    saveChatState();
                 });
             });
         }
@@ -407,6 +420,23 @@
         var previewImg = document.getElementById('chat-preview-img');
         var previewRemove = document.getElementById('chat-preview-remove');
 
+        (function restoreChatState() {
+            try {
+                var raw = localStorage.getItem(chatStateKey);
+                if (!raw) return;
+                var data = JSON.parse(raw);
+                if (data && typeof data.html === 'string' && data.html.trim().length > 0) {
+                    chatBox.innerHTML = data.html;
+                }
+                if (data && data.pendingImage) {
+                    pendingImage = data.pendingImage;
+                    previewImg.src = pendingImage;
+                    previewEl.style.display = 'flex';
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) {}
+        })();
+
         chatFile.addEventListener('change', function() {
             var file = chatFile.files[0];
             if (!file) return;
@@ -415,6 +445,7 @@
                 pendingImage = e.target.result;
                 previewImg.src = pendingImage;
                 previewEl.style.display = 'flex';
+                saveChatState();
             };
             reader.readAsDataURL(file);
             chatFile.value = '';
@@ -424,6 +455,7 @@
             pendingImage = null;
             previewImg.src = '';
             previewEl.style.display = 'none';
+            saveChatState();
         });
 
         document.addEventListener('paste', function(e) {
@@ -438,12 +470,15 @@
                         pendingImage = ev.target.result;
                         previewImg.src = pendingImage;
                         previewEl.style.display = 'flex';
+                        saveChatState();
                     };
                     reader.readAsDataURL(file);
                     break;
                 }
             }
         });
+
+        window.addEventListener('beforeunload', saveChatState);
 
         document.querySelectorAll('.delayed-nav').forEach(function(el) {
             el.style.transition = 'transform 0.1s ease';

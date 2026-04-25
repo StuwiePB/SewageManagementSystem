@@ -45,10 +45,10 @@
             </div>
 
             <div class="form-group">
-                <label for="username">Username <span class="req">*</span></label>
-                <input type="text" name="username" id="username" class="form-control" value="{{ old('username') }}" required autocomplete="username" pattern="[a-zA-Z0-9._-]+" maxlength="50" placeholder="e.g. ahmad.ops">
+                <label for="staffname">Staffname <span class="req">*</span></label>
+                <input type="text" name="staffname" id="staffname" class="form-control" value="{{ old('staffname') }}" required autocomplete="username" pattern="[a-zA-Z0-9._-]+" maxlength="50" placeholder="e.g. ahmad.ops">
                 <p class="field-hint">Unique login identifier (letters, numbers, . _ -).</p>
-                @error('username') <div class="text-danger" style="color:#f87171;font-size:0.8125rem;margin-top:0.25rem;">{{ $message }}</div> @enderror
+                @error('staffname') <div class="text-danger" style="color:#f87171;font-size:0.8125rem;margin-top:0.25rem;">{{ $message }}</div> @enderror
             </div>
 
             <div class="form-group">

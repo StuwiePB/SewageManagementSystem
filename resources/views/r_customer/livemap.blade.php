@@ -5,6 +5,7 @@
         <style>
             body, main { overflow: hidden !important; margin: 0; padding: 0; }
             #livemap { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; }
+            .leaflet-container { background: #0b1628 !important; }
             .leaflet-control-attribution { display: none !important; }
             @keyframes marker-spin { to { transform: rotate(360deg); } }
             .marker-spinner-ring { animation: marker-spin 1.5s linear infinite; transform-origin: center; transform-box: fill-box; }
@@ -83,17 +84,71 @@
     @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        var defaultCenter = [4.5353, 114.7277];
+        var defaultCenter = [4.9031, 114.9398];
+        var bruneiBounds = L.latLngBounds(
+            L.latLng(3.70, 113.75),
+            L.latLng(5.60, 115.85)
+        );
         var reports = @json($reports ?? []);
 
         var map = L.map('livemap', {
             center: defaultCenter,
             zoom: 13,
+            minZoom: 9,
+            maxZoom: 18,
+            maxBounds: bruneiBounds,
+            maxBoundsViscosity: 1.0,
+            inertia: false,
+            bounceAtZoomLimits: false,
+            zoomAnimation: true,
+            fadeAnimation: true,
+            markerZoomAnimation: true,
             zoomControl: false
         });
+        var minPictureZoom = map.getBoundsZoom(bruneiBounds, true);
+        if (minPictureZoom > map.getMinZoom()) {
+            map.setMinZoom(minPictureZoom);
+        }
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © Esri'
+            attribution: 'Tiles © Esri',
+            maxZoom: 18,
+            maxNativeZoom: 18,
+            updateWhenZooming: false,
+            updateWhenIdle: true,
+            keepBuffer: 10
         }).addTo(map);
+        L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Labels © Esri',
+            opacity: 0.90,
+            maxZoom: 18,
+            maxNativeZoom: 18,
+            updateWhenZooming: false,
+            updateWhenIdle: true,
+            keepBuffer: 10
+        }).addTo(map);
+        fetch('{{ asset("geojson/brunei-districts.json") }}')
+            .then(function(response) { return response.json(); })
+            .then(function(geojson) {
+                L.geoJSON(geojson, {
+                    interactive: false,
+                    style: function() {
+                        return {
+                            color: 'rgba(255, 255, 255, 0.72)',
+                            weight: 1,
+                            opacity: 0.72,
+                            fill: false
+                        };
+                    }
+                }).addTo(map);
+            })
+            .catch(function() {});
+
+        map.on('drag', function() {
+            map.panInsideBounds(bruneiBounds, { animate: false });
+        });
+        map.on('zoomend', function() {
+            map.panInsideBounds(bruneiBounds, { animate: false });
+        });
 
         var panel = document.getElementById('report-detail-panel');
         map.on('click', function() {

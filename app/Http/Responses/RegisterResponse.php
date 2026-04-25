@@ -17,6 +17,6 @@ class RegisterResponse implements RegisterResponseContract
             return new JsonResponse('', 201);
         }
 
-        return redirect()->intended(route('customer.dashboard', ['name' => $request->user()->profileSlug()]));
+        return redirect()->route('customer.dashboard', ['name' => $request->user()->profileSlug()]);
     }
 }

@@ -29,7 +29,7 @@ class AdminWorkOrderController extends Controller
 
     public function create()
     {
-        $reports = OperationsReport::where('status', 'new')->orderBy('created_at', 'desc')->get();
+        $reports = OperationsReport::where('status', 'pending')->orderBy('created_at', 'desc')->get();
         $districts = config('brunei.districts', []);
         $mukims = config('brunei.mukims', []);
 

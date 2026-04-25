@@ -47,6 +47,14 @@
                 display: flex;
                 flex-direction: column;
             }
+            .temp-success-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 55;
+                background: rgba(8, 14, 30, 0.22);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+            }
             .temp-success-inner {
                 display: flex;
                 flex-direction: column;
@@ -258,7 +266,7 @@
             </div>
             <div class="preview-info-row" id="preview-phone-row" style="flex: 1; min-width: 0;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-opacity="0.44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                <input type="tel" id="preview-phone-text" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 123 1234" autocomplete="tel" inputmode="tel" pattern="^\+673\s\d{3}\s\d{4}$" style="flex: 1; min-width: 0; background: transparent; border: none; padding: 0; margin: 0; color: white; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 600; outline: none;" />
+                <input type="tel" id="preview-phone-text" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 123 1234" autocomplete="tel" inputmode="tel" pattern="^\+673\s\d{3}\s\d{4}$" readonly aria-readonly="true" style="flex: 1; min-width: 0; background: transparent; border: none; padding: 0; margin: 0; color: rgba(255, 255, 255, 0.58); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 600; outline: none; cursor: not-allowed;" />
             </div>
         </div>
         <div class="preview-info-row" id="preview-location-row">
@@ -298,6 +306,7 @@
     <div id="js-submit-error" class="hidden" style="position: fixed; top: 11vh; left: 20px; right: 20px; z-index: 70; padding: 12px; background: rgba(239, 68, 68, 0.95); color: white; border-radius: 12px; font-size: 13px; font-family: Poppins, sans-serif;"></div>
 
     {{-- Post-submit success (shown after AJAX submit) --}}
+    <div id="temp-success-backdrop" class="temp-success-backdrop" style="display: none;"></div>
     <div id="temp-success-card" class="temp-success-card" style="display: none;" data-redirect-url="">
         <div class="temp-success-inner">
         <div class="temp-success-body">
@@ -327,8 +336,13 @@
         (function() {
             var successAnimTimer = null;
             var card = document.getElementById('temp-success-card');
+            var backdrop = document.getElementById('temp-success-backdrop');
             var cont = document.getElementById('temp-continue-btn');
             var loaderEl = document.getElementById('temp-loader-check');
+            function setSuccessPopupVisible(visible) {
+                if (card) card.style.display = visible ? 'flex' : 'none';
+                if (backdrop) backdrop.style.display = visible ? 'block' : 'none';
+            }
             function clearReportDraftStorage() {
                 try {
                     [
@@ -393,7 +407,7 @@
                     nam.textContent = (ne && ne.value) ? ne.value.trim() : (nam.textContent || '');
                 }
                 card.setAttribute('data-redirect-url', '');
-                card.style.display = 'flex';
+                setSuccessPopupVisible(true);
                 loaderEl.classList.remove('done');
                 if (cont) {
                     cont.disabled = true;
@@ -433,7 +447,7 @@
                 }
                 if (nam) nam.textContent = data.sender_name || '';
                 card.setAttribute('data-redirect-url', data.redirect_url || '');
-                card.style.display = 'flex';
+                setSuccessPopupVisible(true);
 
                 loaderEl.classList.remove('done');
                 if (cont) {
@@ -451,7 +465,7 @@
             if (cont && card) {
                 cont.addEventListener('click', function() {
                     var url = card.getAttribute('data-redirect-url') || '';
-                    card.style.display = 'none';
+                    setSuccessPopupVisible(false);
                     if (url) {
                         window.location.href = url;
                     }
@@ -519,7 +533,7 @@
                         });
                     }).then(function(result) {
                         if (!result.ok) {
-                            if (card) card.style.display = 'none';
+                            setSuccessPopupVisible(false);
                             btn.disabled = false;
                             btn.textContent = 'Submit report';
                             showSubmitError(firstJsonError(result.body));
@@ -532,11 +546,11 @@
                             btn.textContent = 'Submit report';
                             return;
                         }
-                        if (card) card.style.display = 'none';
+                        setSuccessPopupVisible(false);
                         btn.disabled = false;
                         btn.textContent = 'Submit report';
                     }).catch(function() {
-                        if (card) card.style.display = 'none';
+                        setSuccessPopupVisible(false);
                         btn.disabled = false;
                         btn.textContent = 'Submit report';
                         showSubmitError('Network error. Please try again.');

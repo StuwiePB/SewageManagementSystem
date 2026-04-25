@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminWorkOrderController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\Operations\StatisticsController as OperationsStatisticsController;
 use App\Http\Controllers\OperationsController;
+use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\WorkOrderController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,10 @@ Route::get('/explore', function () {
     }
 
     return view('r_customer.dashboard', [
-        'reports' => \App\Models\Report::with('user')->latest()->get(),
+        'reports' => \App\Models\Report::with('user')
+            ->whereHas('operationsReport')
+            ->latest()
+            ->get(),
         'guestMode' => true,
     ]);
 })->name('guest.explore');
@@ -68,6 +72,11 @@ Route::get('/auth/session', function () {
         ],
     ]);
 })->name('auth.session');
+
+Route::post('/password/check-customer-email', [PasswordPanelController::class, 'checkCustomerEmail'])
+    ->name('password.check-customer-email');
+Route::post('/password/update-customer', [PasswordPanelController::class, 'updateCustomerPassword'])
+    ->name('password.update-customer');
 
 Route::get('/locale/{lang}', function (string $lang) {
     if (in_array($lang, ['en', 'ms'], true)) {
@@ -245,7 +254,19 @@ Route::get('/debug-role', function () {
 
 Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group(function () {
     Route::get('/{name}', fn () => redirect()->route('customer.dashboard', ['name' => request()->route('name')]));
-    Route::get('/{name}/dashboard', fn () => view('r_customer.dashboard', ['reports' => \App\Models\Report::with('user')->latest()->get()]))->name('customer.dashboard');
+    Route::get('/{name}/dashboard', function () {
+        $user = auth()->user();
+
+        return view('r_customer.dashboard', [
+            'reports' => \App\Models\Report::with(['user', 'operationsReport'])
+                ->where(function ($q) use ($user) {
+                    $q->whereHas('operationsReport')
+                        ->orWhere('user_id', $user->id);
+                })
+                ->latest()
+                ->get(),
+        ]);
+    })->name('customer.dashboard');
     Route::get('/{name}/brudmsgpt', fn () => view('r_customer.bruflowgpt'))->name('customer.brudmsgpt');
     Route::get('/{name}/bruflowgpt', fn () => redirect()->route('customer.brudmsgpt', ['name' => request()->route('name')]));
     Route::get('/{name}/general', fn () => view('r_customer.general'))->name('customer.general');
@@ -262,6 +283,7 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         ]);
     })->name('customer.preference');
     Route::get('/{name}/profilesettings', fn () => view('r_customer.profilesettings'))->name('customer.profilesettings');
+    Route::get('/{name}/email-bind-otp', fn () => view('r_customer.email-bind-otp'))->name('customer.email.bind.otp');
     Route::get('/{name}/myhistory', fn () => view('r_customer.myhistory'))->name('customer.myhistory');
     Route::get('/{name}/rproblem', fn () => view('r_customer.rproblem'))->name('customer.rproblem');
     Route::get('/{name}/rpicture', fn () => view('r_customer.rpicture'))->name('customer.rpicture');
@@ -269,7 +291,11 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
     Route::get('/{name}/rdetails', fn () => view('r_customer.rdetails'))->name('customer.rdetails');
     Route::get('/{name}/rpreview', fn () => view('r_customer.rpreview'))->name('customer.rpreview');
     Route::get('/{name}/livemap', function () {
-        $reports = \App\Models\Report::whereNotNull('latitude')->whereNotNull('longitude')->latest()->get();
+        $reports = \App\Models\Report::whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereHas('operationsReport')
+            ->latest()
+            ->get();
 
         return view('r_customer.livemap', [
             'reports' => $reports->map(fn ($r) => [
@@ -318,6 +344,9 @@ Route::post('/customer/profile/phone', [App\Http\Controllers\Customer\ProfileCon
 
 Route::post('/customer/profile', [App\Http\Controllers\Customer\ProfileController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.update');
+
+Route::post('/customer/profile/bind-email', [App\Http\Controllers\Customer\ProfileController::class, 'bindEmail'])
+    ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.bind-email');
 
 Route::post('/customer/preference', [App\Http\Controllers\Customer\PreferenceController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.preference.update');
