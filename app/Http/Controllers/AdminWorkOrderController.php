@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
-use App\Models\OperationsReport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class AdminWorkOrderController extends Controller
@@ -73,9 +74,7 @@ class AdminWorkOrderController extends Controller
 
         $workOrder = WorkOrder::create($validated);
 
-        if ($workOrder->report_id) {
-            $workOrder->report->update(['status' => 'in_progress']);
-        }
+        $this->syncLinkedReportStatuses($workOrder, 'in_progress');
 
         return redirect()->route('admin.work-orders.index')
             ->with('success', 'Work order created successfully.');
@@ -100,23 +99,24 @@ class AdminWorkOrderController extends Controller
 
         if ($validated['status'] === 'completed' && $oldStatus !== 'completed') {
             $workOrder->update(['completed_at' => now()]);
-            if ($workOrder->report_id) {
-                $workOrder->report->update(['status' => 'resolved']);
-            }
         }
+
+        $this->syncLinkedReportStatuses($workOrder, $this->mapWorkOrderStatusToReportStatus($validated['status']));
 
         return redirect()->back()->with('success', 'Work order status updated.');
     }
 
     public function show(WorkOrder $workOrder)
     {
-        $workOrder->load(['report', 'photos']);
+        $workOrder->load(['report.customerReport', 'photos']);
+
         return view('r_admin.work-orders.show', compact('workOrder'));
     }
 
     public function pdf(WorkOrder $workOrder)
     {
         $workOrder->load(['report', 'photos']);
+
         return view('r_admin.work-orders.pdf', compact('workOrder'));
     }
 
@@ -170,7 +170,7 @@ class AdminWorkOrderController extends Controller
 
         $uploaded = 0;
         foreach ($request->file('photos') as $file) {
-            $path = $file->store('work-order-photos/' . $workOrder->id, 'public');
+            $path = $file->store('work-order-photos/'.$workOrder->id, 'public');
             WorkOrderPhoto::create([
                 'work_order_id' => $workOrder->id,
                 'path' => $path,
@@ -179,7 +179,7 @@ class AdminWorkOrderController extends Controller
             $uploaded++;
         }
 
-        return redirect()->back()->with('success', $uploaded . ' photo(s) added.');
+        return redirect()->back()->with('success', $uploaded.' photo(s) added.');
     }
 
     public function destroyPhoto(WorkOrder $workOrder, WorkOrderPhoto $photo)
@@ -196,7 +196,38 @@ class AdminWorkOrderController extends Controller
     public function submitForApproval(WorkOrder $workOrder)
     {
         $workOrder->update(['status' => 'pending_approval']);
+        $this->syncLinkedReportStatuses($workOrder, 'in_progress');
 
         return redirect()->back()->with('success', 'Work order submitted for approval.');
+    }
+
+    private function mapWorkOrderStatusToReportStatus(string $workOrderStatus): string
+    {
+        return $workOrderStatus === 'completed'
+            ? 'resolved'
+            : 'in_progress';
+    }
+
+    private function syncLinkedReportStatuses(WorkOrder $workOrder, string $operationsStatus): void
+    {
+        if (! $workOrder->report_id) {
+            return;
+        }
+
+        $report = $workOrder->report()->first();
+        if (! $report) {
+            return;
+        }
+
+        $report->update(['status' => $operationsStatus]);
+
+        if (! Schema::hasColumn('operations_reports', 'customer_report_id') || ! $report->customer_report_id) {
+            return;
+        }
+
+        $customerStatus = $operationsStatus === 'resolved' ? 'resolved' : 'in_progress';
+        \App\Models\Report::query()
+            ->whereKey($report->customer_report_id)
+            ->update(['status' => $customerStatus]);
     }
 }

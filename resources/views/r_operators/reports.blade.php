@@ -104,7 +104,7 @@
                             @if($report->workOrder)
                                 <a href="{{ route('operations.work-orders.show', $report->workOrder) }}" class="link-primary">{{ $report->workOrder->work_order_number }}</a>
                             @else
-                                <span style="color:#9ca3af;">—</span>
+                                <a href="{{ route('operations.work-orders.create', ['report' => $report->id]) }}" class="link-primary">Create WorkOrder</a>
                             @endif
                         </td>
                         <td>{{ $report->created_at->format('M d, Y') }}</td>

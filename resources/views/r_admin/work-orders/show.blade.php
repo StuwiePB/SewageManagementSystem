@@ -115,6 +115,23 @@
     </div>
 </div>
 
+<section class="card" aria-label="Report picture">
+    <h3 class="section-head">Report picture</h3>
+    <p class="section-desc">Original image attached to the linked report.</p>
+
+    @if($workOrder->report && $workOrder->report->customerReport && $workOrder->report->customerReport->photo_path)
+        <a href="{{ \Illuminate\Support\Facades\Storage::url($workOrder->report->customerReport->photo_path) }}" target="_blank" rel="noopener" style="display:inline-block;">
+            <img
+                src="{{ \Illuminate\Support\Facades\Storage::url($workOrder->report->customerReport->photo_path) }}"
+                alt="Report picture"
+                style="max-width:100%; width:auto; max-height:360px; border-radius:10px; border:1px solid rgba(106, 150, 255, 0.2);"
+            >
+        </a>
+    @else
+        <p style="margin:0; font-size:14px; color:var(--text-secondary);">No report picture available for this linked report.</p>
+    @endif
+</section>
+
 <section class="card" aria-label="Site photos">
     <h3 class="section-head">Site photos</h3>
     <p class="section-desc">Add 2 or 3 photos per upload for stronger evidence and so the constructor can better understand the situation.</p>

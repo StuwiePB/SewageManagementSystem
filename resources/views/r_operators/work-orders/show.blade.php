@@ -87,10 +87,28 @@
         </div>
         @endif
 
+        @if(!in_array($workOrder->status, ['pending_approval', 'completed', 'cancelled']))
+            <p style="margin:12px 0 8px; font-size:12px; color:var(--text-secondary);">Or send to higher ups:</p>
+            <form action="{{ route('operations.work-orders.submit-approval', $workOrder) }}" method="POST" style="margin-bottom:12px;">
+                @csrf
+                <button type="submit" style="
+                    width:100%;
+                    padding:8px 16px;
+                    background:#713f12;
+                    color:white;
+                    border:none;
+                    border-radius:8px;
+                    font-weight:500;
+                    cursor:pointer;
+                    font-size:13px;
+                ">Submit for approval</button>
+            </form>
+        @endif
+
         <form action="{{ route('operations.work-orders.update-status', $workOrder) }}" method="POST" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(106, 150, 255, 0.15);">
             @csrf
             @method('PATCH')
-            
+
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label" for="status">Update Status</label>
                 <select id="status" name="status" class="form-control">
@@ -105,28 +123,27 @@
                 </select>
             </div>
 
-            @if(!in_array($workOrder->status, ['pending_approval', 'completed', 'cancelled']))
-                <p style="margin:12px 0 8px; font-size:12px; color:var(--text-secondary);">Or send to higher ups:</p>
-                <form action="{{ route('operations.work-orders.submit-approval', $workOrder) }}" method="POST" style="margin-bottom:12px;">
-                    @csrf
-                    <button type="submit" style="
-                        width:100%;
-                        padding:8px 16px;
-                        background:#713f12;
-                        color:white;
-                        border:none;
-                        border-radius:8px;
-                        font-weight:500;
-                        cursor:pointer;
-                        font-size:13px;
-                    ">Submit for approval</button>
-                </form>
-            @endif
-
             <button type="submit" class="btn-submit">Update Status</button>
         </form>
     </div>
 </div>
+
+<section class="card" aria-label="Report picture">
+    <h3 class="section-head">Report picture</h3>
+    <p class="section-desc">Original image attached to the linked report.</p>
+
+    @if($workOrder->report && $workOrder->report->customerReport && $workOrder->report->customerReport->photo_path)
+        <a href="{{ \Illuminate\Support\Facades\Storage::url($workOrder->report->customerReport->photo_path) }}" target="_blank" rel="noopener" style="display:inline-block;">
+            <img
+                src="{{ \Illuminate\Support\Facades\Storage::url($workOrder->report->customerReport->photo_path) }}"
+                alt="Report picture"
+                style="max-width:100%; width:auto; max-height:360px; border-radius:10px; border:1px solid rgba(106, 150, 255, 0.2);"
+            >
+        </a>
+    @else
+        <p style="margin:0; font-size:14px; color:var(--text-secondary);">No report picture available for this linked report.</p>
+    @endif
+</section>
 
 <section class="card" aria-label="Site photos">
     <h3 class="section-head">Site photos</h3>
