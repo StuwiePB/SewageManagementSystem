@@ -68,9 +68,17 @@ class GoogleVisionService
             $labelFeature->setType(FeatureType::LABEL_DETECTION);
             $labelFeature->setMaxResults(20);
 
+            $objectFeature = new Feature;
+            $objectFeature->setType(FeatureType::OBJECT_LOCALIZATION);
+            $objectFeature->setMaxResults(20);
+
+            $webFeature = new Feature;
+            $webFeature->setType(FeatureType::WEB_DETECTION);
+            $webFeature->setMaxResults(10);
+
             $annotateRequest = new AnnotateImageRequest;
             $annotateRequest->setImage($image);
-            $annotateRequest->setFeatures([$faceFeature, $labelFeature]);
+            $annotateRequest->setFeatures([$faceFeature, $labelFeature, $objectFeature, $webFeature]);
 
             $batchRequest = new BatchAnnotateImagesRequest;
             $batchRequest->setRequests([$annotateRequest]);
@@ -118,6 +126,24 @@ class GoogleVisionService
                 $labels[] = ['description' => $label->getDescription(), 'score' => $label->getScore()];
             }
 
+            $objectAnnotations = $annotateResponse->getLocalizedObjectAnnotations();
+            $objects = [];
+            foreach ($objectAnnotations as $object) {
+                $objects[] = ['name' => $object->getName(), 'score' => $object->getScore()];
+            }
+
+            $webEntities = [];
+            $webDetection = $annotateResponse->getWebDetection();
+            if ($webDetection) {
+                foreach ($webDetection->getWebEntities() as $entity) {
+                    $desc = trim((string) $entity->getDescription());
+                    if ($desc === '') {
+                        continue;
+                    }
+                    $webEntities[] = ['description' => $desc, 'score' => (float) $entity->getScore()];
+                }
+            }
+
             $personLabels = ['person', 'face', 'portrait', 'selfie', 'headshot'];
             $lessReliableLabels = ['human', 'people', 'man', 'woman', 'child'];
             $personDetectedFromLabels = false;
@@ -154,6 +180,8 @@ class GoogleVisionService
                 'person_detected' => $personDetected,
                 'person_confidence' => $finalConfidence,
                 'labels' => $labels,
+                'objects' => $objects,
+                'web_entities' => $webEntities,
                 'detection_method' => $personDetectedFromFace ? 'face' : ($personDetectedFromLabels ? 'label' : 'none'),
                 'face_count' => $faceCount,
                 'person_label_matches' => $personLabelMatches,
@@ -318,7 +346,7 @@ class GoogleVisionService
 
     private function getDefaultResponse(string $error, array $errorDetails = []): array
     {
-        $response = ['person_detected' => false, 'person_confidence' => 0.0, 'labels' => [], 'error' => $error];
+        $response = ['person_detected' => false, 'person_confidence' => 0.0, 'labels' => [], 'objects' => [], 'web_entities' => [], 'error' => $error];
         if (! empty($errorDetails)) {
             $response['error_details'] = $errorDetails;
         }

@@ -9,6 +9,8 @@ use App\Models\Report;
 use App\Models\User;
 use App\Models\Worker;
 use App\Models\WorkOrder;
+use App\Services\AI\GoogleVisionService;
+use App\Services\AI\SewageClassifier;
 use App\Services\Reports\CustomerReportDrainageScan;
 use App\Services\Reports\CustomerReportOperationsSync;
 use App\Support\AccountEmail;
@@ -252,7 +254,10 @@ class AdminController extends Controller
     {
         $report->load(['user', 'operationsReport']);
 
-        return view('r_admin.customer-reports.show', compact('report'));
+        return view('r_admin.customer-reports.show', [
+            'report' => $report,
+            'aiReason' => $this->buildCustomerReportAiReason($report),
+        ]);
     }
 
     public function customerReportSendToOperations(Request $request, Report $report): RedirectResponse
@@ -668,6 +673,54 @@ class AdminController extends Controller
         ], fn ($v) => $v !== null && $v !== '');
 
         return redirect()->route('admin.civilians.index', $query);
+    }
+
+    protected function buildCustomerReportAiReason(Report $report): ?string
+    {
+        if (! $report->drainage_ai_verdict || ! $report->photo_path) {
+            return null;
+        }
+
+        try {
+            $vision = app(GoogleVisionService::class)->analyzeImage($report->photo_path, $report->id, 'public');
+            if (isset($vision['error'])) {
+                return match ($report->drainage_ai_verdict) {
+                    CustomerReportDrainageScan::VERDICT_DRAINAGE => 'Detected strong drainage-related visual indicators in the uploaded image.',
+                    CustomerReportDrainageScan::VERDICT_NOT_DRAINAGE => 'Detected non-drainage visual context (for example person/object-centric content) with low drainage indicators.',
+                    default => 'AI confidence is uncertain, so this report is flagged for manual review.',
+                };
+            }
+
+            $classification = app(SewageClassifier::class)->classify($vision, $report->id);
+            $reason = trim((string) ($classification['reason'] ?? ''));
+            $evidence = $classification['evidence'] ?? [];
+            $score = isset($evidence['sewage_score']) ? (float) $evidence['sewage_score'] : null;
+            $indicators = array_values(array_unique(array_filter((array) ($evidence['sewage_indicators'] ?? []))));
+
+            $parts = [];
+            if ($reason !== '') {
+                $parts[] = $reason;
+            }
+            if ($score !== null) {
+                $parts[] = 'Sewage indicator score: '.number_format($score, 2).'.';
+            }
+            if (! empty($indicators)) {
+                $parts[] = 'Detected indicators: '.implode(', ', array_slice($indicators, 0, 5)).'.';
+            }
+
+            return empty($parts) ? null : implode(' ', $parts);
+        } catch (Throwable $e) {
+            Log::warning('Unable to build AI reason for customer report.', [
+                'report_id' => $report->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return match ($report->drainage_ai_verdict) {
+                CustomerReportDrainageScan::VERDICT_DRAINAGE => 'Detected strong drainage-related visual indicators in the uploaded image.',
+                CustomerReportDrainageScan::VERDICT_NOT_DRAINAGE => 'Detected non-drainage visual context with insufficient drainage indicators.',
+                default => 'AI confidence is uncertain, so this report is flagged for manual review.',
+            };
+        }
     }
 
     protected function redirectAfterCivilianAction(Request $request, User $user): RedirectResponse

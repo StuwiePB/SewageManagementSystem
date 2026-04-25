@@ -12,13 +12,15 @@ return [
 
     'thresholds' => [
         // Person detection confidence thresholds
-        'person_detected_min' => 0.70, // Minimum confidence for face detection (raised from 0.50)
+        'person_detected_min' => 0.70, // Minimum confidence for face detection
         'person_label_min' => 0.70,    // Minimum confidence for label-based person detection (reliable labels)
         'person_label_min_less_reliable' => 0.85, // Minimum confidence for less reliable labels (human, people, etc.)
+        'person_override_confidence' => 0.88, // Strong person detection still does not hard-reject; used for ambiguity handling
+        'person_penalty_base' => 0.35, // How much person signals reduce drainage score
 
         // Drainage relevance score thresholds
-        'sewage_high' => 0.85,      // Above this → NEEDS_REVIEW (likely drainage-related)
-        'sewage_low' => 0.30,       // Below this → NOT_SEWAGE (not drainage-related)
+        'sewage_high' => 0.70,      // Above this → SEWAGE
+        'sewage_low' => 0.28,       // Below this (with no positives) → NOT_SEWAGE
         // Between low and high → NEEDS_REVIEW
 
         // AI-generated detection threshold
@@ -47,11 +49,49 @@ return [
         'pipe',
         'overflow',
         'flood',
+        'flooded',
+        'waterlogging',
         'dirty water',
         'sludge',
         'manhole',
+        'gutter',
+        'culvert',
+        'ditch',
+        'storm drain',
+        'drainage',
+        'waste pipe',
         'leak',
         'effluent',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Non-drainage Context Keywords
+    |--------------------------------------------------------------------------
+    | Signals commonly associated with unrelated photos (people/portraits/indoors)
+    */
+    'non_sewage_keywords' => [
+        'selfie',
+        'portrait',
+        'person',
+        'people',
+        'face',
+        'human',
+        'indoor',
+        'room',
+        'furniture',
+        'clothing',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Feature Source Weights
+    |--------------------------------------------------------------------------
+    */
+    'weights' => [
+        'labels' => 1.0,
+        'objects' => 0.9,
+        'web_entities' => 0.7,
     ],
 
     /*

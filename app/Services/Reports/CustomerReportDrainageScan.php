@@ -45,6 +45,10 @@ final class CustomerReportDrainageScan
         $score = (float) ($evidence['sewage_score'] ?? 0);
         $high = (float) (config('ai.thresholds.sewage_high', 0.85));
 
+        if ($label === 'SEWAGE') {
+            return self::VERDICT_DRAINAGE;
+        }
+
         if ($label === 'NOT_SEWAGE') {
             return self::VERDICT_NOT_DRAINAGE;
         }

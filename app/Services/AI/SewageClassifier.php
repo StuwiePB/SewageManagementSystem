@@ -2,110 +2,178 @@
 
 namespace App\Services\AI;
 
-use Illuminate\Support\Facades\Log;
-
 class SewageClassifier
 {
     public function classify(array $visionResult, ?int $incidentId = null): array
     {
-        $personDetected = $visionResult['person_detected'] ?? false;
-        $labels = $visionResult['labels'] ?? [];
+        $personDetected = (bool) ($visionResult['person_detected'] ?? false);
+        $personConfidence = (float) ($visionResult['person_confidence'] ?? 0.0);
+        $detectionMethod = (string) ($visionResult['detection_method'] ?? 'none');
+        $labels = (array) ($visionResult['labels'] ?? []);
+        $objects = (array) ($visionResult['objects'] ?? []);
+        $webEntities = (array) ($visionResult['web_entities'] ?? []);
         $thresholds = config('ai.thresholds', []);
+        $sewageResult = $this->calculateDrainageEvidence($labels, $objects, $webEntities, $incidentId);
+        $sewageScore = (float) ($sewageResult['score'] ?? 0.0);
+        $sewageIndicators = (array) ($sewageResult['indicators'] ?? []);
+        $negativeSignals = (array) ($sewageResult['negative_signals'] ?? []);
+        $negativeScore = (float) ($sewageResult['negative_score'] ?? 0.0);
 
+        $personPenaltyBase = (float) ($thresholds['person_penalty_base'] ?? 0.35);
+        $personPenalty = $personDetected ? ($personPenaltyBase * min(1.0, max(0.0, $personConfidence))) : 0.0;
+        $finalScore = max(0.0, min(1.0, $sewageScore - $personPenalty - $negativeScore));
+
+        $sewageHigh = (float) ($thresholds['sewage_high'] ?? 0.70);
+        $sewageLow = (float) ($thresholds['sewage_low'] ?? 0.28);
+        $personStrongThreshold = (float) ($thresholds['person_override_confidence'] ?? 0.88);
+        $personStrong = $personDetected && $personConfidence >= $personStrongThreshold;
+        $hasPositiveIndicators = ! empty($sewageIndicators);
+
+        $reasonParts = [];
         if ($personDetected) {
-            $personConfidence = $visionResult['person_confidence'] ?? 0.0;
-            $detectionMethod = $visionResult['detection_method'] ?? 'unknown';
-            $minConfidence = $thresholds['person_detected_min'] ?? 0.70;
-            $requiredConfidence = ($detectionMethod === 'face') ? $minConfidence : ($thresholds['person_label_min'] ?? 0.70);
-            if ($detectionMethod === 'unknown') {
-                $requiredConfidence = 0.80;
-            }
-
-            if ($personConfidence >= $requiredConfidence) {
-                $reason = $detectionMethod === 'face'
-                    ? sprintf('Face detected (confidence: %.2f). Not drainage-related.', $personConfidence)
-                    : sprintf('Person-related content detected (confidence: %.2f). Not drainage-related.', $personConfidence);
-                return [
-                    'label' => 'NOT_SEWAGE',
-                    'confidence' => $thresholds['confidence']['not_sewage_person'] ?? 0.95,
-                    'reason' => $reason,
-                    'evidence' => [
-                        'person_detected' => true,
-                        'person_confidence' => $personConfidence,
-                        'detection_method' => $detectionMethod,
-                        'sewage_score' => 0.0,
-                        'sewage_indicators' => [],
-                        'labels' => $labels,
-                    ],
-                ];
-            }
+            $reasonParts[] = $detectionMethod === 'face'
+                ? sprintf('Face/person signal detected (confidence: %.2f).', $personConfidence)
+                : sprintf('Person-related signal detected (confidence: %.2f).', $personConfidence);
         }
+        if ($hasPositiveIndicators) {
+            $reasonParts[] = 'Drainage indicators found: '.implode(', ', array_slice($sewageIndicators, 0, 5)).'.';
+        } else {
+            $reasonParts[] = 'No strong drainage indicators were found.';
+        }
+        if (! empty($negativeSignals)) {
+            $reasonParts[] = 'Strong non-drainage context: '.implode(', ', array_slice($negativeSignals, 0, 4)).'.';
+        }
+        $reasonParts[] = sprintf(
+            'Weighted score %.2f (drainage %.2f, person penalty %.2f, non-drainage penalty %.2f).',
+            $finalScore,
+            $sewageScore,
+            $personPenalty,
+            $negativeScore
+        );
 
-        $sewageResult = $this->calculateSewageScore($labels, $incidentId);
-        $sewageScore = $sewageResult['score'];
-        $sewageIndicators = $sewageResult['indicators'];
-        $sewageHigh = $thresholds['sewage_high'] ?? 0.85;
-        $sewageLow = $thresholds['sewage_low'] ?? 0.30;
-
-        if ($sewageScore >= $sewageHigh) {
+        if ($finalScore >= $sewageHigh) {
             return [
-                'label' => 'NEEDS_REVIEW',
-                'confidence' => $thresholds['confidence']['needs_review_high'] ?? 0.85,
-                'reason' => 'Drainage-related indicators detected. Requires human verification.',
+                'label' => 'SEWAGE',
+                'confidence' => max(0.60, $finalScore),
+                'reason' => implode(' ', $reasonParts),
                 'evidence' => [
-                    'person_detected' => false,
+                    'person_detected' => $personDetected,
+                    'person_confidence' => $personConfidence,
+                    'detection_method' => $detectionMethod,
                     'sewage_score' => $sewageScore,
+                    'weighted_score' => $finalScore,
+                    'person_penalty' => $personPenalty,
+                    'negative_score' => $negativeScore,
                     'sewage_indicators' => $sewageIndicators,
+                    'negative_signals' => $negativeSignals,
                     'labels' => $labels,
-                ],
-            ];
-        }
-        if ($sewageScore <= $sewageLow) {
-            $reason = empty($labels) ? 'No labels detected. Requires manual review.' : 'No significant drainage-related indicators detected.';
-            return [
-                'label' => empty($labels) ? 'NEEDS_REVIEW' : 'NOT_SEWAGE',
-                'confidence' => empty($labels) ? ($thresholds['confidence']['needs_review_medium'] ?? 0.60) : ($thresholds['confidence']['not_sewage_low_score'] ?? 0.70),
-                'reason' => $reason,
-                'evidence' => [
-                    'person_detected' => false,
-                    'sewage_score' => $sewageScore,
-                    'sewage_indicators' => [],
-                    'labels' => $labels,
-                    'labels_empty' => empty($labels),
+                    'objects' => $objects,
+                    'web_entities' => $webEntities,
                 ],
             ];
         }
 
+        if ($finalScore <= $sewageLow && ! $hasPositiveIndicators && ! $personStrong) {
+            return [
+                'label' => 'NOT_SEWAGE',
+                'confidence' => 1.0 - min(0.5, $finalScore),
+                'reason' => implode(' ', $reasonParts),
+                'evidence' => [
+                    'person_detected' => $personDetected,
+                    'person_confidence' => $personConfidence,
+                    'detection_method' => $detectionMethod,
+                    'sewage_score' => $sewageScore,
+                    'weighted_score' => $finalScore,
+                    'person_penalty' => $personPenalty,
+                    'negative_score' => $negativeScore,
+                    'sewage_indicators' => $sewageIndicators,
+                    'negative_signals' => $negativeSignals,
+                    'labels' => $labels,
+                    'objects' => $objects,
+                    'web_entities' => $webEntities,
+                ],
+            ];
+        }
+
+        // Ambiguous / mixed signals default to manual review.
         return [
             'label' => 'NEEDS_REVIEW',
             'confidence' => $thresholds['confidence']['needs_review_medium'] ?? 0.60,
-            'reason' => empty($labels) ? 'Uncertain. No labels from Vision.' : 'Uncertain. Requires human review.',
+            'reason' => implode(' ', $reasonParts).' Human verification recommended.',
             'evidence' => [
-                'person_detected' => false,
+                'person_detected' => $personDetected,
+                'person_confidence' => $personConfidence,
+                'detection_method' => $detectionMethod,
                 'sewage_score' => $sewageScore,
+                'weighted_score' => $finalScore,
+                'person_penalty' => $personPenalty,
+                'negative_score' => $negativeScore,
                 'sewage_indicators' => $sewageIndicators,
+                'negative_signals' => $negativeSignals,
                 'labels' => $labels,
+                'objects' => $objects,
+                'web_entities' => $webEntities,
                 'labels_empty' => empty($labels),
             ],
         ];
     }
 
-    private function calculateSewageScore(array $labels, ?int $incidentId): array
+    private function calculateDrainageEvidence(array $labels, array $objects, array $webEntities, ?int $incidentId): array
     {
-        $keywords = config('ai.sewage_keywords', []);
-        $maxScore = 0.0;
+        $positiveKeywords = (array) config('ai.sewage_keywords', []);
+        $negativeKeywords = (array) config('ai.non_sewage_keywords', []);
+        $weights = (array) config('ai.weights', []);
+        $labelWeight = (float) ($weights['labels'] ?? 1.0);
+        $objectWeight = (float) ($weights['objects'] ?? 0.9);
+        $webWeight = (float) ($weights['web_entities'] ?? 0.7);
+
+        $positiveScore = 0.0;
+        $negativeScore = 0.0;
         $indicators = [];
-        foreach ($labels as $label) {
-            $description = strtolower($label['description'] ?? '');
-            $score = $label['score'] ?? 0.0;
-            foreach ($keywords as $keyword) {
-                if (stripos($description, strtolower($keyword)) !== false) {
-                    $maxScore = max($maxScore, $score);
-                    $indicators[] = $label['description'];
-                    break;
+        $negativeSignals = [];
+
+        $scan = function (array $items, string $textKey, string $scoreKey, float $weight) use (
+            $positiveKeywords,
+            $negativeKeywords,
+            &$positiveScore,
+            &$negativeScore,
+            &$indicators,
+            &$negativeSignals
+        ): void {
+            foreach ($items as $item) {
+                $text = strtolower((string) ($item[$textKey] ?? ''));
+                $score = (float) ($item[$scoreKey] ?? 0.0);
+                if ($text === '') {
+                    continue;
+                }
+
+                foreach ($positiveKeywords as $keyword) {
+                    if ($keyword !== '' && str_contains($text, strtolower($keyword))) {
+                        $positiveScore = max($positiveScore, $score * $weight);
+                        $indicators[] = (string) ($item[$textKey] ?? '');
+                        break;
+                    }
+                }
+
+                foreach ($negativeKeywords as $keyword) {
+                    if ($keyword !== '' && str_contains($text, strtolower($keyword))) {
+                        $negativeScore = max($negativeScore, $score * $weight);
+                        $negativeSignals[] = (string) ($item[$textKey] ?? '');
+                        break;
+                    }
                 }
             }
-        }
-        return ['score' => $maxScore, 'indicators' => array_unique($indicators)];
+        };
+
+        $scan($labels, 'description', 'score', $labelWeight);
+        $scan($objects, 'name', 'score', $objectWeight);
+        $scan($webEntities, 'description', 'score', $webWeight);
+
+        return [
+            'score' => max(0.0, min(1.0, $positiveScore)),
+            'negative_score' => max(0.0, min(0.75, $negativeScore)),
+            'indicators' => array_values(array_unique(array_filter($indicators))),
+            'negative_signals' => array_values(array_unique(array_filter($negativeSignals))),
+        ];
     }
 }
