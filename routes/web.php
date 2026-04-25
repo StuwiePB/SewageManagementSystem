@@ -1,15 +1,22 @@
 <?php
 
 use App\Http\Controllers\Admin\StatisticsController as AdminStatisticsController;
+use App\Http\Controllers\Admin\SupportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminWorkOrderController;
+use App\Http\Controllers\Customer\ChatController;
+use App\Http\Controllers\Customer\PreferenceController;
+use App\Http\Controllers\Customer\ProfileController;
+use App\Http\Controllers\Customer\ReportController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\Operations\StatisticsController as OperationsStatisticsController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\WorkOrderController;
+use App\Models\Report;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -30,7 +37,7 @@ Route::get('/explore', function () {
     }
 
     return view('r_customer.dashboard', [
-        'reports' => \App\Models\Report::with('user')
+        'reports' => Report::with('user')
             ->whereHas('operationsReport')
             ->latest()
             ->get(),
@@ -39,12 +46,13 @@ Route::get('/explore', function () {
 })->name('guest.explore');
 
 Route::prefix('explore/report')->group(function () {
-    Route::get('/rproblem', fn () => view('r_customer.rproblem', ['guestReportFlow' => true]))->name('guest.report.rproblem');
-    Route::get('/rpicture', fn () => view('r_customer.rpicture', ['guestReportFlow' => true]))->name('guest.report.rpicture');
-    Route::get('/rlocation', fn () => view('r_customer.rlocation', ['guestReportFlow' => true]))->name('guest.report.rlocation');
-    Route::get('/rdetails', fn () => view('r_customer.rdetails', ['guestReportFlow' => true]))->name('guest.report.rdetails');
-    Route::get('/rpreview', fn () => view('r_customer.rpreview', ['guestReportFlow' => true]))->name('guest.report.rpreview');
-    Route::post('/submit', [App\Http\Controllers\Customer\ReportController::class, 'submit'])->name('guest.report.submit');
+    $guestReportToLogin = fn () => redirect()->route('login');
+    Route::get('/rproblem', $guestReportToLogin)->name('guest.report.rproblem');
+    Route::get('/rpicture', $guestReportToLogin)->name('guest.report.rpicture');
+    Route::get('/rlocation', $guestReportToLogin)->name('guest.report.rlocation');
+    Route::get('/rdetails', $guestReportToLogin)->name('guest.report.rdetails');
+    Route::get('/rpreview', $guestReportToLogin)->name('guest.report.rpreview');
+    Route::post('/submit', $guestReportToLogin)->name('guest.report.submit');
 });
 
 Route::get('/signup', function () {
@@ -139,6 +147,19 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::post('/admin/incidents/{incident}/send-to-operations', [IncidentController::class, 'sendToOperations'])->name('admin.incidents.send-to-operations');
     Route::post('/admin/incidents/{incident}/delete', [IncidentController::class, 'destroy'])->name('admin.incidents.destroy');
     Route::get('/admin/gis-map', [AdminController::class, 'gisMap'])->name('admin.gis-map');
+    Route::get('/admin/civilians', [AdminController::class, 'civilianUsersIndex'])->name('admin.civilians.index');
+    Route::get('/admin/civilians/{user}', [AdminController::class, 'showCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.show');
+    Route::post('/admin/civilians/{user}/deactivate', [AdminController::class, 'deactivateCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.deactivate');
+    Route::post('/admin/civilians/{user}/activate', [AdminController::class, 'activateCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.activate');
+    Route::post('/admin/civilians/{user}/delete', [AdminController::class, 'deleteCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.delete');
 
     Route::get('/admin/statistics', [AdminStatisticsController::class, 'index'])->name('admin.statistics.index');
     Route::get('/admin/statistics/view', [AdminStatisticsController::class, 'show'])->name('admin.statistics.show');
@@ -167,6 +188,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::post('/admin/staff/users/{user}/activate', [AdminController::class, 'activateStaffUser'])
         ->whereNumber('user')
         ->name('admin.staff.users.activate');
+    Route::post('/admin/staff/users/{user}/delete', [AdminController::class, 'deleteStaffUser'])
+        ->whereNumber('user')
+        ->name('admin.staff.users.delete');
 
     Route::get('/admin/workers/create', [AdminController::class, 'createWorker'])->name('admin.workers.create');
     Route::post('/admin/workers', [AdminController::class, 'storeWorker'])->name('admin.workers.store');
@@ -176,11 +200,11 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
     Route::get('/incidents/{incident}/image', [IncidentController::class, 'showImage'])->name('incidents.image');
 
-    Route::get('/admin/support', [App\Http\Controllers\Admin\SupportController::class, 'chat'])->name('admin.support.chat');
-    Route::get('/admin/support/conversations', [App\Http\Controllers\Admin\SupportController::class, 'index'])->name('admin.support.conversations');
-    Route::get('/admin/support/conversations/{userId}/messages', [App\Http\Controllers\Admin\SupportController::class, 'messages'])->name('admin.support.messages');
-    Route::post('/admin/support/conversations/{userId}/reply', [App\Http\Controllers\Admin\SupportController::class, 'reply'])->name('admin.support.reply');
-    Route::post('/admin/support/conversations/{userId}/terminate', [App\Http\Controllers\Admin\SupportController::class, 'terminate'])->name('admin.support.terminate');
+    Route::get('/admin/support', [SupportController::class, 'chat'])->name('admin.support.chat');
+    Route::get('/admin/support/conversations', [SupportController::class, 'index'])->name('admin.support.conversations');
+    Route::get('/admin/support/conversations/{userId}/messages', [SupportController::class, 'messages'])->name('admin.support.messages');
+    Route::post('/admin/support/conversations/{userId}/reply', [SupportController::class, 'reply'])->name('admin.support.reply');
+    Route::post('/admin/support/conversations/{userId}/terminate', [SupportController::class, 'terminate'])->name('admin.support.terminate');
 });
 
 Route::middleware(['auth', 'verified', 'role:super_admin'])->group(function () {
@@ -258,13 +282,7 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         $user = auth()->user();
 
         return view('r_customer.dashboard', [
-            'reports' => \App\Models\Report::with(['user', 'operationsReport'])
-                ->where(function ($q) use ($user) {
-                    $q->whereHas('operationsReport')
-                        ->orWhere('user_id', $user->id);
-                })
-                ->latest()
-                ->get(),
+            'reports' => Report::queryForCustomerDashboard($user)->get(),
         ]);
     })->name('customer.dashboard');
     Route::get('/{name}/brudmsgpt', fn () => view('r_customer.bruflowgpt'))->name('customer.brudmsgpt');
@@ -284,14 +302,20 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
     })->name('customer.preference');
     Route::get('/{name}/profilesettings', fn () => view('r_customer.profilesettings'))->name('customer.profilesettings');
     Route::get('/{name}/email-bind-otp', fn () => view('r_customer.email-bind-otp'))->name('customer.email.bind.otp');
-    Route::get('/{name}/myhistory', fn () => view('r_customer.myhistory'))->name('customer.myhistory');
+    Route::get('/{name}/myhistory', function () {
+        $user = auth()->user();
+
+        return view('r_customer.myhistory', [
+            'visibleReports' => Report::queryForCustomerHistory($user->id)->get(),
+        ]);
+    })->name('customer.myhistory');
     Route::get('/{name}/rproblem', fn () => view('r_customer.rproblem'))->name('customer.rproblem');
     Route::get('/{name}/rpicture', fn () => view('r_customer.rpicture'))->name('customer.rpicture');
     Route::get('/{name}/rlocation', fn () => view('r_customer.rlocation'))->name('customer.rlocation');
     Route::get('/{name}/rdetails', fn () => view('r_customer.rdetails'))->name('customer.rdetails');
     Route::get('/{name}/rpreview', fn () => view('r_customer.rpreview'))->name('customer.rpreview');
     Route::get('/{name}/livemap', function () {
-        $reports = \App\Models\Report::whereNotNull('latitude')
+        $reports = Report::whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->whereHas('operationsReport')
             ->latest()
@@ -305,7 +329,7 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
                 'latitude' => $r->latitude,
                 'longitude' => $r->longitude,
                 'status' => $r->status,
-                'photo_url' => $r->photo_path ? \Illuminate\Support\Facades\Storage::url($r->photo_path) : null,
+                'photo_url' => $r->photo_path ? Storage::url($r->photo_path) : null,
                 'created_at' => $r->created_at->format('jS M Y'),
                 'updated_at' => $r->updated_at->format('jS M Y'),
                 'description' => $r->description ?? '',
@@ -316,16 +340,16 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         ]);
     })->name('customer.livemap');
 
-    Route::get('/{name}/report', [App\Http\Controllers\Customer\ReportController::class, 'type'])->name('customer.report.type');
-    Route::post('/{name}/report/type', [App\Http\Controllers\Customer\ReportController::class, 'storeType'])->name('customer.report.storeType');
-    Route::get('/{name}/report/photo', [App\Http\Controllers\Customer\ReportController::class, 'photo'])->name('customer.report.photo');
-    Route::post('/{name}/report/photo', [App\Http\Controllers\Customer\ReportController::class, 'storePhoto'])->name('customer.report.storePhoto');
-    Route::get('/{name}/report/preview', [App\Http\Controllers\Customer\ReportController::class, 'preview'])->name('customer.report.preview');
-    Route::post('/{name}/report/submit', [App\Http\Controllers\Customer\ReportController::class, 'submit'])->name('customer.report.submit');
-    Route::post('/{name}/report/cancel', [App\Http\Controllers\Customer\ReportController::class, 'cancel'])->name('customer.report.cancel');
+    Route::get('/{name}/report', [ReportController::class, 'type'])->name('customer.report.type');
+    Route::post('/{name}/report/type', [ReportController::class, 'storeType'])->name('customer.report.storeType');
+    Route::get('/{name}/report/photo', [ReportController::class, 'photo'])->name('customer.report.photo');
+    Route::post('/{name}/report/photo', [ReportController::class, 'storePhoto'])->name('customer.report.storePhoto');
+    Route::get('/{name}/report/preview', [ReportController::class, 'preview'])->name('customer.report.preview');
+    Route::post('/{name}/report/submit', [ReportController::class, 'submit'])->name('customer.report.submit');
+    Route::post('/{name}/report/cancel', [ReportController::class, 'cancel'])->name('customer.report.cancel');
 });
 
-Route::post('/customer/chat', App\Http\Controllers\Customer\ChatController::class)
+Route::post('/customer/chat', ChatController::class)
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.chat');
 
 Route::get('/customer/support/messages', [App\Http\Controllers\Customer\SupportController::class, 'index'])
@@ -333,22 +357,22 @@ Route::get('/customer/support/messages', [App\Http\Controllers\Customer\SupportC
 Route::post('/customer/support/messages', [App\Http\Controllers\Customer\SupportController::class, 'store'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.support.store');
 
-Route::post('/customer/profile/photo', [App\Http\Controllers\Customer\ProfileController::class, 'updatePhoto'])
+Route::post('/customer/profile/photo', [ProfileController::class, 'updatePhoto'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.photo.update');
 
-Route::post('/customer/profile/name', [App\Http\Controllers\Customer\ProfileController::class, 'updateName'])
+Route::post('/customer/profile/name', [ProfileController::class, 'updateName'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.name.update');
 
-Route::post('/customer/profile/phone', [App\Http\Controllers\Customer\ProfileController::class, 'updatePhone'])
+Route::post('/customer/profile/phone', [ProfileController::class, 'updatePhone'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.phone.update');
 
-Route::post('/customer/profile', [App\Http\Controllers\Customer\ProfileController::class, 'update'])
+Route::post('/customer/profile', [ProfileController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.update');
 
-Route::post('/customer/profile/bind-email', [App\Http\Controllers\Customer\ProfileController::class, 'bindEmail'])
+Route::post('/customer/profile/bind-email', [ProfileController::class, 'bindEmail'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.bind-email');
 
-Route::post('/customer/preference', [App\Http\Controllers\Customer\PreferenceController::class, 'update'])
+Route::post('/customer/preference', [PreferenceController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.preference.update');
 
 require __DIR__.'/settings.php';

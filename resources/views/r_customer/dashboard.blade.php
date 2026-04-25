@@ -133,7 +133,7 @@
         {{-- Horizontally scrolling cards --}}
         <div style="display: flex; gap: 10px; overflow-x: auto; padding: 4px 4px 8px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
             {{-- Add new card: requests location permission before navigating --}}
-            <a href="{{ $guestMode ? route('guest.report.rproblem') : route('customer.rproblem', ['name' => $user->profileSlug()]) }}" id="add-report-card" class="press-btn" style="width: 110px; min-width: 110px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; cursor: pointer; text-decoration: none;">
+            <a href="{{ $guestMode ? route('login') : route('customer.rproblem', ['name' => $user->profileSlug()]) }}" id="add-report-card" class="press-btn" style="width: 110px; min-width: 110px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; cursor: pointer; text-decoration: none;">
                 <img src="{{ asset('images/Vectors/dashboard_addreport.svg') }}" alt="" style="width: 55px; height: 55px; object-fit: contain;" />
             </a>
 
@@ -143,29 +143,42 @@
             @foreach($reports ?? [] as $i => $report)
             @php
                 $isOwner = !$guestMode && $user && $report->user_id === $user->id;
+                $isRejected = $report->wasRejectedByAdmin();
                 $isNotSentToOperations = !($report->operationsReport ?? null);
-                $isOwnerUnderReview = $isNotSentToOperations && $isOwner;
-                if ($isNotSentToOperations && !$isOwner) {
+                $isOwnerUnderReview = ! $isRejected && $isNotSentToOperations && $isOwner;
+                if ($isNotSentToOperations && ! $isOwner && ! $isRejected) {
                     continue;
                 }
+                $reportPhotoOk = $report->photo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($report->photo_path);
             @endphp
             <div class="incident-card" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
-                @if($report->photo_path)
+                @if($reportPhotoOk)
                 <div style="position: relative; width: 100%; height: 75px; min-width: 0; border-top-left-radius: 9px; border-top-right-radius: 9px; overflow: hidden; outline: 0.7px solid rgba(255, 255, 255, 0.21);">
-                    <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; filter: {{ $isOwnerUnderReview ? 'brightness(0.42) blur(1.6px)' : 'none' }};" />
+                    <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; filter: {{ $isOwnerUnderReview ? 'brightness(0.42) blur(1.6px)' : ($isRejected ? 'brightness(0.55) grayscale(0.35)' : 'none') }};" />
                     @if($isOwnerUnderReview)
                     <div style="position: absolute; inset: 0; background: rgba(6, 10, 22, 0.38); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px;">
                         <img src="{{ asset('images/Vectors/dashboard_pending.svg') }}" alt="" style="width: 36px; height: 36px; object-fit: contain; transform: translateY(3px);" />
                         <span style="color: rgba(255,255,255,0.72); font-size: 7px; font-weight: 300; font-family: Poppins, sans-serif; text-align: center; line-height: 1.25; transform: translateY(6px);">Currently under review</span>
                     </div>
+                    @elseif($isRejected)
+                    <div style="position: absolute; inset: 0; background: rgba(6, 10, 22, 0.42); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px;">
+                        <span style="color: #9CA3AF; font-size: 7px; font-weight: 600; font-family: Poppins, sans-serif; text-align: center; line-height: 1.2;">Rejected</span>
+                    </div>
                     @endif
                 </div>
                 @else
-                <div style="width: 100%; height: 75px; background: rgba(139, 105, 20, 0.5); border-top-left-radius: 9px; border-top-right-radius: 9px; outline: 0.7px solid rgba(255, 255, 255, 0.21);"></div>
+                <div style="width: 100%; height: 75px; background: {{ $isRejected ? 'rgba(75, 85, 99, 0.55)' : 'rgba(139, 105, 20, 0.5)' }}; border-top-left-radius: 9px; border-top-right-radius: 9px; outline: 0.7px solid rgba(255, 255, 255, 0.21); display: flex; align-items: center; justify-content: center;">
+                    @if($isRejected)
+                        <span style="color: #9CA3AF; font-size: 7px; font-weight: 600; font-family: Poppins, sans-serif;">Rejected</span>
+                    @endif
+                </div>
                 @endif
                 <div style="padding: 6px 8px; flex: 1; display: flex; flex-direction: column;">
                     <span style="color: white; font-size: 9px; font-weight: 600; font-family: Poppins, sans-serif; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $report->problem_type }}</span>
                     <span style="color: white; font-size: 9px; font-weight: 300; font-family: Poppins, sans-serif; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ Str::limit($report->address ?? '—', 20) }}</span>
+                    @if($isRejected)
+                    <span style="color: #9CA3AF; font-size: 6px; font-weight: 500; font-family: Poppins, sans-serif; line-height: 1.25; margin-top: 2px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ Str::limit('Rejected - '.$report->customerDeletionReasonShortLabel(), 72) }}</span>
+                    @endif
                     <div style="margin-top: auto; display: flex; flex-direction: column; gap: 3px;">
                         <span style="color: rgba(255,255,255,0.4); font-size: 7px; font-weight: 300; font-family: Poppins, sans-serif; line-height: 1;">{{ $report->created_at->format('jS M Y') }}</span>
                         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -180,8 +193,13 @@
                             @endif
                             <span style="color: rgba(255,255,255,0.6); font-size: 7px; font-weight: 400; font-family: Poppins, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; top: 2px;">{{ $reportUser->name ?? 'Unknown' }}</span>
                         </div>
-                        @php $st = $report->status ?? 'pending'; $glowClass = ($st === 'resolved') ? '' : (($st === 'in_progress' || $st === 'under_review') ? ' status-yellow' : ' status-red'); @endphp
-                        <div class="status-dot{{ $isOwnerUnderReview ? '' : $glowClass }}" style="width: 6px; height: 6px; border-radius: 9999px; background: {{ $isOwnerUnderReview ? '#9CA3AF' : ($statusColors[$st] ?? '#ff0000') }}; flex-shrink: 0; animation: {{ $isOwnerUnderReview ? 'none' : '' }};"></div>
+                        @php
+                            $st = $report->status ?? 'pending';
+                            $glowClass = $isRejected ? '' : (($st === 'resolved') ? '' : (($st === 'in_progress' || $st === 'under_review') ? ' status-yellow' : ' status-red'));
+                            $dotBg = $isRejected ? '#9CA3AF' : ($isOwnerUnderReview ? '#9CA3AF' : ($statusColors[$st] ?? '#ff0000'));
+                            $dotAnim = ($isRejected || $isOwnerUnderReview || $st === 'resolved') ? 'none' : '';
+                        @endphp
+                        <div class="status-dot{{ $glowClass }}" style="width: 6px; height: 6px; border-radius: 9999px; background: {{ $dotBg }}; flex-shrink: 0; animation: {{ $dotAnim }};"></div>
                     </div>
                     </div>
                 </div>
@@ -352,6 +370,7 @@
                 }, 100);
             });
         });
+        @unless($guestMode ?? false)
         var addCard = document.getElementById('add-report-card');
         if (addCard && navigator.geolocation) {
             addCard.addEventListener('click', function(e) {
@@ -372,6 +391,7 @@
                 );
             });
         }
+        @endunless
         @if(session('status') === 'report-submitted')
         try { ['rpicture','rproblem_photo','rproblem_choice','rproblem_address','rproblem_lat','rproblem_lng','rproblem_severity','rproblem_description'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(x){}
         alert('Submitted!');

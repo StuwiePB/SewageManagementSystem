@@ -140,10 +140,21 @@
                     <a href="{{ route('admin.incidents.review') }}" class="{{ request()->routeIs('admin.incidents.review') ? 'active' : '' }}"><i class="fas fa-clipboard-check"></i> Review Queue</a>
                 </div>
             </div>
-            <a href="{{ route('admin.gis-map') }}" class="nav-item {{ request()->routeIs('admin.gis-map') ? 'active' : '' }}">
-                <i class="fas fa-map-location-dot"></i>
-                <span>GIS Map</span>
-            </a>
+            <div class="nav-dropdown {{ request()->routeIs('admin.gis-map') ? 'open' : '' }}">
+                <button type="button" class="nav-item nav-dropdown-toggle {{ request()->routeIs('admin.gis-map') ? 'active' : '' }}" onclick="this.closest('.nav-dropdown').classList.toggle('open')">
+                    <i class="fas fa-map-location-dot"></i>
+                    <span>GIS Map</span>
+                    <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <a href="{{ route('admin.gis-map', ['view' => 'admin_ops']) }}" class="{{ request()->routeIs('admin.gis-map') && request()->query('view', 'admin_ops') === 'admin_ops' ? 'active' : '' }}">
+                        <i class="fas fa-layer-group"></i> Admin/Ops GIS map
+                    </a>
+                    <a href="{{ route('admin.gis-map', ['view' => 'customer']) }}" class="{{ request()->routeIs('admin.gis-map') && request()->query('view') === 'customer' ? 'active' : '' }}">
+                        <i class="fas fa-map-pin"></i> Customer GIS map
+                    </a>
+                </div>
+            </div>
             <a href="{{ route('admin.statistics.index') }}" class="nav-item {{ request()->routeIs('admin.statistics.*') ? 'active' : '' }}">
                 <i class="fas fa-chart-line"></i>
                 <span>Statistics</span>
