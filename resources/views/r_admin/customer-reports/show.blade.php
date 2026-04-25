@@ -73,17 +73,6 @@
             <p class="info-label">Submitted</p>
             <p class="info-value">{{ $report->created_at?->format('Y-m-d H:i') ?? '—' }}</p>
         </div>
-        @if($report->drainage_ai_verdict)
-            <div class="detail-row">
-                <p class="info-label">AI drainage check</p>
-                <p class="info-value">{{ match ($report->drainage_ai_verdict) {
-                    'drainage' => 'Drainage-related',
-                    'not_drainage' => 'Not drainage-related',
-                    'needs_review' => 'Needs review',
-                    default => $report->drainage_ai_verdict,
-                } }}</p>
-            </div>
-        @endif
         <div class="detail-row">
             <p class="info-label">Operations</p>
             @if($report->operationsReport)
@@ -107,6 +96,20 @@
             <img src="{{ $photoUrl }}" alt="Report photo" style="max-width: 100%; border-radius: 8px; border: 1px solid rgba(106, 150, 255, 0.2);" />
         @else
             <p class="info-value-muted">No photo uploaded.</p>
+        @endif
+        @if($report->drainage_ai_verdict)
+            <div class="detail-row" style="margin-top: 1rem;">
+                <p class="info-label">AI drainage check</p>
+                <p class="info-value">{{ match ($report->drainage_ai_verdict) {
+                    'drainage' => 'Drainage-related',
+                    'not_drainage' => 'Not drainage-related',
+                    'needs_review' => 'Needs review',
+                    default => $report->drainage_ai_verdict,
+                } }}</p>
+                @if(!empty($aiReason))
+                    <p class="info-value-small" style="margin-top: 0.35rem; line-height: 1.45;">{{ $aiReason }}</p>
+                @endif
+            </div>
         @endif
     </section>
 </div>
