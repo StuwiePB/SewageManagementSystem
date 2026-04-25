@@ -7,6 +7,7 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class WorkOrderController extends Controller
 {
@@ -26,19 +27,68 @@ class WorkOrderController extends Controller
         return view('r_operators.work-orders.index', compact('workOrders'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $reports = OperationsReport::where('status', 'pending')->orderBy('created_at', 'desc')->get();
+
+        $prefillReport = null;
+        if ($request->filled('report')) {
+            $candidate = OperationsReport::with('customerReport')
+                ->whereKey($request->integer('report'))
+                ->first();
+            if ($candidate && ! $candidate->workOrder) {
+                $prefillReport = $candidate;
+                if (! $reports->contains('id', $candidate->id)) {
+                    $reports = $reports->prepend($candidate)->values();
+                }
+            }
+        }
+
         $districts = config('brunei.districts', []);
         $mukims = config('brunei.mukims', []);
 
-        return view('r_operators.work-orders.create', compact('reports', 'districts', 'mukims'));
+        $workOrderDefaults = [
+            'report_id' => '',
+            'type' => '',
+            'priority' => 'medium',
+            'location_address' => '',
+            'district' => '',
+            'mukim' => '',
+            'latitude' => '',
+            'longitude' => '',
+            'description' => '',
+            'notes' => '',
+        ];
+
+        if ($prefillReport) {
+            $workOrderDefaults['report_id'] = (string) $prefillReport->id;
+            $workOrderDefaults['type'] = ucfirst(str_replace('_', ' ', (string) $prefillReport->issue_type));
+            $workOrderDefaults['priority'] = $prefillReport->severity === 'urgent' ? 'high' : 'medium';
+            $workOrderDefaults['location_address'] = (string) $prefillReport->location_address;
+            $workOrderDefaults['district'] = (string) ($prefillReport->district ?? '');
+            $workOrderDefaults['mukim'] = (string) ($prefillReport->mukim ?? '');
+            $workOrderDefaults['latitude'] = $prefillReport->latitude !== null ? (string) $prefillReport->latitude : '';
+            $workOrderDefaults['longitude'] = $prefillReport->longitude !== null ? (string) $prefillReport->longitude : '';
+            $workOrderDefaults['description'] = (string) ($prefillReport->description ?? '');
+        }
+
+        return view('r_operators.work-orders.create', compact(
+            'reports',
+            'districts',
+            'mukims',
+            'prefillReport',
+            'workOrderDefaults'
+        ));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'report_id' => 'nullable|exists:operations_reports,id',
+            'report_id' => [
+                'nullable',
+                'exists:operations_reports,id',
+                Rule::unique('work_orders', 'report_id'),
+            ],
             'type' => 'required|string|max:255',
             'priority' => 'required|in:low,medium,high,critical',
             'location_address' => 'required|string|max:255',
