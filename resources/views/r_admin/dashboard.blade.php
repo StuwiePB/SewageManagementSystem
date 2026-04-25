@@ -93,14 +93,14 @@
             </div>
         </div>
         <div class="stats-grid">
-            <div class="stat-card">
+            <a href="{{ route('admin.civilians.index') }}" class="stat-card" title="View all civilian users">
                 <div class="stat-content">
                     <h3>Civilian Users</h3>
                     <div class="value">{{ $civilianUsers ?? 0 }}</div>
                     <div class="change positive">Customer accounts</div>
                 </div>
                 <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-            </div>
+            </a>
             <div class="stat-card">
                 <div class="stat-content">
                     <h3>Admin</h3>

@@ -16,6 +16,9 @@
 @if(session('success'))
     <div class="alert-success" style="margin-bottom: 1.25rem;">{{ session('success') }}</div>
 @endif
+@if(session('error'))
+    <div class="alert-danger" style="margin-bottom: 1.25rem;">{{ session('error') }}</div>
+@endif
 <div class="header">
     <div>
         <a href="{{ route('admin.staff.index', $backParams) }}" class="back-link" style="margin-bottom: 0.75rem;"><i class="fas fa-arrow-left" style="margin-right: 0.35rem;"></i>Staff directory</a>
@@ -133,6 +136,18 @@
                         <input type="hidden" name="role" value="{{ request('role') }}">
                     @endif
                     <button type="submit" class="btn btn-primary">Activate account</button>
+                </form>
+            @endif
+            @if($canDeleteStaffUser ?? false)
+                <form method="post" action="{{ route('admin.staff.users.delete', $staffUser) }}" style="display: inline;" onsubmit="return confirm('Delete this account permanently? This action cannot be undone.');">
+                    @csrf
+                    @if(request()->filled('q'))
+                        <input type="hidden" name="q" value="{{ request('q') }}">
+                    @endif
+                    @if(request()->filled('role'))
+                        <input type="hidden" name="role" value="{{ request('role') }}">
+                    @endif
+                    <button type="submit" class="btn btn-danger" style="background: rgba(255, 91, 91, 0.15); border-color: rgba(255, 91, 91, 0.4); color: #ff8f8f;">Delete account</button>
                 </form>
             @endif
         </div>

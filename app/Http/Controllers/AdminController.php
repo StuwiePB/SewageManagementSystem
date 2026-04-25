@@ -18,10 +18,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
+use Throwable;
 
 class AdminController extends Controller
 {
@@ -286,8 +288,14 @@ class AdminController extends Controller
     }
 
     /** GIS Map: interactive map view of incidents (reports) and work orders. */
-    public function gisMap(): View
+    public function gisMap(Request $request): View
     {
+        $request->validate([
+            'view' => ['nullable', Rule::in(['admin_ops', 'customer'])],
+        ]);
+
+        $mapView = (string) $request->query('view', 'admin_ops');
+
         $reports = OperationsReport::whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->whereIn('status', ['new', 'in_progress'])
@@ -314,7 +322,27 @@ class AdminController extends Controller
             'crew' => $w->crew?->name,
         ])->values()->all();
 
-        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders'));
+        $customerReports = Report::query()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->latest()
+            ->get();
+
+        $mapCustomerReports = $customerReports->map(fn ($r) => [
+            'id' => $r->id,
+            'lat' => (float) $r->latitude,
+            'lng' => (float) $r->longitude,
+            'number' => 'CR-'.$r->id,
+            'status' => $r->status,
+            'problem_type' => $r->problem_type,
+            'address' => $r->address,
+            'description' => $r->description,
+            'photo_url' => $r->photo_path ? Storage::url($r->photo_path) : null,
+            'created_at' => $r->created_at?->format('jS M Y'),
+            'updated_at' => $r->updated_at?->format('jS M Y'),
+        ])->values()->all();
+
+        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView'));
     }
 
     /**
@@ -323,43 +351,157 @@ class AdminController extends Controller
     public function staffDirectory(Request $request): View
     {
         $request->validate([
-            'role' => ['sometimes', 'in:all,admin,operator'],
+            'role' => ['sometimes', 'in:all,super_admin,admin,operation,operator'],
             'q' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $roleFilter = $request->query('role', 'all');
+        $roleFilter = (string) $request->query('role', 'all');
+        if ($roleFilter === 'operator') {
+            $roleFilter = 'operation';
+        }
         $search = trim((string) $request->query('q', ''));
         $searchLike = $search !== '' ? '%'.addcslashes($search, '%_\\').'%' : null;
 
-        $adminUsers = collect();
-        $operationUsers = collect();
+        $superAdminIds = User::role(User::ROLE_SUPER_ADMIN)->pluck('id');
+        $superAdminIdsColumn = User::where('role', User::ROLE_SUPER_ADMIN)->pluck('id');
+        $adminIds = User::role(User::ROLE_ADMIN)->pluck('id');
+        $adminIdsColumn = User::where('role', User::ROLE_ADMIN)->pluck('id');
+        $operationIds = User::role(User::ROLE_OPERATOR)->pluck('id');
+        $operationIdsColumn = User::where('role', User::ROLE_OPERATOR)->pluck('id');
 
-        if (in_array($roleFilter, ['all', 'admin'], true)) {
-            $adminIds = User::role([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
-            $adminIdsColumn = User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
-            $adminQuery = User::query()
-                ->whereIn('id', $adminIds->merge($adminIdsColumn)->unique())
-                ->orderBy('name');
-            if ($searchLike !== null) {
-                $adminQuery->where('name', 'like', $searchLike);
-            }
-            $adminUsers = $adminQuery->get();
+        $superAdminIdSet = $superAdminIds->merge($superAdminIdsColumn)->unique()->values();
+        $adminIdSet = $adminIds->merge($adminIdsColumn)->unique()->values();
+        $operationIdSet = $operationIds->merge($operationIdsColumn)->unique()->values();
+
+        $allStaffIds = $superAdminIdSet
+            ->merge($adminIdSet)
+            ->merge($operationIdSet)
+            ->unique()
+            ->values();
+
+        $staffQuery = User::query()
+            ->whereIn('id', $allStaffIds)
+            ->orderBy('name');
+
+        if ($searchLike !== null) {
+            $staffQuery->where('name', 'like', $searchLike);
         }
 
-        if (in_array($roleFilter, ['all', 'operator'], true)) {
-            $operationIds = User::role(User::ROLE_OPERATOR)->pluck('id');
-            $operationIdsColumn = User::where('role', User::ROLE_OPERATOR)->pluck('id');
-            $operationQuery = User::query()
-                ->whereIn('id', $operationIds->merge($operationIdsColumn)->unique())
-                ->orderBy('name')
-                ->with('crew');
-            if ($searchLike !== null) {
-                $operationQuery->where('name', 'like', $searchLike);
-            }
-            $operationUsers = $operationQuery->get();
+        if ($roleFilter === User::ROLE_SUPER_ADMIN) {
+            $staffQuery->whereIn('id', $superAdminIdSet);
+        } elseif ($roleFilter === User::ROLE_ADMIN) {
+            $staffQuery->whereIn('id', $adminIdSet);
+        } elseif ($roleFilter === 'operation') {
+            $staffQuery->whereIn('id', $operationIdSet);
         }
 
-        return view('r_admin.staff.index', compact('adminUsers', 'operationUsers', 'roleFilter', 'search'));
+        $staffUsers = $staffQuery->get();
+
+        $staffUsers = $staffUsers->map(function (User $user): User {
+            $user->staff_role_label = $this->staffUserRoleLabel($user);
+
+            return $user;
+        });
+
+        return view('r_admin.staff.index', compact('staffUsers', 'roleFilter', 'search'));
+    }
+
+    /**
+     * Admin console: list civilian/customer accounts.
+     */
+    public function civilianUsersIndex(Request $request): View
+    {
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $search = trim((string) $request->query('q', ''));
+        $searchLike = $search !== '' ? '%'.addcslashes($search, '%_\\').'%' : null;
+
+        $civilianUsers = User::query()
+            ->where(function ($q): void {
+                $q->where('role', User::ROLE_CUSTOMER)
+                    ->orWhereHas('roles', function ($r): void {
+                        $r->where('name', User::ROLE_CUSTOMER);
+                    });
+            })
+            ->orderBy('name');
+
+        if ($searchLike !== null) {
+            $civilianUsers->where('name', 'like', $searchLike);
+        }
+
+        return view('r_admin.civilians.index', [
+            'civilianUsers' => $civilianUsers->get(),
+            'search' => $search,
+        ]);
+    }
+
+    public function showCivilianUser(Request $request, User $user): View
+    {
+        if (! ($user->hasRole(User::ROLE_CUSTOMER) || $user->role === User::ROLE_CUSTOMER)) {
+            abort(404);
+        }
+
+        return view('r_admin.civilians.show', [
+            'civilianUser' => $user,
+            'canManageCivilianAccount' => $this->canManageCivilianAccount($request->user(), $user),
+        ]);
+    }
+
+    public function deactivateCivilianUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageCivilianAccount($request->user(), $user)) {
+            abort(403);
+        }
+
+        if (! ($user->is_active ?? true)) {
+            return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Account is already deactivated.');
+        }
+
+        $user->forceFill(['is_active' => false])->save();
+
+        return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Civilian account deactivated.');
+    }
+
+    public function activateCivilianUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageCivilianAccount($request->user(), $user)) {
+            abort(403);
+        }
+
+        if ($user->is_active ?? true) {
+            return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Account is already active.');
+        }
+
+        $user->forceFill(['is_active' => true])->save();
+
+        return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Civilian account activated.');
+    }
+
+    public function deleteCivilianUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageCivilianAccount($request->user(), $user)) {
+            abort(403);
+        }
+
+        $deletedName = $user->name;
+
+        try {
+            $user->syncRoles([]);
+            $user->delete();
+        } catch (Throwable $e) {
+            Log::warning('Failed to delete civilian account.', [
+                'actor_id' => $request->user()?->id,
+                'target_user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->redirectToCivilians($request)
+                ->with('error', 'Unable to delete this civilian account right now. Please try again.');
+        }
+
+        return $this->redirectToCivilians($request)->with('success', 'Deleted civilian account: '.$deletedName.'.');
     }
 
     /**
@@ -378,6 +520,7 @@ class AdminController extends Controller
             'staffUser' => $user,
             'staffRoleLabel' => $this->staffUserRoleLabel($user),
             'canManageStaffActivation' => $this->canManageStaffAccountActivation($actor, $user),
+            'canDeleteStaffUser' => $this->canDeleteStaffUser($actor, $user),
         ]);
     }
 
@@ -409,6 +552,38 @@ class AdminController extends Controller
         $user->forceFill(['is_active' => true])->save();
 
         return $this->redirectToStaffUser($user, $request)->with('success', 'Account activated. They can sign in again.');
+    }
+
+    public function deleteStaffUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canDeleteStaffUser($request->user(), $user)) {
+            abort(403);
+        }
+
+        $deletedName = $user->name;
+
+        try {
+            $user->syncRoles([]);
+            $user->delete();
+        } catch (Throwable $e) {
+            Log::warning('Failed to delete staff account.', [
+                'actor_id' => $request->user()?->id,
+                'target_user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->redirectToStaffUser($user, $request)
+                ->with('error', 'Unable to delete this account right now. Please try again.');
+        }
+
+        $query = array_filter([
+            'q' => $request->input('q'),
+            'role' => $request->input('role'),
+        ], fn ($v) => $v !== null && $v !== '');
+
+        return redirect()
+            ->route('admin.staff.index', $query)
+            ->with('success', 'Deleted account: '.$deletedName.'.');
     }
 
     protected function redirectToStaffUser(User $user, Request $request): RedirectResponse
@@ -448,6 +623,66 @@ class AdminController extends Controller
         return false;
     }
 
+    protected function canDeleteStaffUser(?User $actor, User $target): bool
+    {
+        if ($actor === null) {
+            return false;
+        }
+
+        if (! $this->userIsStaffDirectoryMember($target)) {
+            return false;
+        }
+
+        if (! $actor->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($actor->id === $target->id) {
+            return false;
+        }
+
+        return ! $target->hasRole(User::ROLE_SUPER_ADMIN);
+    }
+
+    protected function canManageCivilianAccount(?User $actor, User $target): bool
+    {
+        if ($actor === null) {
+            return false;
+        }
+
+        if (! $actor->hasRole([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])) {
+            return false;
+        }
+
+        if ($actor->id === $target->id) {
+            return false;
+        }
+
+        return $target->hasRole(User::ROLE_CUSTOMER) || $target->role === User::ROLE_CUSTOMER;
+    }
+
+    protected function redirectToCivilians(Request $request): RedirectResponse
+    {
+        $query = array_filter([
+            'q' => $request->input('q'),
+        ], fn ($v) => $v !== null && $v !== '');
+
+        return redirect()->route('admin.civilians.index', $query);
+    }
+
+    protected function redirectAfterCivilianAction(Request $request, User $user): RedirectResponse
+    {
+        if ($request->input('return_to') === 'show') {
+            $query = array_filter([
+                'q' => $request->input('q'),
+            ], fn ($v) => $v !== null && $v !== '');
+
+            return redirect()->route('admin.civilians.show', array_merge(['user' => $user], $query));
+        }
+
+        return $this->redirectToCivilians($request);
+    }
+
     protected function userIsStaffDirectoryMember(User $user): bool
     {
         return $user->hasRole([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, User::ROLE_OPERATOR]);
@@ -455,14 +690,14 @@ class AdminController extends Controller
 
     protected function staffUserRoleLabel(User $user): string
     {
-        if ($user->hasRole(User::ROLE_SUPER_ADMIN)) {
+        if ($user->hasRole(User::ROLE_SUPER_ADMIN) || $user->role === User::ROLE_SUPER_ADMIN) {
             return 'Super admin';
         }
-        if ($user->hasRole(User::ROLE_ADMIN)) {
+        if ($user->hasRole(User::ROLE_ADMIN) || $user->role === User::ROLE_ADMIN) {
             return 'Admin';
         }
-        if ($user->hasRole(User::ROLE_OPERATOR)) {
-            return 'Operator';
+        if ($user->hasRole(User::ROLE_OPERATOR) || $user->role === User::ROLE_OPERATOR) {
+            return 'Operation';
         }
 
         return 'Staff';

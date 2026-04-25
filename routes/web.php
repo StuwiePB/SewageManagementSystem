@@ -147,6 +147,19 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::post('/admin/incidents/{incident}/send-to-operations', [IncidentController::class, 'sendToOperations'])->name('admin.incidents.send-to-operations');
     Route::post('/admin/incidents/{incident}/delete', [IncidentController::class, 'destroy'])->name('admin.incidents.destroy');
     Route::get('/admin/gis-map', [AdminController::class, 'gisMap'])->name('admin.gis-map');
+    Route::get('/admin/civilians', [AdminController::class, 'civilianUsersIndex'])->name('admin.civilians.index');
+    Route::get('/admin/civilians/{user}', [AdminController::class, 'showCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.show');
+    Route::post('/admin/civilians/{user}/deactivate', [AdminController::class, 'deactivateCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.deactivate');
+    Route::post('/admin/civilians/{user}/activate', [AdminController::class, 'activateCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.activate');
+    Route::post('/admin/civilians/{user}/delete', [AdminController::class, 'deleteCivilianUser'])
+        ->whereNumber('user')
+        ->name('admin.civilians.delete');
 
     Route::get('/admin/statistics', [AdminStatisticsController::class, 'index'])->name('admin.statistics.index');
     Route::get('/admin/statistics/view', [AdminStatisticsController::class, 'show'])->name('admin.statistics.show');
@@ -175,6 +188,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::post('/admin/staff/users/{user}/activate', [AdminController::class, 'activateStaffUser'])
         ->whereNumber('user')
         ->name('admin.staff.users.activate');
+    Route::post('/admin/staff/users/{user}/delete', [AdminController::class, 'deleteStaffUser'])
+        ->whereNumber('user')
+        ->name('admin.staff.users.delete');
 
     Route::get('/admin/workers/create', [AdminController::class, 'createWorker'])->name('admin.workers.create');
     Route::post('/admin/workers', [AdminController::class, 'storeWorker'])->name('admin.workers.store');
