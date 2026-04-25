@@ -6,6 +6,7 @@ use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class OperationsController extends Controller
 {
@@ -62,10 +63,17 @@ class OperationsController extends Controller
             return $found ? $found->count : 0;
         })->toArray();
 
-        $reportsSentToday = OperationsReport::query()
-            ->whereNotNull('customer_report_id')
-            ->whereDate('created_at', today())
-            ->count();
+        $reportsSentTodayQuery = OperationsReport::query()
+            ->whereDate('created_at', today());
+
+        if (Schema::hasColumn('operations_reports', 'customer_report_id')) {
+            $reportsSentTodayQuery->whereNotNull('customer_report_id');
+        } else {
+            // Legacy schema fallback: count today's reports when linkage column is unavailable.
+            $reportsSentTodayQuery->whereNotNull('report_number');
+        }
+
+        $reportsSentToday = $reportsSentTodayQuery->count();
 
         return view('r_operators.dashboard', compact(
             'activeIncidents',

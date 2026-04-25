@@ -17,6 +17,6 @@
       Psy\Exception\ParseErrorException::fromParseError(Object(PhpParser\Error))
 
   2   vendor\psy\psysh\src\CodeCleaner.php:269
-      Psy\CodeCleaner::parse("<?php dump(\App\Models\Report::where('reference_code','like','HA-CUS-%')-,'user_id','reference_code','status'])-;
+      Psy\CodeCleaner::parse("<?php dump(\App\Models\WorkOrder::with('report')-,'work_order_number','report_id','status'])-,'wo_status'=,'report_id'=,'report_status'=,'customer_report_id'=;
 ")
 
