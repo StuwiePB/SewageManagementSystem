@@ -1,6 +1,7 @@
 <x-layouts::customer :title="__('Report Problem') . ' – BruDMS'" :bare="true">
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+        @include('r_customer.partials.report-flow-spacing')
         <style>
             .press-btn { transition: transform 0.06s ease; }
             .press-btn:active { transform: scale(0.92) !important; }
@@ -43,18 +44,18 @@
 
     <div style="position: fixed; left: 6px; right: 6px; bottom: 0; height: 100px; border-radius: 0; background: linear-gradient(to top, rgba(217, 217, 217, 0.02), transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); mask-image: linear-gradient(to top, black 60%, transparent); -webkit-mask-image: linear-gradient(to top, black 60%, transparent); z-index: 6; pointer-events: none;"></div>
 
-    <div style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column; gap: 18px;">
-        <div style="display: flex; flex-direction: column; gap: 5px; max-width: calc(100% - 120px); margin-left: calc(20px + (40px - 21px) / 2 + 30px + 24px);">
-            <span style="color: white; font-size: 13px; font-family: Poppins, sans-serif; font-weight: 600; line-height: 1.4;">Help keep <span style="color: #04BCFF;">Brunei</span> clean and safe by reporting sewage problems accurately</span>
-            <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 200;">State your problem type</span>
+    <div class="rflow-main-stack">
+        <div class="rflow-header-col">
+            <span class="rflow-header-line-primary">Help keep <span style="color: #04BCFF;">Brunei</span> clean and safe by reporting sewage problems accurately</span>
+            <span class="rflow-header-line-secondary">State your problem type</span>
         </div>
         <div class="choices-scroll" style="margin-left: 40px; margin-right: 40px; overflow-y: auto; max-height: 75vh; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 8px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 13px; padding: 4px 2px 12px;">
+            <div class="rflow-choices-grid">
                 <div class="choice choice-card" data-tagline="Damaged pipelines" style="aspect-ratio: 17 / 21; border-radius: 9px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); padding: 1px; display: flex; flex-direction: column; overflow: hidden; container-type: inline-size; container-name: card;">
                     <div style="height: 65%; min-height: 0; overflow: hidden; border-radius: 8px 8px 0 0; border: 0.7px solid rgba(255, 255, 255, 0.21); box-sizing: border-box; flex-shrink: 0;">
                         <img src="{{ asset('images/rproblem/corrosion-large-pipe-2-1200.jpg') }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; padding: 8px 6px 6px 10px; width: 100%; box-sizing: border-box; text-align: left; margin-top: 0;">
+                    <div class="rflow-choice-text">
                         <span class="choice-tagline" style="color: white; font-weight: 600; font-family: Poppins, sans-serif;">Damaged pipelines</span>
                         <span class="choice-subtitle" style="color: rgba(255, 255, 255, 0.46); font-weight: 300; font-family: Poppins, sans-serif;">Cracked, broken, collapsed pipes</span>
                     </div>
@@ -63,7 +64,7 @@
                     <div style="height: 65%; min-height: 0; overflow: hidden; border-radius: 8px 8px 0 0; border: 0.7px solid rgba(255, 255, 255, 0.21); box-sizing: border-box; flex-shrink: 0;">
                         <img src="{{ asset('images/rproblem/Clogged-storm-drains.webp') }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; padding: 8px 6px 6px 10px; width: 100%; box-sizing: border-box; text-align: left; margin-top: 0;">
+                    <div class="rflow-choice-text">
                         <span class="choice-tagline" style="color: white; font-weight: 600; font-family: Poppins, sans-serif;">Clogged Drains</span>
                         <span class="choice-subtitle" style="color: rgba(255, 255, 255, 0.46); font-weight: 300; font-family: Poppins, sans-serif;">Blockages (debris, roots, dumping, etc.)</span>
                     </div>
@@ -72,7 +73,7 @@
                     <div style="height: 65%; min-height: 0; overflow: hidden; border-radius: 8px 8px 0 0; border: 0.7px solid rgba(255, 255, 255, 0.21); box-sizing: border-box; flex-shrink: 0;">
                         <img src="{{ asset('images/rproblem/file_FDCB1305-EDBF-49C8-A1AE-C0C6FF8AAE0C-scaled.jpeg') }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; padding: 8px 6px 6px 10px; width: 100%; box-sizing: border-box; text-align: left; margin-top: 0;">
+                    <div class="rflow-choice-text">
                         <span class="choice-tagline" style="color: white; font-weight: 600; font-family: Poppins, sans-serif;">Street Pooling</span>
                         <span class="choice-subtitle" style="color: rgba(255, 255, 255, 0.46); font-weight: 300; font-family: Poppins, sans-serif;">Standing water, street flooding</span>
                     </div>
@@ -81,7 +82,7 @@
                     <div style="height: 65%; min-height: 0; overflow: hidden; border-radius: 8px 8px 0 0; border: 0.7px solid rgba(255, 255, 255, 0.21); box-sizing: border-box; flex-shrink: 0;">
                         <img src="{{ asset('images/rproblem/Screenshot 2026-02-28 181135.png') }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; padding: 8px 6px 6px 10px; width: 100%; box-sizing: border-box; text-align: left; margin-top: 0;">
+                    <div class="rflow-choice-text">
                         <span class="choice-tagline" style="color: white; font-weight: 600; font-family: Poppins, sans-serif;">Manhole issues</span>
                         <span class="choice-subtitle" style="color: rgba(255, 255, 255, 0.46); font-weight: 300; font-family: Poppins, sans-serif;">Missing, damaged, or displaced covers</span>
                     </div>
@@ -90,7 +91,7 @@
                     <div style="height: 65%; min-height: 0; overflow: hidden; border-radius: 8px 8px 0 0; border: 0.7px solid rgba(255, 255, 255, 0.21); box-sizing: border-box; flex-shrink: 0;">
                         <img src="{{ asset('images/rproblem/iStock-684764482.jpg') }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; padding: 8px 6px 6px 10px; width: 100%; box-sizing: border-box; text-align: left; margin-top: 0;">
+                    <div class="rflow-choice-text">
                         <span class="choice-tagline" style="color: white; font-weight: 600; font-family: Poppins, sans-serif;">Sewage overflow</span>
                         <span class="choice-subtitle" style="color: rgba(255, 255, 255, 0.46); font-weight: 300; font-family: Poppins, sans-serif;">Sewage coming up from drains or manholes</span>
                     </div>
@@ -99,7 +100,7 @@
                     <div style="height: 65%; min-height: 0; overflow: hidden; border-radius: 8px 8px 0 0; border: 0.7px solid rgba(255, 255, 255, 0.21); box-sizing: border-box; flex-shrink: 0;">
                         <img src="{{ asset('images/rproblem/Why-Does-My-Water-Smell-Like-Sewage.webp') }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; padding: 8px 6px 6px 10px; width: 100%; box-sizing: border-box; text-align: left; margin-top: 0;">
+                    <div class="rflow-choice-text">
                         <span class="choice-tagline" style="color: white; font-weight: 600; font-family: Poppins, sans-serif;">Odor complaint</span>
                         <span class="choice-subtitle" style="color: rgba(255, 255, 255, 0.46); font-weight: 300; font-family: Poppins, sans-serif;">Persistent foul smell</span>
                     </div>
