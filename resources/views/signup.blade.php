@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>BruDMS</title>
         @include('partials.favicon')
+        <link rel="preload" as="image" href="{{ asset('images/crdboard.png') }}">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
@@ -652,9 +653,9 @@
         </style>
     </head>
     <body style="min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box;">
-        <div id="bg-desktop" style="position: fixed; inset: 0; z-index: -1; background-image: url('/images/crdboard.svg'); background-size: cover; background-position: center; background-repeat: no-repeat;" aria-hidden="true"></div>
+        <div id="bg-desktop" style="position: fixed; inset: 0; z-index: -1; background-image: url('{{ e(asset('images/crdboard.png')) }}'); background-size: cover; background-position: center; background-repeat: no-repeat;" aria-hidden="true"></div>
         <div id="bg-mobile" style="position: fixed; inset: 0; z-index: -1; overflow: hidden; display: none;" aria-hidden="true">
-            <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.svg'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
+            <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('{{ e(asset('images/crdboard.png')) }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
         </div>
         <div
             class="glass-box"
@@ -1321,6 +1322,7 @@
 
             (function() {
                 var loginBtn = document.getElementById('btn-login');
+                var loginForm = document.getElementById('login-form');
                 var loginEmail = document.getElementById('login-email');
                 var loginPassword = document.getElementById('login-password');
                 var loginEmailInvalidEl = document.getElementById('login-email-invalid-msg');
@@ -1361,14 +1363,64 @@
                     }
                 }
 
+                // Password autofill often skips "input" until later; re-sync a few times after load
+                function scheduleAutofillResync() {
+                    [0, 50, 100, 200, 400, 800].forEach(function(ms) {
+                        setTimeout(updateLoginButton, ms);
+                    });
+                }
+                window.addEventListener('load', scheduleAutofillResync);
+                if (document.readyState === 'complete') {
+                    scheduleAutofillResync();
+                }
+                // Back/forward cache can restore a stale @csrf; refresh so token matches the session
+                window.addEventListener('pageshow', function(ev) {
+                    if (!ev.persisted) return;
+                    var panel = document.getElementById('right-panel-login');
+                    if (panel && panel.classList.contains('visible')) {
+                        window.location.reload();
+                    }
+                });
+
                 if (loginEmail) {
                     loginEmail.addEventListener('input', updateLoginButton);
                     loginEmail.addEventListener('blur', updateLoginButton);
+                    loginEmail.addEventListener('change', updateLoginButton);
                 }
                 if (loginPassword) {
                     loginPassword.addEventListener('input', updateLoginButton);
                     loginPassword.addEventListener('blur', updateLoginButton);
+                    loginPassword.addEventListener('change', updateLoginButton);
                 }
+
+                // If the browser or password manager triggers submit before our JS "sees" autofill, wait and re-submit
+                if (loginForm) {
+                    loginForm.addEventListener('submit', function onLoginFormSubmit(e) {
+                        updateLoginButton();
+                        if (!loginBtn || !loginBtn.disabled) {
+                            return;
+                        }
+                        e.preventDefault();
+                        var n = 0;
+                        var max = 40;
+                        var t = setInterval(function() {
+                            n += 1;
+                            updateLoginButton();
+                            if (loginBtn && !loginBtn.disabled) {
+                                clearInterval(t);
+                                try {
+                                    loginForm.requestSubmit(loginBtn);
+                                } catch (err) {
+                                    loginBtn.disabled = false;
+                                    loginForm.submit();
+                                }
+                            } else if (n >= max) {
+                                clearInterval(t);
+                            }
+                        }, 50);
+                    });
+                }
+
                 updateLoginButton();
             })();
 

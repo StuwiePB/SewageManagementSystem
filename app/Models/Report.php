@@ -108,6 +108,33 @@ class Report extends Model
     }
 
     /**
+     * Customer dashboard: "under review" (own report, not yet sent to operations) first, then newest.
+     */
+    public function scopeOrderByOwnerUnderReviewFirst(Builder $query, User $user): Builder
+    {
+        $uid = (int) $user->id;
+
+        return $query
+            ->orderByRaw(
+                'CASE WHEN reports.user_id = ? AND NOT EXISTS (SELECT 1 FROM operations_reports op WHERE op.customer_report_id = reports.id) THEN 0 ELSE 1 END',
+                [$uid]
+            )
+            ->orderByDesc('reports.created_at');
+    }
+
+    /**
+     * Admin and maps: not yet sent to operations (intake / under review) first, then newest.
+     */
+    public function scopeOrderByUnsentToOperationsFirst(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw(
+                'CASE WHEN NOT EXISTS (SELECT 1 FROM operations_reports op WHERE op.customer_report_id = reports.id) THEN 0 ELSE 1 END'
+            )
+            ->orderByDesc('reports.created_at');
+    }
+
+    /**
      * Dashboard strip: community reports (with ops) + my drafts.
      */
     public static function queryForCustomerDashboard(User $user): Builder
@@ -119,7 +146,7 @@ class Report extends Model
                 $q->whereHas('operationsReport')
                     ->orWhere('reports.user_id', $user->id);
             })
-            ->latest();
+            ->orderByOwnerUnderReviewFirst($user);
     }
 
     public static function generateReferenceCode(): string
