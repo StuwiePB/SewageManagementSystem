@@ -13,11 +13,31 @@
 @endphp
 
 @section('content')
+<style>
+    .alert-error-popup {
+        position: fixed;
+        top: 1.25rem;
+        right: 1.25rem;
+        z-index: 1200;
+        max-width: min(28rem, calc(100vw - 2.5rem));
+        background: rgba(255, 91, 91, 0.18);
+        border: 1px solid rgba(255, 91, 91, 0.55);
+        color: #ffc0c0;
+        padding: 0.8rem 1rem;
+        border-radius: 0.625rem;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+        font-size: 0.9375rem;
+        font-weight: 600;
+    }
+</style>
 @if(session('success'))
     <div class="alert-success" style="margin-bottom: 1.25rem;">{{ session('success') }}</div>
 @endif
 @if(session('error'))
-    <div class="alert-danger" style="margin-bottom: 1.25rem;">{{ session('error') }}</div>
+    <div class="alert-error-popup" role="alert">{{ session('error') }}</div>
+@endif
+@if($errors->any())
+    <div class="alert-error-popup" role="alert">{{ $errors->first() }}</div>
 @endif
 <div class="header">
     <div>
@@ -136,6 +156,32 @@
                         <input type="hidden" name="role" value="{{ request('role') }}">
                     @endif
                     <button type="submit" class="btn btn-primary">Activate account</button>
+                </form>
+            @endif
+            @if($canResetStaffPassword ?? false)
+                <form method="post" action="{{ route('admin.staff.users.password.reset', $staffUser) }}" style="display: inline-flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                    @csrf
+                    @if(request()->filled('q'))
+                        <input type="hidden" name="q" value="{{ request('q') }}">
+                    @endif
+                    @if(request()->filled('role'))
+                        <input type="hidden" name="role" value="{{ request('role') }}">
+                    @endif
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="New password"
+                        required
+                        style="min-width: 10rem; padding: 0.45rem 0.6rem; border-radius: 0.5rem; border: 1px solid rgba(160, 174, 208, 0.35); background: rgba(17, 24, 39, 0.4); color: #fff;"
+                    >
+                    <input
+                        type="password"
+                        name="password_confirmation"
+                        placeholder="Confirm password"
+                        required
+                        style="min-width: 10rem; padding: 0.45rem 0.6rem; border-radius: 0.5rem; border: 1px solid rgba(160, 174, 208, 0.35); background: rgba(17, 24, 39, 0.4); color: #fff;"
+                    >
+                    <button type="submit" class="btn btn-primary">Change password</button>
                 </form>
             @endif
             @if($canDeleteStaffUser ?? false)

@@ -525,6 +525,7 @@ class AdminController extends Controller
             'staffRoleLabel' => $this->staffUserRoleLabel($user),
             'canManageStaffActivation' => $this->canManageStaffAccountActivation($actor, $user),
             'canDeleteStaffUser' => $this->canDeleteStaffUser($actor, $user),
+            'canResetStaffPassword' => $this->canResetStaffUserPassword($actor, $user),
         ]);
     }
 
@@ -590,6 +591,35 @@ class AdminController extends Controller
             ->with('success', 'Deleted account: '.$deletedName.'.');
     }
 
+    public function resetStaffUserPassword(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canResetStaffUserPassword($request->user(), $user)) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        try {
+            $user->forceFill([
+                'password' => Hash::make($validated['password']),
+            ])->save();
+        } catch (Throwable $e) {
+            Log::warning('Failed to reset staff account password.', [
+                'actor_id' => $request->user()?->id,
+                'target_user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->redirectToStaffUser($user, $request)
+                ->with('error', 'Unable to change the account password right now. Please try again.');
+        }
+
+        return $this->redirectToStaffUser($user, $request)
+            ->with('success', 'Password changed successfully for '.$user->name.'.');
+    }
+
     protected function redirectToStaffUser(User $user, Request $request): RedirectResponse
     {
         $query = array_filter([
@@ -646,6 +676,11 @@ class AdminController extends Controller
         }
 
         return ! $target->hasRole(User::ROLE_SUPER_ADMIN);
+    }
+
+    protected function canResetStaffUserPassword(?User $actor, User $target): bool
+    {
+        return $this->canManageStaffAccountActivation($actor, $target);
     }
 
     protected function canManageCivilianAccount(?User $actor, User $target): bool

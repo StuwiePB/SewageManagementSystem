@@ -44,6 +44,42 @@
         font-weight: 700;
         line-height: 1;
     }
+    .customer-gis-legend {
+        margin-bottom: 0.9rem;
+        display: flex;
+        gap: 0.55rem;
+        overflow-x: auto;
+        padding-bottom: 0.15rem;
+    }
+    .customer-gis-legend-item {
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(97, 107, 110, 0.18);
+        color: var(--text-primary);
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.35rem 0.62rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.16s ease;
+    }
+    .customer-gis-legend-item:hover {
+        border-color: rgba(106, 150, 255, 0.68);
+        transform: translateY(-1px);
+    }
+    .customer-gis-legend-item.is-active {
+        border-color: rgba(106, 150, 255, 0.9);
+        box-shadow: 0 0 0 1px rgba(106, 150, 255, 0.35) inset;
+    }
+    .customer-gis-legend-dot {
+        width: 0.62rem;
+        height: 0.62rem;
+        border-radius: 999px;
+        flex-shrink: 0;
+    }
     .district-tooltip {
         background: rgba(26, 29, 43, 0.95);
         color: #fff;
@@ -107,6 +143,7 @@
             <span class="customer-gis-stat-value">{{ $customerCountResolved }}</span>
         </div>
     </div>
+    <div id="customer-gis-legend" class="customer-gis-legend" aria-label="Customer report legend"></div>
     <div id="gis-map-customer"></div>
 </div>
 
@@ -135,6 +172,42 @@
         opacity: 1,
         fillOpacity: 0.05
     };
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatStatusLabel(status) {
+        var key = String(status || '').trim().toLowerCase();
+        if (key === 'in_progress') return 'In Progress';
+        if (key === 'under_review') return 'Under Review';
+        if (key === 'on_site') return 'On Site';
+        if (key === 'on_the_way') return 'On The Way';
+        if (key === 'pending_approval') return 'Pending Approval';
+        if (key === 'resolved') return 'Resolved';
+        if (key === 'completed') return 'Completed';
+        if (key === 'assigned') return 'Assigned';
+        if (key === 'pending') return 'Pending';
+        if (!key) return 'Pending';
+        return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function markerColorsForStatus(status) {
+        var key = String(status || 'pending').toLowerCase();
+        if (key === 'resolved') return { fill: '#00FF26', stroke: '#00b31a' };
+        if (key === 'in_progress' || key === 'under_review') return { fill: '#FFAE00', stroke: '#cc8800' };
+        return { fill: '#ff0000', stroke: '#b30000' };
+    }
+
+    function popupLine(label, value) {
+        return '<div style="margin-top:2px;"><strong style="color:#6f8fdf;">' + escapeHtml(label) + ':</strong> '
+            + '<strong style="color:#1f2937;">' + escapeHtml(value) + '</strong></div>';
+    }
 
     function districtName(feature) {
         var raw = feature && feature.properties ? (feature.properties.NAME_1 || '') : '';
@@ -307,29 +380,69 @@
     addDistrictLayer(customerMap);
 
     var customerBounds = [];
+    var customerLegend = document.getElementById('customer-gis-legend');
+    var customerMarkerRefs = [];
     customerReports.forEach(function (r) {
         if (r.lat == null || r.lng == null) return;
         var status = r.status || 'pending';
-        var statusColor = status === 'resolved'
-            ? '#00FF26'
-            : (status === 'in_progress' || status === 'under_review' ? '#FFAE00' : '#ff0000');
-        var statusStroke = status === 'resolved'
-            ? '#00b31a'
-            : (status === 'in_progress' || status === 'under_review' ? '#cc8800' : '#b30000');
-        L.circleMarker([r.lat, r.lng], {
-            radius: 5,
-            fillColor: statusColor,
-            color: statusStroke,
+        var markerColors = markerColorsForStatus(status);
+        var issueText = (r.problem_type && String(r.problem_type).trim()) ? String(r.problem_type).trim() : 'Not specified';
+        var addressText = (r.address && String(r.address).trim()) ? String(r.address).trim() : 'No address provided';
+        var statusText = formatStatusLabel(r.status);
+        var popupHtml = '<div style="min-width:230px; max-width:270px;">';
+        if (r.photo_url) {
+            popupHtml += '<img src="' + escapeHtml(r.photo_url) + '" alt="Report photo" '
+                + 'style="width:100%; max-height:120px; object-fit:cover; border-radius:8px; margin-bottom:6px; border:1px solid rgba(0,0,0,0.12);" />';
+        }
+        popupHtml += '<div><strong style="font-size:14px; color:#111827;">' + escapeHtml(r.number || 'Customer Report') + '</strong></div>'
+            + popupLine('Issue', issueText)
+            + popupLine('Address', addressText)
+            + popupLine('Status', statusText);
+        if (r.description && String(r.description).trim()) {
+            popupHtml += popupLine('Details', String(r.description).trim());
+        }
+        popupHtml += '</div>';
+
+        var marker = L.circleMarker([r.lat, r.lng], {
+            radius: 7,
+            fillColor: markerColors.fill,
+            color: markerColors.stroke,
             weight: 2,
             fillOpacity: 0.9
-        })
+        });
+
+        marker
             .addTo(customerMap)
-            .bindPopup(
-                '<strong>' + (r.number || 'Customer Report') + '</strong><br>'
-                + (r.problem_type ? 'Type: ' + r.problem_type + '<br>' : '')
-                + (r.address || '')
-                + (r.status ? '<br><span style="color:#9fb6ff;">Status: ' + r.status + '</span>' : '')
-            );
+            .bindPopup(popupHtml, { maxWidth: 320 });
+        marker.on('click', function () {
+            customerMarkerRefs.forEach(function (x) { x.marker.setStyle({ radius: 7, weight: 2 }); });
+            marker.setStyle({ radius: 9, weight: 3 });
+            if (customerLegend) {
+                customerLegend.querySelectorAll('.customer-gis-legend-item').forEach(function (el) {
+                    el.classList.remove('is-active');
+                });
+                if (marker._legendEl) {
+                    marker._legendEl.classList.add('is-active');
+                }
+            }
+            marker.openPopup();
+        });
+
+        customerMarkerRefs.push({ marker: marker, report: r });
+
+        if (customerLegend) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'customer-gis-legend-item';
+            btn.innerHTML = '<span class="customer-gis-legend-dot" style="background:' + markerColors.fill + '; border:1px solid ' + markerColors.stroke + ';"></span>'
+                + '<span>' + escapeHtml(issueText) + '</span>';
+            btn.addEventListener('click', function () {
+                customerMap.flyTo([r.lat, r.lng], Math.max(customerMap.getZoom(), 14), { duration: 0.45 });
+                marker.fire('click');
+            });
+            customerLegend.appendChild(btn);
+            marker._legendEl = btn;
+        }
 
         customerBounds.push([r.lat, r.lng]);
     });

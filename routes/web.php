@@ -191,6 +191,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::post('/admin/staff/users/{user}/delete', [AdminController::class, 'deleteStaffUser'])
         ->whereNumber('user')
         ->name('admin.staff.users.delete');
+    Route::post('/admin/staff/users/{user}/password', [AdminController::class, 'resetStaffUserPassword'])
+        ->whereNumber('user')
+        ->name('admin.staff.users.password.reset');
 
     Route::get('/admin/workers/create', [AdminController::class, 'createWorker'])->name('admin.workers.create');
     Route::post('/admin/workers', [AdminController::class, 'storeWorker'])->name('admin.workers.store');
