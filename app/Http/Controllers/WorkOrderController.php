@@ -132,7 +132,7 @@ class WorkOrderController extends Controller
     public function updateStatus(Request $request, WorkOrder $workOrder)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,assigned,in_progress,on_the_way,on_site,pending_approval,completed,cancelled',
+            'status' => 'required|in:pending,assigned,on_site,in_progress,completed',
         ]);
 
         $oldStatus = $workOrder->status;
@@ -242,10 +242,7 @@ class WorkOrderController extends Controller
 
     public function submitForApproval(WorkOrder $workOrder)
     {
-        $workOrder->update(['status' => 'pending_approval']);
-        $this->syncLinkedReportStatuses($workOrder, 'in_progress');
-
-        return redirect()->back()->with('success', 'Work order submitted for approval.');
+        return redirect()->back()->with('error', 'This status flow is no longer available.');
     }
 
     private function mapWorkOrderStatusToReportStatus(string $workOrderStatus): string

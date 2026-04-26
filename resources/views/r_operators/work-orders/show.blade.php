@@ -87,24 +87,6 @@
         </div>
         @endif
 
-        @if(!in_array($workOrder->status, ['pending_approval', 'completed', 'cancelled']))
-            <p style="margin:12px 0 8px; font-size:12px; color:var(--text-secondary);">Or send to higher ups:</p>
-            <form action="{{ route('operations.work-orders.submit-approval', $workOrder) }}" method="POST" style="margin-bottom:12px;">
-                @csrf
-                <button type="submit" style="
-                    width:100%;
-                    padding:8px 16px;
-                    background:#713f12;
-                    color:white;
-                    border:none;
-                    border-radius:8px;
-                    font-weight:500;
-                    cursor:pointer;
-                    font-size:13px;
-                ">Submit for approval</button>
-            </form>
-        @endif
-
         <form action="{{ route('operations.work-orders.update-status', $workOrder) }}" method="POST" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(106, 150, 255, 0.15);">
             @csrf
             @method('PATCH')
@@ -114,12 +96,9 @@
                 <select id="status" name="status" class="form-control">
                     <option value="pending" {{ $workOrder->status == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="assigned" {{ $workOrder->status == 'assigned' ? 'selected' : '' }}>Assigned</option>
-                    <option value="in_progress" {{ $workOrder->status == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                    <option value="on_the_way" {{ $workOrder->status == 'on_the_way' ? 'selected' : '' }}>On the Way</option>
                     <option value="on_site" {{ $workOrder->status == 'on_site' ? 'selected' : '' }}>On Site</option>
-                    <option value="pending_approval" {{ $workOrder->status == 'pending_approval' ? 'selected' : '' }}>Pending Approval</option>
-                    <option value="completed" {{ $workOrder->status == 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="cancelled" {{ $workOrder->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    <option value="in_progress" {{ $workOrder->status == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                    <option value="completed" {{ $workOrder->status == 'completed' ? 'selected' : '' }}>Complete</option>
                 </select>
             </div>
 
