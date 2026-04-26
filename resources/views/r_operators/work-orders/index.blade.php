@@ -9,6 +9,13 @@
     </div>
 </header>
 
+@if(session('success'))
+    <div class="alert alert-success" style="margin-bottom: 1rem;">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="alert" style="margin-bottom: 1rem; background: rgba(255, 91, 91, 0.15); color: #ffb4b4; border: 1px solid rgba(255, 91, 91, 0.35);">{{ session('error') }}</div>
+@endif
+
 <section class="card card-mb" aria-label="Filters">
     <form method="GET" action="{{ route('operations.work-orders.index') }}" class="grid-filters">
         <div class="form-group">
@@ -78,7 +85,16 @@
                             @endphp
                             <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $workOrder->status)) }}</span>
                         </td>
-                        <td><a href="{{ route('operations.work-orders.show', $workOrder) }}" class="link-primary">View</a></td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:0.65rem;">
+                                <a href="{{ route('operations.work-orders.show', $workOrder) }}" class="link-primary">View</a>
+                                <form method="POST" action="{{ route('operations.work-orders.destroy', $workOrder) }}" style="display:inline;" onsubmit="return confirm('Delete this work order and linked customer report? This cannot be undone.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="link-primary" style="background:none; border:none; color:#ff8f8f; cursor:pointer; padding:0;">Delete</button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
