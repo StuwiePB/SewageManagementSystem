@@ -127,6 +127,7 @@ Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified'
     Route::get('/work-orders/{workOrder}/edit', [WorkOrderController::class, 'edit'])->name('work-orders.edit');
     Route::put('/work-orders/{workOrder}', [WorkOrderController::class, 'update'])->name('work-orders.update');
     Route::patch('/work-orders/{workOrder}/status', [WorkOrderController::class, 'updateStatus'])->name('work-orders.update-status');
+    Route::delete('/work-orders/{workOrder}', [WorkOrderController::class, 'destroy'])->name('work-orders.destroy');
     Route::post('/work-orders/{workOrder}/submit-approval', [WorkOrderController::class, 'submitForApproval'])->name('work-orders.submit-approval');
     Route::post('/work-orders/{workOrder}/photos', [WorkOrderController::class, 'storePhoto'])->name('work-orders.photos.store');
     Route::delete('/work-orders/{workOrder}/photos/{photo}', [WorkOrderController::class, 'destroyPhoto'])->name('work-orders.photos.destroy');
