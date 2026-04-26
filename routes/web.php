@@ -15,6 +15,7 @@ use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\WorkOrderController;
 use App\Models\Report;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -313,13 +314,58 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
             'visibleReports' => Report::queryForCustomerHistory($user->id)->get(),
         ]);
     })->name('customer.myhistory');
+    Route::get('/{name}/custatistics', function () {
+        $reports = Report::query()
+            ->whereNull('reports.deleted_at')
+            ->whereHas('operationsReport')
+            ->get();
+        $days = collect(range(6, 0))->map(function (int $offset) {
+            return Carbon::today()->subDays($offset);
+        });
+        $countsByDate = $reports
+            ->groupBy(fn ($r) => optional($r->created_at)->toDateString())
+            ->map(fn ($items) => count($items));
+
+        $chartLabels = $days->map(fn (Carbon $d) => $d->format('D'))->values()->all();
+        $chartValues = $days->map(fn (Carbon $d) => (int) ($countsByDate[$d->toDateString()] ?? 0))->values()->all();
+        $chartDayIso = $days->map(fn (Carbon $d) => (int) $d->format('N'))->values()->all();
+
+        $start7 = Carbon::today()->subDays(6)->startOfDay();
+        $reports7d = $reports->filter(fn ($r) => $r->created_at && $r->created_at->gte($start7));
+        $statusReportLabels = [__('Pending'), __('In progress'), __('Resolved')];
+        $statusByDay = $days->map(function (Carbon $d) use ($reports) {
+            $dateStr = $d->toDateString();
+            $onDay = $reports->filter(fn ($r) => $r->created_at && $r->created_at->toDateString() === $dateStr);
+
+            return [
+                (int) $onDay->where('status', 'pending')->count(),
+                (int) $onDay->whereIn('status', ['in_progress', 'under_review'])->count(),
+                (int) $onDay->where('status', 'resolved')->count(),
+            ];
+        })->values()->all();
+        $statusReportValues = [
+            (int) collect($statusByDay)->sum(fn (array $row) => $row[0]),
+            (int) collect($statusByDay)->sum(fn (array $row) => $row[1]),
+            (int) collect($statusByDay)->sum(fn (array $row) => $row[2]),
+        ];
+
+        return view('r_customer.custatistics', [
+            'chartLabels' => $chartLabels,
+            'chartValues' => $chartValues,
+            'chartDayIso' => $chartDayIso,
+            'statusByDay' => $statusByDay,
+            'statusReportLabels' => $statusReportLabels,
+            'statusReportValues' => $statusReportValues,
+        ]);
+    })->name('customer.custatistics');
     Route::get('/{name}/rproblem', fn () => view('r_customer.rproblem'))->name('customer.rproblem');
     Route::get('/{name}/rpicture', fn () => view('r_customer.rpicture'))->name('customer.rpicture');
     Route::get('/{name}/rlocation', fn () => view('r_customer.rlocation'))->name('customer.rlocation');
     Route::get('/{name}/rdetails', fn () => view('r_customer.rdetails'))->name('customer.rdetails');
     Route::get('/{name}/rpreview', fn () => view('r_customer.rpreview'))->name('customer.rpreview');
     Route::get('/{name}/livemap', function () {
-        $reports = Report::whereNotNull('latitude')
+        $reports = Report::query()
+            ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->whereHas('operationsReport')
             ->latest()

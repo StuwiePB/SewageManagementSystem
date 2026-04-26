@@ -242,11 +242,11 @@
             </div>
             @endif
         </div>
-        {{-- Incidents last 7 days section --}}
+        {{-- Statistics (links to customer statistics) --}}
         <div style="margin-top: 20px;">
-            <span style="color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">Incidents last 7 days</span>
+            <span style="display: block; color: rgba(255, 255, 255, 0.5); font-size: 12px; font-weight: 600; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 10px;">{{ __('Statistics') }}</span>
             @if($guestMode)
-            <div class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+            <a href="{{ route('login') }}" class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
                     <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                         <defs>
@@ -256,17 +256,15 @@
                         </defs>
                         <rect width="100%" height="100%" fill="url(#grid-guest)" />
                     </svg>
-                    <a href="{{ route('login') }}" aria-label="{{ __('Sign in') }}" style="position: absolute; inset: 0; z-index: 2; border-radius: 7px; text-decoration: none; cursor: pointer;"></a>
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 88%; text-align: center;">
                         <img src="{{ asset('images/Vectors/explore_lock.svg') }}" alt="" style="width: 50px; height: 45px; object-fit: contain; flex-shrink: 0;" />
                         <span style="color: rgba(255, 255, 255, 0.42); font-size: 9px; font-weight: 500; font-family: Poppins, sans-serif; line-height: 1.25;">{{ __('Log in to use this feature') }}</span>
                     </div>
                 </div>
-            </div>
+            </a>
             @else
-            <div style="position: relative; width: 100%; height: 15vh;">
-            <div style="width: 100%; height: 100%; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); position: relative; padding: 3px;">
-                <div style="width: 100%; height: 100%; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative;">
+            <a href="{{ route('customer.custatistics', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
+                <div style="width: 100%; height: 100%; min-height: 120px; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative;">
                     {{-- Grid pattern --}}
                     <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                         <defs>
@@ -281,8 +279,7 @@
                         <img src="{{ asset('images/Vectors/dashboard_analytics.svg') }}" alt="" style="width: 55px; height: 55px; object-fit: contain;" />
                     </div>
                 </div>
-            </div>
-            </div>
+            </a>
             @endif
         </div>
     </div>
