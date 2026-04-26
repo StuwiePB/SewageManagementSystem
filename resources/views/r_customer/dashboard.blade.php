@@ -54,6 +54,16 @@
             .tab-btn-active { color: #040929; }
             .tab-btn:hover { color: #04BCFF; }
             .tab-btn-locked { opacity: 0.55; position: relative; }
+            .dashboard-filter-chip {
+                padding: 3px 8px; border-radius: 7px; background: rgba(66, 106, 120, 0.16);
+                outline: 1px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px);
+                flex-shrink: 0; display: flex; align-items: center; cursor: pointer; border: none; font: inherit;
+                color: white; font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;
+                transition: outline-color 0.15s ease, background 0.15s ease;
+            }
+            .dashboard-filter-chip:hover { outline-color: rgba(4, 188, 255, 0.5); }
+            .dashboard-filter-chip--active { outline: 1.2px solid #04BCFF; background: rgba(4, 188, 255, 0.2); }
+            .dashboard-incident-card[hidden] { display: none !important; }
         </style>
     @endpush
     {{-- Desktop: normal background --}}
@@ -114,19 +124,12 @@
         {{-- Header row --}}
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
             <span style="color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; flex-shrink: 0; margin-left: 8px;">Active incidents</span>
-            <div style="display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 2px; margin-left: 16px;">
-                <div style="padding: 3px 8px; border-radius: 7px; background: rgba(66, 106, 120, 0.16); outline: 1px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; align-items: center;">
-                    <span style="color: white; font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;">All</span>
-                </div>
-                <div style="padding: 3px 8px; border-radius: 7px; background: rgba(66, 106, 120, 0.16); outline: 1px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; align-items: center;">
-                    <span style="color: white; font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;">Under Review</span>
-                </div>
-                <div style="padding: 3px 8px; border-radius: 7px; background: rgba(66, 106, 120, 0.16); outline: 1px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; align-items: center;">
-                    <span style="color: white; font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;">In Progress</span>
-                </div>
-                <div style="padding: 3px 8px; border-radius: 7px; background: rgba(66, 106, 120, 0.16); outline: 1px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; align-items: center;">
-                    <span style="color: white; font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;">Resolved</span>
-                </div>
+            <div id="dashboard-report-filters" style="display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 2px; margin-left: 16px;" role="group" aria-label="{{ __('Filter incidents') }}">
+                <button type="button" class="dashboard-filter-chip dashboard-filter-chip--active" data-dashboard-filter="all" aria-pressed="true">All</button>
+                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="owner_review" aria-pressed="false">{{ __('Under review') }}</button>
+                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="pending" aria-pressed="false">{{ __('Pending') }}</button>
+                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="in_progress" aria-pressed="false">{{ __('In progress') }}</button>
+                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="resolved" aria-pressed="false">{{ __('Resolved') }}</button>
             </div>
         </div>
 
@@ -150,8 +153,13 @@
                     continue;
                 }
                 $reportPhotoOk = $report->photo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($report->photo_path);
+                $stForFilter = $report->status ?? 'pending';
+                $cardOwnerReview = $isOwnerUnderReview;
+                $cardInProgress = ! $isRejected && ! $cardOwnerReview && in_array($stForFilter, ['in_progress', 'under_review'], true);
+                $cardResolved = ! $isRejected && $stForFilter === 'resolved';
+                $cardPending = ! $isRejected && ! $cardOwnerReview && ! $cardResolved && ! $cardInProgress;
             @endphp
-            <div class="incident-card" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
+            <div class="incident-card dashboard-incident-card" data-card-owner-review="{{ $cardOwnerReview ? '1' : '0' }}" data-card-pending="{{ $cardPending ? '1' : '0' }}" data-card-in-progress="{{ $cardInProgress ? '1' : '0' }}" data-card-resolved="{{ $cardResolved ? '1' : '0' }}" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
                 @if($reportPhotoOk)
                 <div style="position: relative; width: 100%; height: 75px; min-width: 0; border-top-left-radius: 9px; border-top-right-radius: 9px; overflow: hidden; outline: 0.7px solid rgba(255, 255, 255, 0.21);">
                     <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; filter: {{ $isOwnerUnderReview ? 'brightness(0.42) blur(1.6px)' : ($isRejected ? 'brightness(0.55) grayscale(0.35)' : 'none') }};" />
@@ -197,9 +205,9 @@
                             $st = $report->status ?? 'pending';
                             $glowClass = $isRejected ? '' : (($st === 'resolved') ? '' : (($st === 'in_progress' || $st === 'under_review') ? ' status-yellow' : ' status-red'));
                             $dotBg = $isRejected ? '#9CA3AF' : ($isOwnerUnderReview ? '#9CA3AF' : ($statusColors[$st] ?? '#ff0000'));
-                            $dotAnim = ($isRejected || $isOwnerUnderReview || $st === 'resolved') ? 'none' : '';
+                            $dotStyleExtra = ($isRejected || $isOwnerUnderReview) ? ' animation: none;' : '';
                         @endphp
-                        <div class="status-dot{{ $glowClass }}" style="width: 6px; height: 6px; border-radius: 9999px; background: {{ $dotBg }}; flex-shrink: 0; animation: {{ $dotAnim }};"></div>
+                        <div class="status-dot{{ $glowClass }}" style="width: 6px; height: 6px; border-radius: 9999px; background: {{ $dotBg }}; flex-shrink: 0;{{ $dotStyleExtra }}"></div>
                     </div>
                     </div>
                 </div>
@@ -354,6 +362,61 @@
         } else {
             initDashboardLiveMap();
         }
+    </script>
+    <script>
+        (function () {
+            var chips = document.querySelectorAll('.dashboard-filter-chip');
+            var cards = document.querySelectorAll('.dashboard-incident-card');
+            if (!chips.length) {
+                return;
+            }
+            function applyDashboardFilter(key) {
+                if (!key) {
+                    key = 'all';
+                }
+                var k = String(key);
+                for (var i = 0; i < cards.length; i++) {
+                    var card = cards[i];
+                    var isOwnerReview = card.getAttribute('data-card-owner-review') === '1';
+                    var isPending = card.getAttribute('data-card-pending') === '1';
+                    var isInProgress = card.getAttribute('data-card-in-progress') === '1';
+                    var isResolved = card.getAttribute('data-card-resolved') === '1';
+                    var show;
+                    if (k === 'all') {
+                        show = true;
+                    } else if (k === 'owner_review') {
+                        show = isOwnerReview;
+                    } else if (k === 'pending') {
+                        show = isPending;
+                    } else if (k === 'in_progress') {
+                        show = isInProgress;
+                    } else if (k === 'resolved') {
+                        show = isResolved;
+                    } else {
+                        show = true;
+                    }
+                    if (show) {
+                        card.removeAttribute('hidden');
+                    } else {
+                        card.setAttribute('hidden', 'hidden');
+                    }
+                }
+            }
+            for (var c = 0; c < chips.length; c++) {
+                (function (btn) {
+                    btn.addEventListener('click', function () {
+                        var key = btn.getAttribute('data-dashboard-filter') || 'all';
+                        for (var j = 0; j < chips.length; j++) {
+                            chips[j].classList.remove('dashboard-filter-chip--active');
+                            chips[j].setAttribute('aria-pressed', 'false');
+                        }
+                        btn.classList.add('dashboard-filter-chip--active');
+                        btn.setAttribute('aria-pressed', 'true');
+                        applyDashboardFilter(key);
+                    });
+                })(chips[c]);
+            }
+        })();
     </script>
     <script>
         document.querySelectorAll('.delayed-nav').forEach(function(el) {

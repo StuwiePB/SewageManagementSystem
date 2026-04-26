@@ -2,6 +2,7 @@
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        @include('r_customer.partials.report-flow-spacing')
         <style>
             body, main { overflow: hidden !important; }
             .press-btn { transition: transform 0.06s ease; }
@@ -56,10 +57,10 @@
     {{-- Map: isolated wrapper, explicit size, no overflow tricks --}}
     <div style="position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 85%; max-width: 320px; height: 260px; border-radius: 16px; background: rgba(217, 217, 217, 0.06); border: 0.7px solid rgba(255, 255, 255, 0.25); z-index: 2;">
         <div id="map" style="width: 100%; height: 100%; border-radius: 16px;"></div>
-        <div id="location-prompt" style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; z-index: 10;">
-            <span style="color: white; font-size: 14px; font-weight: 600; font-family: Poppins, sans-serif; margin-bottom: 8px;">Get your current location</span>
-            <span id="location-prompt-hint" style="color: rgba(255, 255, 255, 0.7); font-size: 12px; font-family: Poppins, sans-serif; margin-bottom: 16px;">Tap below to allow location access</span>
-            <button type="button" id="get-location-btn" class="press-btn" style="width: 100%; max-width: 200px; padding: 12px 20px; border-radius: 12px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 600; font-size: 14px; border: none; cursor: pointer; margin-bottom: 12px;">📍 Get my location</button>
+        <div id="location-prompt" class="rflow-location-prompt" style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); border-radius: 16px; z-index: 10;">
+            <span style="color: white; font-size: 14px; font-weight: 600; font-family: Poppins, sans-serif;">Get your current location</span>
+            <span id="location-prompt-hint" style="color: rgba(255, 255, 255, 0.7); font-size: 12px; font-family: Poppins, sans-serif;">Tap below to allow location access</span>
+            <button type="button" id="get-location-btn" class="press-btn" style="width: 100%; max-width: 200px; padding: 12px 20px; border-radius: 12px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 600; font-size: 14px; border: none; cursor: pointer;">📍 Get my location</button>
             <span style="color: rgba(255, 255, 255, 0.5); font-size: 11px; font-family: Poppins, sans-serif;">Or tap map to set manually</span>
         </div>
         <button type="button" id="locate-btn" class="press-btn" style="position: absolute; bottom: 12px; right: 12px; z-index: 11; width: 40px; height: 40px; border-radius: 50%; background: white; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px;" title="Locate me">📍</button>
@@ -72,10 +73,10 @@
     <div style="position: fixed; left: 6px; right: 6px; bottom: 0; height: 100px; border-radius: 0; background: linear-gradient(to top, rgba(217, 217, 217, 0.02), transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); mask-image: linear-gradient(to top, black 60%, transparent); -webkit-mask-image: linear-gradient(to top, black 60%, transparent); z-index: 6; pointer-events: none;"></div>
     <button type="button" id="confirm-location-btn" class="press-btn" disabled style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: rgba(66, 106, 120, 0.35); color: rgba(255, 255, 255, 0.65); font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: not-allowed; display: flex; align-items: center; justify-content: center; box-shadow: none;">Confirm location</button>
 
-    <div style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column; gap: 18px; pointer-events: none;">
-        <div style="display: flex; flex-direction: column; gap: 5px; max-width: calc(100% - 120px); margin-left: calc(20px + (40px - 21px) / 2 + 30px + 24px);">
-            <span style="color: white; font-size: 13px; font-family: Poppins, sans-serif; font-weight: 600; line-height: 1.4;">Where it happens determines how fast we respond</span>
-            <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 200;">Pinpoint your location</span>
+    <div class="rflow-main-stack rflow-main-stack--inert">
+        <div class="rflow-header-col">
+            <span class="rflow-header-line-primary">Where it happens determines how fast we respond</span>
+            <span class="rflow-header-line-secondary">Pinpoint your location</span>
         </div>
     </div>
 

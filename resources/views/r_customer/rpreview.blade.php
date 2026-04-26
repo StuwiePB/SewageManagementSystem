@@ -1,12 +1,13 @@
 <x-layouts::customer :title="__('Preview Report') . ' – BruDMS'" :bare="true">
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+        @include('r_customer.partials.report-flow-spacing')
         <style>
             #preview-problem-text { font-size: clamp(12px, 4vw, 20px); font-weight: 700; font-family: Poppins, sans-serif; color: white; white-space: nowrap; }
             #preview-date-text { font-size: 12px; font-weight: 600; font-family: Poppins, sans-serif; color: rgba(255, 255, 255, 0.5); }
             .press-btn { transition: transform 0.06s ease; }
             .press-btn:active { transform: scale(0.92) !important; }
-            #preview-photo-wrapper { position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 100px); right: 20px; z-index: 2; display: flex; flex-direction: column; gap: 14px; align-items: stretch; }
+            #preview-photo-wrapper { position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 100px); right: 20px; z-index: 2; display: flex; flex-direction: column; gap: var(--rflow-gap-section); align-items: stretch; }
             #preview-photo-box { width: calc(50vw - 20px - (40px - 21px) / 2); height: auto; aspect-ratio: 4/3; flex-shrink: 0; }
             .preview-info-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); color: white; font-size: 11px; font-family: Poppins, sans-serif; line-height: 1.3; }
             .preview-info-row img { flex-shrink: 0; width: 16px; height: 16px; }
@@ -247,10 +248,10 @@
 
     <img src="{{ asset('images/Vectors/report_rpreview.svg') }}" alt="" style="position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 30px); z-index: 5; width: 30px; height: 31px; pointer-events: none;" />
 
-    <div id="preview-header" style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column; gap: 20px; pointer-events: none;">
-        <div style="display: flex; flex-direction: column; gap: 5px; max-width: calc(100% - 120px); margin-left: calc(20px + (40px - 21px) / 2 + 30px + 24px);">
-            <span style="color: white; font-size: 13px; font-family: Poppins, sans-serif; font-weight: 600; line-height: 1.4;">Finalised information, queued for action</span>
-            <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 200;">Please verify all details before final submission</span>
+    <div id="preview-header" class="rflow-preview-header" style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column;">
+        <div class="rflow-header-col">
+            <span class="rflow-header-line-primary">Finalised information, queued for action</span>
+            <span class="rflow-header-line-secondary">Please verify all details before final submission</span>
         </div>
     </div>
 
@@ -258,8 +259,8 @@
         <div id="preview-photo-box" style="border-radius: 7px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); overflow: hidden;">
             <img id="preview-photo" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
         </div>
-        <div id="preview-info-stack" style="display: flex; flex-direction: column; gap: 6px;">
-        <div style="display: flex; gap: 4px; align-items: stretch;">
+        <div id="preview-info-stack" class="rflow-info-stack">
+        <div class="rflow-name-phone-row">
             <div class="preview-info-row" id="preview-name-row" style="flex: 1; min-width: 0;">
                 <img src="{{ asset('images/Vectors/rpreview_name.svg') }}" alt="" />
                 <input type="text" id="preview-name-text" name="reporter_name" form="submit-report-form" value="{{ old('reporter_name', $user->name ?? '') }}" placeholder="Muhammad Ali" autocomplete="name" style="flex: 1; min-width: 0; background: transparent; border: none; padding: 0; margin: 0; color: white; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 600; outline: none;" />

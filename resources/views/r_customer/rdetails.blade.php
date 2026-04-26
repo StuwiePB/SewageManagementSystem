@@ -1,6 +1,7 @@
 <x-layouts::customer :title="__('Confirm Report') . ' – BruDMS'" :bare="true">
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+        @include('r_customer.partials.report-flow-spacing')
         <style>
             .press-btn { transition: transform 0.06s ease; }
             .press-btn:active { transform: scale(0.92) !important; }
@@ -34,10 +35,10 @@
 
     <img src="{{ asset('images/Vectors/report_rdetails.svg') }}" alt="" style="position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 30px); z-index: 5; width: 30px; height: 31px; pointer-events: none;" />
 
-    <div style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column; gap: 18px; pointer-events: none;">
-        <div style="display: flex; flex-direction: column; gap: 5px; max-width: calc(100% - 120px); margin-left: calc(20px + (40px - 21px) / 2 + 30px + 24px);">
-            <span style="color: white; font-size: 13px; font-family: Poppins, sans-serif; font-weight: 600; line-height: 1.4;">Clear descriptions reduce delays on site</span>
-            <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 200;">Add any additional details that may help</span>
+    <div class="rflow-main-stack rflow-main-stack--inert">
+        <div class="rflow-header-col">
+            <span class="rflow-header-line-primary">Clear descriptions reduce delays on site</span>
+            <span class="rflow-header-line-secondary">Add any additional details that may help</span>
         </div>
     </div>
 
@@ -50,7 +51,7 @@
         </span>
     </div>
 
-    <div style="position: fixed; left: 50%; top: calc(11vh + 28px + 58px + 24px + 40px + 8px); transform: translateX(-50%); width: 85%; max-width: 320px; height: 320px; border-radius: 14px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); z-index: 2; padding: 8px 16px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px;">
+    <div class="rflow-details-block" style="position: fixed; left: 50%; top: calc(11vh + 28px + 58px + 24px + 40px + 8px); transform: translateX(-50%); width: 85%; max-width: 320px; height: 320px; border-radius: 14px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); z-index: 2; padding: 8px 16px 12px; box-sizing: border-box; display: flex; flex-direction: column;">
         <span style="color: rgba(255, 255, 255, 0.9); font-size: 12px; font-family: Poppins, sans-serif; font-weight: 600;">Description</span>
         <div style="flex: 1; min-height: 0; margin: 0 -13px -9px -13px; display: flex;">
             <textarea name="description" id="description-textbox" placeholder="Describe the problem..." style="flex: 1; min-height: 0; width: 100%; border-radius: 11px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.25); padding: 10px 12px; color: rgba(255, 255, 255, 0.9); font-size: 12px; font-family: Poppins, sans-serif; resize: none; outline: none; box-sizing: border-box;"></textarea>

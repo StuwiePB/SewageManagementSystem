@@ -159,8 +159,7 @@ class AdminController extends Controller
     public function customerReports(Request $request): View
     {
         $query = Report::query()
-            ->with(['user', 'operationsReport'])
-            ->latest('created_at');
+            ->with(['user', 'operationsReport']);
 
         $sentFilter = $request->string('sent')->toString();
         if (! in_array($sentFilter, ['unsent', 'sent', 'all'], true)) {
@@ -195,7 +194,7 @@ class AdminController extends Controller
             }
         }
 
-        $reports = $query->paginate(15)->withQueryString();
+        $reports = $query->orderByUnsentToOperationsFirst()->paginate(15)->withQueryString();
 
         $unscannedWithPhotoCount = Report::query()
             ->whereNotNull('photo_path')
@@ -330,7 +329,7 @@ class AdminController extends Controller
         $customerReports = Report::query()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->latest()
+            ->orderByUnsentToOperationsFirst()
             ->get();
 
         $mapCustomerReports = $customerReports->map(fn ($r) => [
