@@ -207,8 +207,10 @@
             if (infoEl) {
                 infoEl.style.display = 'flex';
                 var st = item.report.status || 'pending';
-                var statusText = (st === 'resolved') ? 'Resolved' : (['in_progress','under_review'].indexOf(st) >= 0 ? 'In progress' : 'Active');
-                var statusColor = (st === 'resolved') ? '#00ff73' : (['in_progress','under_review'].indexOf(st) >= 0 ? '#ffae00' : '#e00808');
+                var isResolved = st === 'resolved';
+                var isInProgress = ['in_progress', 'under_review'].indexOf(st) >= 0;
+                var statusText = isResolved ? 'Resolved' : (isInProgress ? 'In progress' : 'Pending');
+                var statusColor = isResolved ? '#00FF26' : (isInProgress ? '#FFAE00' : '#FF0000');
                 var statusEl = document.getElementById('report-detail-status');
                 statusEl.textContent = statusText;
                 statusEl.style.color = statusColor;
@@ -233,10 +235,11 @@
 
         reports.forEach(function(r, idx) {
             if (r.latitude != null && r.longitude != null) {
-                var statusColors = { pending: '#ff0000', in_progress: '#FFAE00', under_review: '#FFAE00', resolved: '#00FF26' };
-                var strokeColors = { pending: '#b30000', in_progress: '#cc8800', under_review: '#cc8800', resolved: '#00b31a' };
-                var color = statusColors[r.status] || '#ff0000';
-                var stroke = strokeColors[r.status] || '#b30000';
+                var st = r.status || 'pending';
+                var isResolved = st === 'resolved';
+                var isInProgress = ['in_progress', 'under_review'].indexOf(st) >= 0;
+                var color = isResolved ? '#00FF26' : (isInProgress ? '#FFAE00' : '#FF0000');
+                var stroke = isResolved ? '#00B31A' : (isInProgress ? '#CC8800' : '#B30000');
                 var marker = L.circleMarker([r.latitude, r.longitude], {
                     radius: 5,
                     fillColor: color,
