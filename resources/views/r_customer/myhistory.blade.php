@@ -85,8 +85,12 @@
                                 $statusColor = '#9CA3AF';
                             } else {
                                 $st = $report->status ?? 'pending';
-                                $statusText = ($st === 'resolved') ? 'Resolved' : (in_array($st, ['in_progress', 'under_review'], true) ? 'In progress' : 'Active');
-                                $statusColor = ($st === 'resolved') ? '#00ff73' : (in_array($st, ['in_progress', 'under_review'], true) ? '#ffae00' : '#e00808');
+                                $statusText = $st === 'resolved'
+                                    ? 'Resolved'
+                                    : ($st === 'cancelled' ? 'Cancelled' : (in_array($st, ['in_progress', 'under_review'], true) ? 'In progress' : 'Active'));
+                                $statusColor = $st === 'resolved'
+                                    ? '#00ff73'
+                                    : ($st === 'cancelled' ? '#9CA3AF' : (in_array($st, ['in_progress', 'under_review'], true) ? '#ffae00' : '#e00808'));
                             }
                         @endphp
                         <div style="position: relative; width: 100%; min-height: 105px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; flex-direction: row; align-items: center; padding: 5px; gap: 12px;">
@@ -113,6 +117,8 @@
                                         <span style="color: rgba(255, 255, 255, 0.55); font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px;">N/A</span>
                                     @elseif(!$isRejected && ($report->status ?? '') === 'resolved')
                                         <span style="color: white; font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px;">{{ $report->updated_at ? $report->updated_at->format('jS M Y') : '—' }}</span>
+                                    @elseif(!$isRejected && ($report->status ?? '') === 'cancelled')
+                                        <span style="color: rgba(255, 255, 255, 0.55); font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px;">Cancelled</span>
                                     @else
                                         <span style="color: rgba(255, 255, 255, 0.45); font-family: Poppins, sans-serif; font-weight: 400; font-size: 10px;">In Progress<span class="in-progress-dots">...</span></span>
                                     @endif

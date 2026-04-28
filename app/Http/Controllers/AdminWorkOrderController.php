@@ -201,11 +201,67 @@ class AdminWorkOrderController extends Controller
         return redirect()->back()->with('success', 'Work order submitted for approval.');
     }
 
+    public function destroy(WorkOrder $workOrder)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403, 'Only Super Admin can archive work orders.');
+
+        $workOrder->load('report');
+        $workOrder->delete();
+        $this->syncLinkedReportStatuses($workOrder, 'cancelled');
+
+        return redirect()
+            ->route('admin.work-orders.index')
+            ->with('success', 'Work order '.$workOrder->work_order_number.' archived.');
+    }
+
+    public function archived(Request $request)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403, 'Only Super Admin can access archived work orders.');
+
+        $query = WorkOrder::onlyTrashed()->with('report');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        $workOrders = $query
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('r_admin.work-orders.archived', compact('workOrders'));
+    }
+
+    public function restore(int $workOrder)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403, 'Only Super Admin can restore archived work orders.');
+
+        $record = WorkOrder::withTrashed()->findOrFail($workOrder);
+        if (! $record->trashed()) {
+            return redirect()
+                ->route('admin.work-orders.archived')
+                ->with('error', 'Work order is already active.');
+        }
+
+        $record->restore();
+        $this->syncLinkedReportStatuses($record, $this->mapWorkOrderStatusToReportStatus((string) $record->status));
+
+        return redirect()
+            ->route('admin.work-orders.archived')
+            ->with('success', 'Work order '.$record->work_order_number.' restored.');
+    }
+
     private function mapWorkOrderStatusToReportStatus(string $workOrderStatus): string
     {
-        return $workOrderStatus === 'completed'
-            ? 'resolved'
-            : 'in_progress';
+        return match ($workOrderStatus) {
+            'completed' => 'resolved',
+            'cancelled' => 'cancelled',
+            default => 'in_progress',
+        };
     }
 
     private function syncLinkedReportStatuses(WorkOrder $workOrder, string $operationsStatus): void
@@ -225,7 +281,11 @@ class AdminWorkOrderController extends Controller
             return;
         }
 
-        $customerStatus = $operationsStatus === 'resolved' ? 'resolved' : 'in_progress';
+        $customerStatus = match ($operationsStatus) {
+            'resolved' => 'resolved',
+            'cancelled' => 'cancelled',
+            default => 'in_progress',
+        };
         \App\Models\Report::query()
             ->whereKey($report->customer_report_id)
             ->update(['status' => $customerStatus]);

@@ -8,6 +8,13 @@
         <p>Work Order Details</p>
     </div>
     <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;">
+        @if(auth()->user()?->isSuperAdmin())
+            <form method="POST" action="{{ route('admin.work-orders.destroy', $workOrder) }}" onsubmit="return confirm('Delete this work order? It will be archived and can be restored later.');" style="margin: 0;">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+        @endif
         <a href="{{ route('admin.work-orders.pdf', $workOrder) }}" target="_blank" rel="noopener" class="btn btn-secondary">View / Print PDF</a>
         <a href="{{ route('admin.work-orders.index') }}" class="btn btn-secondary">Back to Work Orders</a>
     </div>

@@ -39,6 +39,7 @@ Route::get('/explore', function () {
 
     return view('r_customer.dashboard', [
         'reports' => Report::with('user')
+            ->where('status', '!=', 'cancelled')
             ->whereHas('operationsReport')
             ->latest()
             ->get(),
@@ -123,14 +124,14 @@ Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified'
     Route::get('/work-orders', [WorkOrderController::class, 'index'])->name('work-orders.index');
     Route::get('/work-orders/create', [WorkOrderController::class, 'create'])->name('work-orders.create');
     Route::post('/work-orders', [WorkOrderController::class, 'store'])->name('work-orders.store');
-    Route::get('/work-orders/{workOrder}', [WorkOrderController::class, 'show'])->name('work-orders.show');
-    Route::get('/work-orders/{workOrder}/pdf', [WorkOrderController::class, 'pdf'])->name('work-orders.pdf');
-    Route::get('/work-orders/{workOrder}/edit', [WorkOrderController::class, 'edit'])->name('work-orders.edit');
-    Route::put('/work-orders/{workOrder}', [WorkOrderController::class, 'update'])->name('work-orders.update');
-    Route::patch('/work-orders/{workOrder}/status', [WorkOrderController::class, 'updateStatus'])->name('work-orders.update-status');
-    Route::delete('/work-orders/{workOrder}', [WorkOrderController::class, 'destroy'])->name('work-orders.destroy');
-    Route::post('/work-orders/{workOrder}/submit-approval', [WorkOrderController::class, 'submitForApproval'])->name('work-orders.submit-approval');
-    Route::post('/work-orders/{workOrder}/photos', [WorkOrderController::class, 'storePhoto'])->name('work-orders.photos.store');
+    Route::get('/work-orders/{workOrder}', [WorkOrderController::class, 'show'])->whereNumber('workOrder')->name('work-orders.show');
+    Route::get('/work-orders/{workOrder}/pdf', [WorkOrderController::class, 'pdf'])->whereNumber('workOrder')->name('work-orders.pdf');
+    Route::get('/work-orders/{workOrder}/edit', [WorkOrderController::class, 'edit'])->whereNumber('workOrder')->name('work-orders.edit');
+    Route::put('/work-orders/{workOrder}', [WorkOrderController::class, 'update'])->whereNumber('workOrder')->name('work-orders.update');
+    Route::patch('/work-orders/{workOrder}/status', [WorkOrderController::class, 'updateStatus'])->whereNumber('workOrder')->name('work-orders.update-status');
+    Route::delete('/work-orders/{workOrder}', [WorkOrderController::class, 'destroy'])->whereNumber('workOrder')->name('work-orders.destroy');
+    Route::post('/work-orders/{workOrder}/submit-approval', [WorkOrderController::class, 'submitForApproval'])->whereNumber('workOrder')->name('work-orders.submit-approval');
+    Route::post('/work-orders/{workOrder}/photos', [WorkOrderController::class, 'storePhoto'])->whereNumber('workOrder')->name('work-orders.photos.store');
     Route::delete('/work-orders/{workOrder}/photos/{photo}', [WorkOrderController::class, 'destroyPhoto'])->name('work-orders.photos.destroy');
 });
 
@@ -171,13 +172,14 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::get('/admin/work-orders', [AdminWorkOrderController::class, 'index'])->name('admin.work-orders.index');
     Route::get('/admin/work-orders/create', [AdminWorkOrderController::class, 'create'])->name('admin.work-orders.create');
     Route::post('/admin/work-orders', [AdminWorkOrderController::class, 'store'])->name('admin.work-orders.store');
-    Route::get('/admin/work-orders/{workOrder}', [AdminWorkOrderController::class, 'show'])->name('admin.work-orders.show');
-    Route::get('/admin/work-orders/{workOrder}/pdf', [AdminWorkOrderController::class, 'pdf'])->name('admin.work-orders.pdf');
-    Route::get('/admin/work-orders/{workOrder}/edit', [AdminWorkOrderController::class, 'edit'])->name('admin.work-orders.edit');
-    Route::put('/admin/work-orders/{workOrder}', [AdminWorkOrderController::class, 'update'])->name('admin.work-orders.update');
-    Route::patch('/admin/work-orders/{workOrder}/status', [AdminWorkOrderController::class, 'updateStatus'])->name('admin.work-orders.update-status');
-    Route::post('/admin/work-orders/{workOrder}/submit-approval', [AdminWorkOrderController::class, 'submitForApproval'])->name('admin.work-orders.submit-approval');
-    Route::post('/admin/work-orders/{workOrder}/photos', [AdminWorkOrderController::class, 'storePhoto'])->name('admin.work-orders.photos.store');
+    Route::get('/admin/work-orders/{workOrder}', [AdminWorkOrderController::class, 'show'])->whereNumber('workOrder')->name('admin.work-orders.show');
+    Route::get('/admin/work-orders/{workOrder}/pdf', [AdminWorkOrderController::class, 'pdf'])->whereNumber('workOrder')->name('admin.work-orders.pdf');
+    Route::get('/admin/work-orders/{workOrder}/edit', [AdminWorkOrderController::class, 'edit'])->whereNumber('workOrder')->name('admin.work-orders.edit');
+    Route::put('/admin/work-orders/{workOrder}', [AdminWorkOrderController::class, 'update'])->whereNumber('workOrder')->name('admin.work-orders.update');
+    Route::patch('/admin/work-orders/{workOrder}/status', [AdminWorkOrderController::class, 'updateStatus'])->whereNumber('workOrder')->name('admin.work-orders.update-status');
+    Route::delete('/admin/work-orders/{workOrder}', [AdminWorkOrderController::class, 'destroy'])->whereNumber('workOrder')->name('admin.work-orders.destroy');
+    Route::post('/admin/work-orders/{workOrder}/submit-approval', [AdminWorkOrderController::class, 'submitForApproval'])->whereNumber('workOrder')->name('admin.work-orders.submit-approval');
+    Route::post('/admin/work-orders/{workOrder}/photos', [AdminWorkOrderController::class, 'storePhoto'])->whereNumber('workOrder')->name('admin.work-orders.photos.store');
     Route::delete('/admin/work-orders/{workOrder}/photos/{photo}', [AdminWorkOrderController::class, 'destroyPhoto'])->name('admin.work-orders.photos.destroy');
 
     Route::get('/admin/staff', [AdminController::class, 'staffDirectory'])->name('admin.staff.index');
@@ -217,6 +219,8 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])->group(function () {
     Route::post('/admin/staff/users', [AdminController::class, 'storeStaffUser'])->name('admin.staff.users.store');
     Route::get('/admin/staff/admins/create', fn () => redirect()->route('admin.staff.users.create', ['role' => 'admin']))->name('admin.staff.admins.create');
     Route::get('/admin/staff/operations/create', fn () => redirect()->route('admin.staff.users.create', ['role' => 'operator']))->name('admin.staff.operations.create');
+    Route::get('/admin/work-orders/archived', [AdminWorkOrderController::class, 'archived'])->name('admin.work-orders.archived');
+    Route::post('/admin/work-orders/{workOrder}/restore', [AdminWorkOrderController::class, 'restore'])->whereNumber('workOrder')->name('admin.work-orders.restore');
 });
 
 Route::redirect('/admin/operators/create', '/admin/staff/users/create?role=operator');

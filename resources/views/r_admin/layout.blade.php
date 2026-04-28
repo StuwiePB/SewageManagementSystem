@@ -159,10 +159,16 @@
                 <i class="fas fa-chart-line"></i>
                 <span>Statistics</span>
             </a>
-            <a href="{{ route('admin.work-orders.index') }}" class="nav-item {{ request()->routeIs('admin.work-orders.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.work-orders.index') }}" class="nav-item {{ request()->routeIs('admin.work-orders.*') && !request()->routeIs('admin.work-orders.archived') ? 'active' : '' }}">
                 <i class="fas fa-clipboard-list"></i>
                 <span>Work Orders</span>
             </a>
+            @if(auth()->user()?->isSuperAdmin())
+                <a href="{{ route('admin.work-orders.archived') }}" class="nav-item {{ request()->routeIs('admin.work-orders.archived') ? 'active' : '' }}">
+                    <i class="fas fa-box-archive"></i>
+                    <span>Work Order Archive</span>
+                </a>
+            @endif
             <a href="{{ route('admin.support.chat') }}" class="nav-item {{ request()->routeIs('admin.support.chat') ? 'active' : '' }}">
                 <i class="fas fa-comments"></i>
                 <span>Customer chat</span>

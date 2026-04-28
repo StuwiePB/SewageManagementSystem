@@ -88,11 +88,6 @@
                         <td>
                             <div style="display:flex; align-items:center; gap:0.65rem;">
                                 <a href="{{ route('operations.work-orders.show', $workOrder) }}" class="link-primary">View</a>
-                                <form method="POST" action="{{ route('operations.work-orders.destroy', $workOrder) }}" style="display:inline;" onsubmit="return confirm('Delete this work order and linked customer report? This cannot be undone.');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="link-primary" style="background:none; border:none; color:#ff8f8f; cursor:pointer; padding:0;">Delete</button>
-                                </form>
                             </div>
                         </td>
                     </tr>
