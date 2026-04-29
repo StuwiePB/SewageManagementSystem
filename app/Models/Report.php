@@ -142,6 +142,7 @@ class Report extends Model
         return static::query()
             ->with(['user', 'operationsReport'])
             ->whereNull('reports.deleted_at')
+            ->where('reports.status', '!=', 'cancelled')
             ->where(function (Builder $q) use ($user) {
                 $q->whereHas('operationsReport')
                     ->orWhere('reports.user_id', $user->id);

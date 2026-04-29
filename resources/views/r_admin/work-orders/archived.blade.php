@@ -4,16 +4,14 @@
 
 <header class="header">
     <div>
-        <h1>Work Orders</h1>
-        <p>Manage and track work orders</p>
+        <h1>Archived Work Orders</h1>
+        <p>Super Admin archive and restore center</p>
     </div>
-    @if(auth()->user()?->isSuperAdmin())
-        <a href="{{ route('admin.work-orders.archived') }}" class="btn btn-secondary">View Archive</a>
-    @endif
+    <a href="{{ route('admin.work-orders.index') }}" class="btn btn-secondary">Back to Active Work Orders</a>
 </header>
 
 <section class="card card-mb" aria-label="Filters">
-    <form method="GET" action="{{ route('admin.work-orders.index') }}" class="grid-filters">
+    <form method="GET" action="{{ route('admin.work-orders.archived') }}" class="grid-filters">
         <div class="form-group flex-grow" style="min-width: 160px;">
             <label class="form-label" for="status">Status</label>
             <select id="status" name="status" class="form-control" style="min-width: 160px;">
@@ -44,7 +42,7 @@
     </form>
 </section>
 
-<section class="card" aria-label="Work orders list">
+<section class="card" aria-label="Archived work orders list">
     <div class="table-wrap">
         <table class="ops-table">
             <thead>
@@ -55,15 +53,14 @@
                     <th>Type</th>
                     <th>Priority</th>
                     <th>Status</th>
+                    <th>Archived At</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($workOrders as $workOrder)
                     <tr>
-                        <td>
-                            <a href="{{ route('admin.work-orders.show', $workOrder) }}" class="link-primary">{{ $workOrder->work_order_number }}</a>
-                        </td>
+                        <td>{{ $workOrder->work_order_number }}</td>
                         <td>{{ $workOrder->district_display ?? '—' }}</td>
                         <td>{{ $workOrder->location_address }}</td>
                         <td>{{ $workOrder->type }}</td>
@@ -84,22 +81,17 @@
                             @endphp
                             <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $workOrder->status)) }}</span>
                         </td>
+                        <td>{{ optional($workOrder->deleted_at)->format('M d, Y g:i A') ?? '—' }}</td>
                         <td>
-                            <div style="display:flex; align-items:center; gap:0.65rem;">
-                                <a href="{{ route('admin.work-orders.show', $workOrder) }}" class="link-primary">View</a>
-                                @if(auth()->user()?->isSuperAdmin())
-                                    <form method="POST" action="{{ route('admin.work-orders.destroy', $workOrder) }}" style="display:inline;" onsubmit="return confirm('Delete this work order? It will be archived and can be restored later.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="link-primary" style="background:none; border:none; color:#ff8f8f; cursor:pointer; padding:0;">Delete</button>
-                                    </form>
-                                @endif
-                            </div>
+                            <form method="POST" action="{{ route('admin.work-orders.restore', $workOrder->id) }}" style="display:inline;" onsubmit="return confirm('Restore this work order back to active list?');">
+                                @csrf
+                                <button type="submit" class="link-primary" style="background:none; border:none; color:#56FF8B; cursor:pointer; padding:0;">Restore</button>
+                            </form>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="cell-muted">No work orders found.</td>
+                        <td colspan="8" class="cell-muted">No archived work orders found.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -111,14 +103,14 @@
             <span class="pagination-info">Showing {{ $workOrders->firstItem() }}–{{ $workOrders->lastItem() }} of {{ $workOrders->total() }}</span>
             <div class="pagination-btns">
                 @if($workOrders->onFirstPage())
-                    <span class="btn-page disabled"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Previous</span>
+                    <span class="btn-page disabled">Previous</span>
                 @else
-                    <a href="{{ $workOrders->previousPageUrl() }}" class="btn-page"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Previous</a>
+                    <a href="{{ $workOrders->previousPageUrl() }}" class="btn-page">Previous</a>
                 @endif
                 @if($workOrders->hasMorePages())
-                    <a href="{{ $workOrders->nextPageUrl() }}" class="btn-page">Next <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></a>
+                    <a href="{{ $workOrders->nextPageUrl() }}" class="btn-page">Next</a>
                 @else
-                    <span class="btn-page disabled">Next <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></span>
+                    <span class="btn-page disabled">Next</span>
                 @endif
             </div>
         </div>

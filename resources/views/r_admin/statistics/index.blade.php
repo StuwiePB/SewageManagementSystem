@@ -60,23 +60,24 @@
     <h3 class="card-title">Time period</h3>
     <p class="card-subtitle">Select the date range for your statistics.</p>
 
+    @php($selectedPeriod = request('period', 'this_month'))
     <form action="{{ route('admin.statistics.show') }}" method="GET">
         <div class="stat-period-row">
             <label for="period">Period</label>
             <select name="period" id="period">
-                <option value="last_7_days">Last 7 days</option>
-                <option value="this_month" selected>This month</option>
-                <option value="this_quarter">This quarter</option>
-                <option value="custom">Custom date range</option>
+                <option value="last_7_days" {{ $selectedPeriod === 'last_7_days' ? 'selected' : '' }}>Last 7 days</option>
+                <option value="this_month" {{ $selectedPeriod === 'this_month' ? 'selected' : '' }}>This month</option>
+                <option value="this_quarter" {{ $selectedPeriod === 'this_quarter' ? 'selected' : '' }}>This quarter</option>
+                <option value="custom" {{ $selectedPeriod === 'custom' ? 'selected' : '' }}>Custom date range</option>
             </select>
             <div id="custom-dates" class="stat-custom-dates">
                 <div>
                     <label>Start</label>
-                    <input type="date" name="start" value="{{ request('start') }}">
+                    <input type="date" id="start-date" name="start" value="{{ request('start') }}">
                 </div>
                 <div>
                     <label>End</label>
-                    <input type="date" name="end" value="{{ request('end') }}">
+                    <input type="date" id="end-date" name="end" value="{{ request('end') }}">
                 </div>
             </div>
         </div>
@@ -136,9 +137,18 @@
 (function() {
     var period = document.getElementById('period');
     var customDates = document.getElementById('custom-dates');
+    var startDate = document.getElementById('start-date');
+    var endDate = document.getElementById('end-date');
     if (period && customDates) {
         function toggle() {
-            customDates.classList.toggle('show', period.value === 'custom');
+            var isCustom = period.value === 'custom';
+            customDates.classList.toggle('show', isCustom);
+            if (startDate && endDate) {
+                startDate.disabled = !isCustom;
+                endDate.disabled = !isCustom;
+                startDate.required = isCustom;
+                endDate.required = isCustom;
+            }
         }
         period.addEventListener('change', toggle);
         toggle();

@@ -6,12 +6,9 @@ use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Throwable;
 
 class WorkOrderController extends Controller
 {
@@ -245,45 +242,7 @@ class WorkOrderController extends Controller
 
     public function destroy(WorkOrder $workOrder)
     {
-        $workOrder->load(['photos', 'report.customerReport']);
-
-        $opsReport = $workOrder->report;
-        $customerReport = $opsReport?->customerReport;
-        $workOrderNumber = $workOrder->work_order_number;
-        $photoPaths = $workOrder->photos->pluck('path')->filter()->values()->all();
-
-        try {
-            DB::transaction(function () use ($workOrder, $opsReport, $customerReport) {
-                $workOrder->delete();
-
-                if ($opsReport) {
-                    $opsReport->delete();
-                }
-
-                if ($customerReport) {
-                    $customerReport->delete();
-                }
-            });
-
-            foreach ($photoPaths as $path) {
-                Storage::disk('public')->delete($path);
-            }
-        } catch (Throwable $e) {
-            Log::warning('Failed to delete work order and linked reports.', [
-                'work_order_id' => $workOrder->id,
-                'operations_report_id' => $opsReport?->id,
-                'customer_report_id' => $customerReport?->id,
-                'message' => $e->getMessage(),
-            ]);
-
-            return redirect()
-                ->route('operations.work-orders.index')
-                ->with('error', 'Unable to delete this work order right now. Please try again.');
-        }
-
-        return redirect()
-            ->route('operations.work-orders.index')
-            ->with('success', 'Deleted work order '.$workOrderNumber.' and linked report records.');
+        abort(403, 'Only Super Admin can archive work orders.');
     }
 
     public function submitForApproval(WorkOrder $workOrder)
@@ -293,9 +252,11 @@ class WorkOrderController extends Controller
 
     private function mapWorkOrderStatusToReportStatus(string $workOrderStatus): string
     {
-        return $workOrderStatus === 'completed'
-            ? 'resolved'
-            : 'in_progress';
+        return match ($workOrderStatus) {
+            'completed' => 'resolved',
+            'cancelled' => 'cancelled',
+            default => 'in_progress',
+        };
     }
 
     private function syncLinkedReportStatuses(WorkOrder $workOrder, string $operationsStatus): void
@@ -315,7 +276,11 @@ class WorkOrderController extends Controller
             return;
         }
 
-        $customerStatus = $operationsStatus === 'resolved' ? 'resolved' : 'in_progress';
+        $customerStatus = match ($operationsStatus) {
+            'resolved' => 'resolved',
+            'cancelled' => 'cancelled',
+            default => 'in_progress',
+        };
         \App\Models\Report::query()
             ->whereKey($report->customer_report_id)
             ->update(['status' => $customerStatus]);
