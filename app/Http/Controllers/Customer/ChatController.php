@@ -559,12 +559,14 @@ TXT;
             return json_encode(['error' => $result['error'] ?? 'Query failed'], JSON_UNESCAPED_UNICODE);
         }
 
+        $rows = $this->stripUnderReviewRows($result['rows'] ?? []);
+
         $encoded = json_encode(
             [
                 'result_type' => $result['result_type'] ?? 'unknown',
-                'rows' => $result['rows'] ?? [],
+                'rows' => $rows,
                 'truncated' => (bool) ($result['truncated'] ?? false),
-                'row_count' => (int) ($result['row_count'] ?? 0),
+                'row_count' => count($rows),
                 'affected_rows' => (int) ($result['affected_rows'] ?? 0),
                 'success' => (bool) ($result['success'] ?? false),
             ],
@@ -572,6 +574,47 @@ TXT;
         );
 
         return $encoded !== false ? $encoded : '{"error":"encode_failed"}';
+    }
+
+    /**
+     * Prevent customer-facing AI responses from exposing under-review records.
+     *
+     * @param  array<int, mixed>  $rows
+     * @return array<int, mixed>
+     */
+    private function stripUnderReviewRows(array $rows): array
+    {
+        $filtered = [];
+        foreach ($rows as $row) {
+            if (! is_array($row) && ! is_object($row)) {
+                $filtered[] = $row;
+                continue;
+            }
+
+            $normalized = is_object($row) ? (array) $row : $row;
+            $shouldHide = false;
+
+            foreach ($normalized as $key => $value) {
+                if (! is_string($key) || ! is_string($value)) {
+                    continue;
+                }
+
+                if (! str_contains(strtolower($key), 'status')) {
+                    continue;
+                }
+
+                if (strtolower(trim($value)) === 'under_review') {
+                    $shouldHide = true;
+                    break;
+                }
+            }
+
+            if (! $shouldHide) {
+                $filtered[] = $row;
+            }
+        }
+
+        return $filtered;
     }
 
     private function messageRequestsNearbyIssues(string $message): bool
@@ -620,7 +663,7 @@ TXT;
         }
 
         return (bool) preg_match(
-            '/\b(blockage|blocked|clog|clogged|leak|leaking|overflow|overflowing|smell|odor|bau|tersumbat|bocor|melimpah|saliran|drain|drainage|sewer|pembetungan)\b/i',
+            '/\b(report|lapor|laporan|hantar\s+laporan|submit\s+report|file\s+(a\s+)?report|make\s+(a\s+)?report|blockage|blocked|clog|clogged|leak|leaking|overflow|overflowing|smell|odor|bau|tersumbat|bocor|melimpah|saliran|drain|drainage|sewer|pembetungan)\b/i',
             $message
         );
     }
