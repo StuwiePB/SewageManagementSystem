@@ -136,6 +136,61 @@
                 background: #2acbff;
                 box-shadow: 0 3px 10px rgba(4, 188, 255, 0.38);
             }
+            .msg-quick-actions {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .quick-chip {
+                height: 30px;
+                border-radius: 9999px;
+                border: 1px solid rgba(255, 255, 255, 0.25);
+                background: rgba(66, 106, 120, 0.2);
+                color: #e5e7eb;
+                padding: 0 11px;
+                font-size: 10px;
+                font-family: Poppins, sans-serif;
+                font-weight: 600;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.1s ease, border-color 0.2s ease;
+            }
+            .quick-chip:active {
+                transform: scale(0.96);
+            }
+            .quick-chip.is-active {
+                border-color: #04BCFF;
+                color: #ffffff;
+                background: rgba(4, 188, 255, 0.24);
+            }
+            .quick-chip.quick-chip-text {
+                height: auto;
+                padding: 0;
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                color: #9cdcff;
+                text-decoration: underline;
+                text-underline-offset: 2px;
+                font-weight: 700;
+            }
+            .quick-chip.quick-chip-text:hover {
+                color: #c2ebff;
+                border: none;
+            }
+            .quick-chip.quick-chip-text.is-active {
+                color: #ffffff;
+                background: transparent;
+            }
+            .quick-chip:hover {
+                border-color: #04BCFF;
+                color: #ffffff;
+            }
             @keyframes msgPop {
                 from { opacity: 0; transform: translateY(8px); }
                 to { opacity: 1; transform: translateY(0); }
@@ -303,10 +358,13 @@
             callback(payload);
         }
 
-        function appendBotReply(rawReply) {
+        function appendBotReply(rawReply, reportImageUrl, quickActions, forceShowReportButton) {
             var text = String(rawReply || '');
             var showReportButton = text.indexOf('SHOW_REPORT_BUTTON') !== -1;
             text = text.replace(/SHOW_REPORT_BUTTON/g, '').trim();
+            if (forceShowReportButton === true) {
+                showReportButton = true;
+            }
             if (!text) text = mockReplies[0];
 
             var botMsg = document.createElement('div');
@@ -320,6 +378,52 @@
                 a.href = reportUrl;
                 a.textContent = 'Go to report';
                 botMsg.appendChild(a);
+            }
+
+            if (reportImageUrl) {
+                var reportImg = document.createElement('img');
+                reportImg.className = 'msg-img';
+                reportImg.src = reportImageUrl;
+                reportImg.alt = 'report image';
+                reportImg.style.marginTop = '10px';
+                botMsg.appendChild(reportImg);
+            }
+
+            if (Array.isArray(quickActions) && quickActions.length) {
+                var wrap = document.createElement('div');
+                wrap.className = 'msg-quick-actions';
+                quickActions.forEach(function(action) {
+                    if (!action || !action.label || !action.type || !action.value) return;
+                    var el = document.createElement(action.type === 'url' || action.type === 'tel' ? 'a' : 'button');
+                    el.className = 'quick-chip';
+                    if (action.type === 'tel') {
+                        el.classList.add('quick-chip-text');
+                        el.textContent = String(action.value);
+                    } else {
+                        el.textContent = action.label;
+                    }
+                    if (action.type === 'url') {
+                        el.href = action.value;
+                        el.target = '_blank';
+                        el.rel = 'noopener noreferrer';
+                    } else if (action.type === 'tel') {
+                        el.href = 'tel:' + action.value;
+                    } else {
+                        el.type = 'button';
+                        el.addEventListener('click', function() {
+                            el.classList.add('is-active');
+                            chatInput.value = action.value;
+                            sendMessage();
+                            setTimeout(function() { el.classList.remove('is-active'); }, 250);
+                        });
+                    }
+                    el.addEventListener('click', function() {
+                        el.classList.add('is-active');
+                        setTimeout(function() { el.classList.remove('is-active'); }, 250);
+                    });
+                    wrap.appendChild(el);
+                });
+                if (wrap.children.length) botMsg.appendChild(wrap);
             }
             chatBox.scrollTop = chatBox.scrollHeight;
             saveChatState();
@@ -390,7 +494,12 @@
                 })
                 .then(function(res) {
                     if (typing.parentNode) chatBox.removeChild(typing);
-                    appendBotReply(res.ok && res.data.reply ? res.data.reply : (res.data.error || mockReplies[0]));
+                    appendBotReply(
+                        res.ok && res.data.reply ? res.data.reply : (res.data.error || mockReplies[0]),
+                        res.ok ? (res.data.report_image_url || null) : null,
+                        res.ok ? (res.data.quick_actions || []) : [],
+                        res.ok ? (res.data.show_report_button === true) : false
+                    );
                 })
                 .catch(function(err) {
                     if (typing.parentNode) chatBox.removeChild(typing);

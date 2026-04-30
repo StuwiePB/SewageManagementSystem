@@ -78,7 +78,7 @@ class ZiqahDatabaseBridge
             return '';
         }
 
-        return "\n\nDATABASE CONTEXT (Laravel connections; read-only for you — use the database_select tool for live rows):\n".implode("\n", $blocks);
+        return "\n\nDATABASE CONTEXT (Laravel connections; use the database_query tool for live rows/changes):\n".implode("\n", $blocks);
     }
 
     /**
@@ -104,7 +104,7 @@ class ZiqahDatabaseBridge
         $mukims = Config::get('brunei.mukims', []);
 
         $lines = [
-            "\n\nLOCATION DATA (from your database; samples below — use `database_select` to search, filter, or list coordinates):",
+            "\n\nLOCATION DATA (from your database; samples below — use `database_query` to search, filter, or list coordinates):",
             '- `reports`: column `address` (text), plus `latitude` / `longitude` when set. For public/nearby context, consider only reports already linked to `operations_reports` (sent to operations).',
             '- `operations_reports`: `location_address`, `district`, `mukim` (slugs matching Brunei config), `latitude`, `longitude`.',
             '- `work_orders`: same geographic columns as operations reports.',
@@ -393,9 +393,17 @@ class ZiqahDatabaseBridge
     }
 
     /**
-     * @return array{ok: true, rows: list<object|string>, truncated: bool}|array{ok: false, error: string}
+     * @return array{
+     *   ok: true,
+     *   result_type: string,
+     *   rows: list<object|string>,
+     *   truncated: bool,
+     *   row_count: int,
+     *   affected_rows: int,
+     *   success: bool
+     * }|array{ok: false, error: string}
      */
-    public function runReadOnlySelect(string $connectionName, string $sql, int $maxRows): array
+    public function runSql(string $connectionName, string $sql, int $maxRows): array
     {
         $conn = $this->resolveConnection($connectionName);
         if ($conn === '') {
@@ -405,57 +413,47 @@ class ZiqahDatabaseBridge
             ];
         }
 
-        $err = $this->validateReadOnlySelect($sql);
-        if ($err !== null) {
-            return ['ok' => false, 'error' => $err];
-        }
-
-        $limited = $this->ensureSelectLimit(trim($sql), $maxRows);
-
-        try {
-            $rows = DB::connection($conn)->select($limited);
-            $truncated = count($rows) >= $maxRows;
-
-            return ['ok' => true, 'rows' => array_values($rows), 'truncated' => $truncated];
-        } catch (Throwable $e) {
-            Log::warning('ZiqahDatabaseBridge: select failed', ['connection' => $conn, 'error' => $e->getMessage()]);
-
-            return ['ok' => false, 'error' => 'Query failed: '.$e->getMessage()];
-        }
-    }
-
-    public function validateReadOnlySelect(string $sql): ?string
-    {
         $sql = trim($sql);
         if ($sql === '') {
-            return 'Empty SQL.';
-        }
-
-        if (preg_match('/;\s*\S/s', $sql)) {
-            return 'Only a single statement is allowed (no extra statements after `;`).';
+            return ['ok' => false, 'error' => 'Empty SQL.'];
         }
 
         $core = rtrim($sql, " \t\n\r\0\x0B;");
-        if (! preg_match('/^SELECT\s/is', $core)) {
-            return 'Only SELECT queries are allowed.';
-        }
+        $isSelect = (bool) preg_match('/^SELECT\s/is', $core);
 
-        if (preg_match('/--|/\*|\#/s', $sql)) {
-            return 'SQL comments are not allowed.';
-        }
+        try {
+            if ($isSelect) {
+                $limited = $this->ensureSelectLimit($core, $maxRows);
+                $rows = DB::connection($conn)->select($limited);
+                $truncated = count($rows) >= $maxRows;
 
-        $u = strtoupper($core);
-        $forbidden = [
-            'INSERT ', 'UPDATE ', 'DELETE ', 'DROP ', 'ALTER ', 'TRUNCATE ', 'CREATE ', 'GRANT ', 'REVOKE ',
-            ' INTO OUTFILE', ' INTO DUMPFILE', 'LOAD_FILE', 'BENCHMARK(', 'SLEEP(',
-        ];
-        foreach ($forbidden as $bad) {
-            if (str_contains($u, $bad)) {
-                return 'That query contains a forbidden construct.';
+                return [
+                    'ok' => true,
+                    'result_type' => 'select',
+                    'rows' => array_values($rows),
+                    'truncated' => $truncated,
+                    'row_count' => count($rows),
+                    'affected_rows' => 0,
+                    'success' => true,
+                ];
             }
-        }
 
-        return null;
+            $affectedRows = DB::connection($conn)->affectingStatement($core);
+
+            return [
+                'ok' => true,
+                'result_type' => 'mutation',
+                'rows' => [],
+                'truncated' => false,
+                'row_count' => 0,
+                'affected_rows' => max(0, (int) $affectedRows),
+                'success' => true,
+            ];
+        } catch (Throwable $e) {
+            Log::warning('ZiqahDatabaseBridge: query failed', ['connection' => $conn, 'error' => $e->getMessage()]);
+
+            return ['ok' => false, 'error' => 'Query failed: '.$e->getMessage()];
+        }
     }
 
     private function ensureSelectLimit(string $sql, int $max): string
