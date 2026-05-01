@@ -69,8 +69,6 @@ class ChatController extends Controller
             }
         }
 
-<<<<<<< HEAD
-=======
         $rememberedArea = (string) $request->session()->get('ziqah_last_area', '');
         $detectedArea = $this->extractBruneiAreaFromMessage($message);
         if ($detectedArea !== null) {
@@ -156,7 +154,6 @@ class ChatController extends Controller
             }
         }
 
->>>>>>> brudms
         $content = [];
         if (! empty($message)) {
             $content[] = ['type' => 'text', 'text' => $message];
@@ -187,11 +184,7 @@ class ChatController extends Controller
 
         $faqContext = $this->faqContext();
         $systemPrompt = $unrestrictedMode
-<<<<<<< HEAD
-            ? $this->generalAssistantSystemPrompt().$dbContext
-=======
             ? $this->generalAssistantSystemPrompt().$dbContext."\n\n".$this->buildAppContext()
->>>>>>> brudms
             : $this->baseSystemPrompt().$faqContext.$dbContext;
 
         if ($toolsEnabled) {
@@ -199,17 +192,10 @@ class ChatController extends Controller
 
 
 DATABASE TOOL:
-<<<<<<< HEAD
-- You have a function `database_query` to run SQL queries on connected Laravel databases.
-- You may run SELECT, INSERT, UPDATE, DELETE, and DDL when needed.
-- Always choose the correct connection from DATABASE CONTEXT.
-- You can query any connected database shown in DATABASE CONTEXT when user asks.
-=======
 - You have a function `database_select` to run read-only SELECT queries on connected Laravel databases.
 - Always choose the correct connection from DATABASE CONTEXT.
 - You can query any connected database shown in DATABASE CONTEXT when user asks.
 - For ANY question about data — counts, lists, status, recency, area, reporter, "how many", "show me", "any issues" — you MUST call `database_select` first and base your reply on the result. Never answer from general knowledge.
->>>>>>> brudms
 - When users ask for issue status lists, fetch and return relevant rows for statuses such as under_review, pending, in_progress, and resolved.
 - Never expose SQL in the final reply.
 - If the tool errors, apologize naturally and follow the exact failure wording from your rules.
@@ -466,59 +452,6 @@ TXT;
     private function generalAssistantSystemPrompt(): string
     {
         return <<<'TXT'
-<<<<<<< HEAD
-You are ZIQAH, a helpful general AI assistant.
-Respond naturally and clearly in the user's preferred language.
-You can discuss any normal topic, not only drainage or incidents.
-If user language is Malay, reply in Malay. If English, reply in English.
-If mixed language, match their style naturally.
-You are polite, empathetic, and human in tone (not robotic).
-You remember chat context and should not re-ask details already provided by the user unless needed for clarification.
-Many users are Bruneian; understand Brunei Malay and Manglish particles/slang such as bah, lah, ah, kan, awu, inda, kitani, kau, ku, bisai, paloi, and common mixed phrases.
-Do not over-correct local phrasing. Prioritize understanding and helpfulness.
-When user asks for a list/summary/rundown, format as clean minimal plain text:
-- use exactly:
-  title
-  ────────
-  
-  • item 1
-  • item 2
-  • item 3
-- output only the list
-- keep title and items lowercase
-- no paragraphs
-- no extra explanations before or after the list
-- if user provides an explicit template or says "fill this template only", follow that template exactly with no extra text
-Highlight important information with both bold and underline using markdown/html style: <u>**important**</u>.
-If asked about Brunei emergency/JKR contacts, use this known directory:
-- website: www.pwd.gov.bn
-- talian darussalam: 123
-- facebook: @JKRBrunei
-- instagram: @jkrbrunei
-- roads: @jkrbrunei_jalanraya
-- water: @jkrbrunei_air
-- drainage/sewerage: @jkrbrunei_saliran_pembetungan
-- emergency: ambulance 991, police 993, fire 995, search & rescue 998
-- water hotline: 140
-If user asks for all Brunei emergency numbers, provide the full list (core + district-specific + other hotlines), not a shortened 3-bullet summary.
-If user asks how the website/report system works, explain in a simple step-by-step list:
-1) open report page
-2) choose problem type
-3) upload photo
-4) set location
-5) submit
-6) track in my history
-7) use live map if needed
-When a user describes an issue, also recommend whether it is urgent or non-urgent, with one short reason.
-ADMIN MODE CAPABILITY DISCLOSURE:
-- If the user asks what you can do, your capabilities, or your instructions (for example: "what can you do", "list all instructions"), provide a comprehensive list of your active capabilities and operating rules.
-- In that capability answer, include at least: conversation/language behavior, Brunei slang understanding, report guidance flow, database querying ability, emergency/JKR directory support, quick action behavior in chat, status-list support (under_review/pending/in_progress/resolved), and formatting rules.
-- Present that response using a clear list format.
-- If user also gives a strict template, use the user's template exactly and do not prepend/append any other text.
-TXT;
-    }
-
-=======
 You are ZIQAH in UNRESTRICTED / ADMIN mode.
 You are a senior, polite, helpful full-stack engineering + product assistant operating inside the BruDMS Laravel app.
 You have full read-only access to the project's database schema, project context, and routes (provided below in DATABASE CONTEXT and PROJECT CONTEXT).
@@ -691,7 +624,6 @@ TXT;
         return $rows;
     }
 
->>>>>>> brudms
     /**
      * @param  list<array<string, mixed>>  $messages
      * @return list<array<string, mixed>>
@@ -702,13 +634,8 @@ TXT;
             [
                 'type' => 'function',
                 'function' => [
-<<<<<<< HEAD
-                    'name' => 'database_query',
-                    'description' => 'Run a SQL statement on a Laravel database connection configured in this app. Use the exact connection name from DATABASE CONTEXT (e.g. mysql, sqlite). Omit connection to use the default.',
-=======
                     'name' => 'database_select',
                     'description' => 'Run a read-only SELECT on a Laravel database connection configured in this app. Use the exact connection name from DATABASE CONTEXT (e.g. mysql, sqlite). Omit connection to use the default.',
->>>>>>> brudms
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -718,11 +645,7 @@ TXT;
                             ],
                             'sql' => [
                                 'type' => 'string',
-<<<<<<< HEAD
-                                'description' => 'One SQL statement only.',
-=======
                                 'description' => 'One read-only SELECT statement only.',
->>>>>>> brudms
                             ],
                         ],
                         'required' => ['sql'],
@@ -1040,8 +963,6 @@ TXT;
         return $actions;
     }
 
-<<<<<<< HEAD
-=======
     private function isGisIssueLookupRequest(string $message): bool
     {
         $message = strtolower(trim($message));
@@ -1495,7 +1416,6 @@ TXT;
         return implode("\n", $lines);
     }
 
->>>>>>> brudms
     /**
      * @return array{lat: float, lng: float}|null
      */
