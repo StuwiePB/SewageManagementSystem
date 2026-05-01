@@ -244,7 +244,7 @@
         </div>
         {{-- Statistics (links to customer statistics) --}}
         <div style="margin-top: 20px;">
-            <span style="display: block; color: rgba(255, 255, 255, 0.5); font-size: 12px; font-weight: 600; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 10px;">{{ __('Statistics') }}</span>
+            <span style="display: block; color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 8px;">{{ __('Statistics') }}</span>
             @if($guestMode)
             <a href="{{ route('login') }}" class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
