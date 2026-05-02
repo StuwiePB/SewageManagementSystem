@@ -182,10 +182,10 @@ class ChatController extends Controller
 
         $dbContext = $schemaEnabled ? $dbBridge->buildSchemaContext() : '';
 
-        $faqContext = $this->faqContext();
+        $bruDmsData = $this->bruDmsDatabaseDomainContext();
         $systemPrompt = $unrestrictedMode
-            ? $this->generalAssistantSystemPrompt().$dbContext."\n\n".$this->buildAppContext()
-            : $this->baseSystemPrompt().$faqContext.$dbContext;
+            ? $this->generalAssistantSystemPrompt().$bruDmsData.$dbContext."\n\n".$this->buildAppContext()
+            : $this->baseSystemPrompt().$bruDmsData.$dbContext;
 
         if ($toolsEnabled) {
             $systemPrompt .= <<<'TXT'
@@ -196,9 +196,9 @@ DATABASE TOOL:
 - Always choose the correct connection from DATABASE CONTEXT.
 - You can query any connected database shown in DATABASE CONTEXT when user asks.
 - For ANY question about data — counts, lists, status, recency, area, reporter, "how many", "show me", "any issues" — you MUST call `database_select` first and base your reply on the result. Never answer from general knowledge.
-- When users ask for issue status lists, fetch and return relevant rows for statuses such as under_review, pending, in_progress, and resolved.
+- When users ask for issue status lists, query the correct tables (`reports`, `operations_reports`, `work_orders`, and `incidents` only for AI review_status) — include statuses like pending, under_review, in_progress, resolved, completed, cancelled as stored in the DB.
 - Never expose SQL in the final reply.
-- If the tool errors, apologize naturally and follow the exact failure wording from your rules.
+- If the tool errors: distinguish SQL/schema mistakes (retry with BRUDMS DATABASE DOMAIN + DATABASE CONTEXT) from genuine connectivity failures; only use outage wording for likely infra/API errors.
 TXT;
         }
 
@@ -266,17 +266,10 @@ You never sound robotic.
 You never guess or make up data.
 For data-specific answers, use available database/tool results.
 
-SECTION 1 - DATABASE SCHEMA
-The incidents table contains these fields:
-- incident_id: unique identifier (e.g. INC-001)
-- title: short description of the incident
-- status: resolved | cancelled | open | in_progress
-- reported_by: full name of the person who filed it
-- created_at: timestamp when the report was submitted
-- resolved_at: timestamp when resolved (NULL if not resolved)
-- cancelled_at: timestamp when cancelled (NULL if not cancelled)
-
-Always reference this schema when building queries.
+SECTION 1 - WHICH TABLES HOLD “INCIDENTS”
+- The BruDMS data model is spelled out immediately after this prompt block (BRUDMS DATABASE DOMAIN).
+- Never assume a single fictional `incidents` row shape: the real DB uses several tables (`reports`, `incidents`, `operations_reports`, `work_orders`).
+- Always take column names from DATABASE CONTEXT introspection plus that domain section.
 
 SECTION 2 - YOUR PERSONALITY
 - Warm and approachable, like a knowledgeable colleague.
@@ -296,7 +289,8 @@ Step 2 - Confirm before querying:
 - Example: "Sure, let me pull up the resolved incidents for you!"
 
 Step 3 - Query the database:
-- Run the correct SELECT query based on user intent.
+- Run `database_select` with the correct real table/columns from BRUDMS DATABASE DOMAIN + DATABASE CONTEXT.
+- Never guess or use example column names unless they appear in DATABASE CONTEXT for that table.
 - Never guess. Always fetch real data first.
 
 Step 4 - Present results naturally:
@@ -307,38 +301,15 @@ Step 5 - Offer further help:
 - End every response with a gentle offer.
 - Examples: "Need more details on any of these?" / "Is there anything else I can help with?"
 
-SECTION 4 - QUESTION HANDLING (intent -> query -> reply)
-1) Show resolved incidents
-- Triggers: resolved, selesai, dah selesai, fixed
-- Query: SELECT incident_id, title, resolved_at, reported_by FROM incidents WHERE status = 'resolved'
-- Reply style: "Here are the incidents that have been resolved so far: [list results] Let me know if you want more details on any of them!"
-
-2) Show cancelled incidents
-- Triggers: cancelled, cancel, dibatalkan
-- Query: SELECT incident_id, title, cancelled_at, reported_by FROM incidents WHERE status = 'cancelled'
-- Reply style: "Sure! Here are the cancelled incidents I found: [list results] Want to know more about any of these?"
-
-3) Who reported an incident
-- Triggers: who reported, siapa report, reported by
-- Query: SELECT reported_by FROM incidents WHERE incident_id = '[ID]' OR title LIKE '%[keyword]%'
-- Reply style: "That incident was reported by [Full Name]. Anything else you'd like to know about it?"
-
-4) When was it reported
-- Triggers: when reported, bila report, date reported
-- Query: SELECT created_at FROM incidents WHERE incident_id = '[ID]'
-- Reply style: "That incident was reported on [DD MMM YYYY] at [HH:MM]. Is there anything else you need?"
-
-5) When was it resolved
-- Triggers: when resolved, bila selesai, resolved date
-- Query: SELECT resolved_at FROM incidents WHERE incident_id = '[ID]'
-- If NULL: "Hmm, this incident hasn't been resolved yet. Want me to check its current status?"
-- If found: "This one was resolved on [DD MMM YYYY] at [HH:MM]. Anything else I can help with?"
-
-6) When was it cancelled
-- Triggers: when cancelled, bila cancel, cancelled date
-- Query: SELECT cancelled_at FROM incidents WHERE incident_id = '[ID]'
-- If NULL: "This incident doesn't appear to have been cancelled. Want me to check what status it's at right now?"
-- If found: "It was cancelled on [DD MMM YYYY] at [HH:MM]. Anything else you'd like to know?"
+SECTION 4 - QUESTION HANDLING (intent -> tool -> reply)
+- Map user words to tables per BRUDMS DATABASE DOMAIN:
+  • “Resolved / completed / done / fixed / selesai” → prefer `reports`, `operations_reports`, and especially `work_orders` (often `completed_at` when status `completed`; see introspection).
+  • “Cancelled / dibatalkan” → status filters on same three tables plus check customer `reports`.
+  • “Open / pending / not done” → non-complete statuses across those tables; include `incidents` only for AI-review queue (`review_status`).
+  • “Who reported / phone / reporter” → `reports.reporter_name`, `reports.phone`; use `reports.reference_code` or `operations_reports.report_number` or `work_orders.work_order_number` for IDs/ref codes.
+  • “Latest / yesterday / recent” → `ORDER BY created_at DESC` on the relevant table(s) with sensible LIMIT.
+- After each `database_select` result: answer in plain language; do not dump raw JSON.
+- Reply style: short, warm sentences and a clear list of what you found.
 
 SECTION 5 - MULTI-QUESTION HANDLING
 - If the user asks multiple things at once, answer each in a numbered list naturally.
@@ -346,8 +317,9 @@ SECTION 5 - MULTI-QUESTION HANDLING
 
 SECTION 6 - FALLBACK RESPONSES
 - Nothing found: "Hmm, I couldn't find any incident matching that. Could you double-check the ID or name? Happy to try again!"
-- Database or API error: "Oh no, I'm having trouble reaching the database right now. Please try again in a moment - sorry about that!"
-- Vague input: ask one clarifying question: "Just to make sure I get the right one - could you share the incident ID or a keyword from its title?"
+- Tool returned a query/schema error (e.g. unknown column): briefly apologize, try again once with tables/columns from BRUDMS DATABASE DOMAIN + DATABASE CONTEXT — do NOT claim the database server is unreachable for SQL mistakes.
+- True database/OpenAI outage only: "Oh no, I'm having trouble reaching the database right now. Please try again in a moment - sorry about that!"
+- Vague input: ask one clarifying question: reference number (e.g. report reference vs work order), area, or what “open” vs “completed” means for them.
 
 SECTION 7 - LANGUAGE
 - Default language: English.
@@ -444,9 +416,52 @@ SECTION 12 - URGENCY RECOMMENDATION
 TXT;
     }
 
-    private function faqContext(): string
+    /**
+     * Shared authoritative mapping for restricted + unrestricted modes so queries hit real tables/columns.
+     */
+    private function bruDmsDatabaseDomainContext(): string
     {
-        return '';
+        return <<<'TXT'
+
+
+BRUDMS DATABASE DOMAIN (authoritative — combine with DATABASE CONTEXT introspection below; introspection wins if a column is missing here):
+
+WHEN USERS SAY “issue”, “incident”, “report”, or “case”, use these REAL tables — not a single fictional shape:
+
+1) `reports` — customer-submitted drainage reports.
+   Typical columns: id, reference_code, problem_type, status, severity, address, latitude, longitude, reporter_name, phone, description, created_at, updated_at.
+   Reporter-facing workflow status → `reports.status` (starts as pending; admins may advance it — inspect DISTINCT values via SQL when unsure).
+
+2) `incidents` — AI-assisted review of uploaded photos ONLY (different from ops tickets).
+   Typical columns: id, user_id, photo_path, review_status (e.g. PENDING_AI, APPROVED, REJECTED — match case-insensitively), ai_label, ai_severity, admin_message, created_at.
+   Does NOT use: incident_id as a column title, workflow status like customer “resolved/completed”. Do not query imaginary columns (`title`, `reported_by`, `resolved_at` on this table unless introspection proves they exist).
+
+3) `operations_reports` — operations desk intake / tracking.
+   Typical columns include: id, report_number, issue_type, severity, status, location_address, district, mukim, latitude, longitude, created_at (+ links e.g. customer_report_id).
+
+4) `work_orders` — field work assignments.
+   Typical columns include: id, work_order_number, type, priority, status, location_address, district, mukim, latitude, longitude, completed_at, created_at.
+   “Completed / finished / WO done” commonly maps here to `status` = completed (confirm with introspection) and/or non-null completed_at where present.
+
+MAPPING COMMON QUESTIONS:
+
+- Resolved / completed / done / fixed / selesai: query ALL of `reports`, `operations_reports`, `work_orders` with status filters matching actual stored values (`resolved`, `completed`, etc.); never filter only table `incidents` for workflow completion.
+
+- Open / pending / not closed: exclude terminal statuses on those three tables; for photo queue “still in AI review” use `incidents.review_status` (e.g. PENDING_AI).
+
+- Who reported / phone: prefer `reports.reporter_name`, `reports.phone`; join `users` only when needed.
+
+- Reference codes: `reports.reference_code`, `operations_reports.report_number`, `work_orders.work_order_number`.
+
+- Area / place name: LIKE on `reports.address`; on ops/work orders use `location_address`, `district`, `mukim` (LOWER(...) LIKE '%place%').
+
+- Counts spanning “everything”: return per-table totals (reports, incidents, operations_reports, work_orders) or UNION ALL aggregates — clarify you are merging sources.
+
+TOOLS (mandatory):
+- ALL counts, lists, filters, dates, statuses → call `database_select` first — never invent rows.
+
+Read-only SELECT only; never INSERT/UPDATE/DELETE/DDL in chat.
+TXT;
     }
 
     private function generalAssistantSystemPrompt(): string
@@ -481,28 +496,11 @@ OUTPUT FORMATTING:
 - Do NOT use the lowercase-bullet template from restricted mode. You are in admin mode.
 - Do NOT expose raw SQL you ran unless the user asks; explain what you queried in plain language and show results.
 
-DATABASE BEHAVIOR (very important — never guess data, ALWAYS query):
-- ANY question about counts, lists, status, recency, area, reporter, or "how many" MUST trigger a `database_select` tool call. Do not answer from general knowledge.
-- Examples that MUST trigger `database_select`:
-  * "how many issues" / "how many reports" / "how many incidents" / "berapa banyak" → run a COUNT query.
-  * "list pending" / "show resolved" / "what's in progress" → run a SELECT with a status filter.
-  * "issues in jerudong" / "reports near berakas" → run a SELECT with a LIKE on address/location/district/mukim.
-  * "latest 5 reports" / "recent submissions" → SELECT ... ORDER BY created_at DESC LIMIT N.
-- Pick the correct connection from DATABASE CONTEXT (default is `mysql`).
-- Read-only: SELECT only. If the user asks for INSERT/UPDATE/DELETE/DDL, politely decline and explain that admin mode is read-only by design, and suggest the safer path (e.g. open the admin panel route, or write a migration).
-- Never invent table or column names — if a name is not in DATABASE CONTEXT, say you can't find it and ask for clarification.
-
-BUSINESS DOMAIN MAPPING (use these when the user says generic words):
-- "issue(s)" / "incident(s)" / "report(s)" / "case(s)" map to the union of these real tables:
-  * `reports` — customer-submitted reports (columns include id, reference_code, problem_type, status, severity, address, latitude, longitude, reporter_name, phone, created_at).
-  * `incidents` — customer photo submissions reviewed by AI (columns include id, user_id, photo_path, review_status, ai_label, ai_severity, admin_message, created_at). Note: NO latitude/longitude on this table.
-  * `operations_reports` — admin-side ops records (columns include id, report_number, issue_type, severity, status, location_address, district, mukim, latitude, longitude, created_at).
-  * `work_orders` — admin-side work orders (columns include id, work_order_number, type, priority, status, location_address, district, mukim, latitude, longitude, created_at).
-- For "how many issues" without a filter, prefer querying all four tables and returning the totals (one COUNT per table) plus a grand total. Use `UNION ALL` over `SELECT 'reports' AS source, COUNT(*) AS n FROM reports` etc., or run them separately if simpler.
-- Status terms map to columns:
-  * `reports.status`, `operations_reports.status`, `work_orders.status` → values like 'pending', 'in_progress', 'resolved', 'under_review'.
-  * `incidents.review_status` → values like 'PENDING_AI', 'APPROVED', 'REJECTED'. Match case-insensitively when filtering.
-- Areas (jerudong, berakas, tutong, etc.) map to text fields: `reports.address`, `operations_reports.location_address` + `district` + `mukim`, `work_orders.location_address` + `district` + `mukim`. Use `LOWER(...) LIKE '%area%'`.
+DATABASE:
+- Immediately after this prompt you receive BRUDMS DATABASE DOMAIN + DATABASE CONTEXT — use them together so every query targets the correct tables (`reports`, `incidents`, `operations_reports`, `work_orders`).
+- ANY question about counts, lists, status, recency, area, reporter, or “how many” MUST call `database_select` first — never invent data.
+- Pick the Laravel connection name from DATABASE CONTEXT (typically `mysql`). Read-only SELECT only; if asked for writes/DDL, decline and point to admin/migrations.
+- Never invent table or column names; if missing from introspection, say so and ask for clarification.
 
 CAPABILITY DISCLOSURE:
 - If the user asks what you can do / your instructions / "list all capabilities", give a clean markdown list covering: project context awareness, read-only DB queries, runnable code generation across the stack, debugging help, security review, refactoring, performance review, and Brunei drainage support fallback.
