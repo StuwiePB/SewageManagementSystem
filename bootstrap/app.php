@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\EnsureCustomerNameInUrl;
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\LogoutBeforeLoginSwitch;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,17 +17,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/sns',
+        ]);
+
         // Trust Herd Share / tunnel proxies so session & CSRF work when accessing from phone
         $middleware->trustProxies(at: '*');
 
         $middleware->web(append: [
-            \App\Http\Middleware\LogoutBeforeLoginSwitch::class,
-            \App\Http\Middleware\EnsureAccountIsActive::class,
-            \App\Http\Middleware\SetLocale::class,
+            LogoutBeforeLoginSwitch::class,
+            EnsureAccountIsActive::class,
+            SetLocale::class,
         ]);
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
-            'customer.name' => \App\Http\Middleware\EnsureCustomerNameInUrl::class,
+            'role' => EnsureUserHasRole::class,
+            'customer.name' => EnsureCustomerNameInUrl::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

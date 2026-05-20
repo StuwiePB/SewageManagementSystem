@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\AI\AnalyzeIncidentImage;
 use App\Models\Incident;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -58,7 +59,7 @@ class IncidentController extends Controller
     /**
      * Send incident to operations (with optional admin message).
      */
-    public function sendToOperations(Request $request, Incident $incident)
+    public function sendToOperations(Request $request, Incident $incident, SnsNotifier $snsNotifier)
     {
         $validated = $request->validate([
             'admin_message' => ['nullable', 'string', 'max:2000'],
@@ -69,6 +70,8 @@ class IncidentController extends Controller
             'sent_to_operations_at' => now(),
             'review_status' => 'SENT_TO_OPERATIONS',
         ]);
+
+        $snsNotifier->incidentSentToOperations($incident->fresh());
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -157,6 +160,7 @@ class IncidentController extends Controller
         if ($riskScore >= 30) {
             return 'MEDIUM';
         }
+
         return 'LOW';
     }
 

@@ -6,6 +6,7 @@ use App\Models\Incident;
 use App\Services\AI\GoogleVisionService;
 use App\Services\AI\SewageClassifier;
 use App\Services\AI\WinstonService;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -22,13 +23,15 @@ class AnalyzeIncidentImage implements ShouldQueue
     public function handle(
         GoogleVisionService $visionService,
         SewageClassifier $classifier,
-        WinstonService $winstonService
+        WinstonService $winstonService,
+        SnsNotifier $snsNotifier,
     ): void {
         $incident = Incident::findOrFail($this->incidentId);
 
         try {
             if (! $this->validateImage($incident)) {
                 $this->updateIncidentWithError($incident, 'Image validation failed');
+
                 return;
             }
 
@@ -48,10 +51,13 @@ class AnalyzeIncidentImage implements ShouldQueue
                     $fallbackResult = $this->fallbackClassification($incident, $errorMessage, $errorDetails);
                     if ($fallbackResult) {
                         $this->updateIncidentWithResult($incident, $fallbackResult['classification'], $fallbackResult['evidence'], []);
+                        $snsNotifier->incidentHighRisk($incident->fresh());
+
                         return;
                     }
                 }
                 $this->updateIncidentWithError($incident, $errorMessage, $errorDetails);
+
                 return;
             }
 
@@ -75,6 +81,7 @@ class AnalyzeIncidentImage implements ShouldQueue
             }
 
             $this->updateIncidentWithResult($incident, $classification, $evidence, $visionResult);
+            $snsNotifier->incidentHighRisk($incident->fresh());
         } catch (\Exception $e) {
             Log::error("Failed to analyze incident {$incident->id}", [
                 'incident_id' => $incident->id,
@@ -97,6 +104,7 @@ class AnalyzeIncidentImage implements ShouldQueue
             return false;
         }
         $mimeType = Storage::disk('local')->mimeType($incident->photo_path);
+
         return in_array($mimeType, ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'], true);
     }
 

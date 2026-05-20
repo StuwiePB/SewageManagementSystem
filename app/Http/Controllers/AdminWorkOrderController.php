@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
-use App\Models\OperationsReport;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -36,7 +37,7 @@ class AdminWorkOrderController extends Controller
         return view('r_admin.work-orders.create', compact('reports', 'districts', 'mukims'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SnsNotifier $snsNotifier)
     {
         $validated = $request->validate([
             'report_id' => 'nullable|exists:operations_reports,id',
@@ -77,6 +78,8 @@ class AdminWorkOrderController extends Controller
             $workOrder->report->update(['status' => 'in_progress']);
         }
 
+        $snsNotifier->workOrderCreated($workOrder);
+
         return redirect()->route('admin.work-orders.index')
             ->with('success', 'Work order created successfully.');
     }
@@ -111,12 +114,14 @@ class AdminWorkOrderController extends Controller
     public function show(WorkOrder $workOrder)
     {
         $workOrder->load(['report', 'photos']);
+
         return view('r_admin.work-orders.show', compact('workOrder'));
     }
 
     public function pdf(WorkOrder $workOrder)
     {
         $workOrder->load(['report', 'photos']);
+
         return view('r_admin.work-orders.pdf', compact('workOrder'));
     }
 
@@ -170,7 +175,7 @@ class AdminWorkOrderController extends Controller
 
         $uploaded = 0;
         foreach ($request->file('photos') as $file) {
-            $path = $file->store('work-order-photos/' . $workOrder->id, 'public');
+            $path = $file->store('work-order-photos/'.$workOrder->id, 'public');
             WorkOrderPhoto::create([
                 'work_order_id' => $workOrder->id,
                 'path' => $path,
@@ -179,7 +184,7 @@ class AdminWorkOrderController extends Controller
             $uploaded++;
         }
 
-        return redirect()->back()->with('success', $uploaded . ' photo(s) added.');
+        return redirect()->back()->with('success', $uploaded.' photo(s) added.');
     }
 
     public function destroyPhoto(WorkOrder $workOrder, WorkOrderPhoto $photo)

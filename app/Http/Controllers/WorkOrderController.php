@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -35,7 +36,7 @@ class WorkOrderController extends Controller
         return view('r_operators.work-orders.create', compact('reports', 'districts', 'mukims'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SnsNotifier $snsNotifier)
     {
         $validated = $request->validate([
             'report_id' => 'nullable|exists:operations_reports,id',
@@ -75,6 +76,8 @@ class WorkOrderController extends Controller
         if ($workOrder->report_id) {
             $workOrder->report->update(['status' => 'in_progress']);
         }
+
+        $snsNotifier->workOrderCreated($workOrder);
 
         return redirect()->route('operations.work-orders.index')
             ->with('success', 'Work order created successfully.');

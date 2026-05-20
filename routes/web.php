@@ -12,6 +12,7 @@ use App\Http\Controllers\Customer\ReportController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\Operations\StatisticsController as OperationsStatisticsController;
 use App\Http\Controllers\OperationsController;
+use App\Http\Controllers\Webhooks\SnsWebhookController;
 use App\Http\Controllers\WorkOrderController;
 use App\Models\Report;
 use App\Models\User;
@@ -341,5 +342,15 @@ Route::post('/customer/profile', [ProfileController::class, 'update'])
 
 Route::post('/customer/preference', [PreferenceController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.preference.update');
+
+Route::get('/webhooks/sns', function () {
+    return response(
+        'BruDMS SNS webhook is ready. Subscribe this URL in AWS SNS (HTTPS). SNS sends POST only.',
+        200,
+        ['Content-Type' => 'text/plain; charset=UTF-8'],
+    );
+})->name('webhooks.sns.health');
+
+Route::post('/webhooks/sns', SnsWebhookController::class)->name('webhooks.sns');
 
 require __DIR__.'/settings.php';
