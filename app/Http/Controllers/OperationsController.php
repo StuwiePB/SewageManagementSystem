@@ -130,8 +130,11 @@ class OperationsController extends Controller
             ->whereIn('status', ['pending', 'assigned', 'in_progress'])
             ->get();
 
+        // Rectangular bounds + northwest coast line guard (coast: lat ≈ 0.50*lng − 52.37)
         $inBrunei = fn ($lat, $lng): bool =>
-            $lat >= 4.0 && $lat <= 5.1 && $lng >= 114.07 && $lng <= 115.40;
+            $lat >= 4.0 && $lat <= 5.07
+            && $lng >= 114.07 && $lng <= 115.40
+            && $lat <= 0.50 * $lng - 52.37;
 
         $mapReports = $reports->filter(fn ($r) => $inBrunei((float) $r->latitude, (float) $r->longitude))
             ->map(fn ($r) => [
