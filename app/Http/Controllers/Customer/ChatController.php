@@ -601,7 +601,7 @@ SECTION 13 - BRUNEI WEATHER & DRAINAGE RISK ZONES
 - When users ask which areas have drainage/sewer/flood risk: use the BRUNEI DRAINAGE RISK ZONES list.
 - Red zones (very high/high): Kedayan D2, Damuan D6, Sungai Brunei/Kampong Ayer, Gadong, Subok, Kota Batu, Bunut, Panaga, etc.
 - Yellow zones: moderate recurring risk (Lambak Kanan, Berakas, Serusop, Mata-Mata, etc.).
-- Tie weather + risk together: heavy rain increases blockage, backflow, and odor in low-lying and river-adjacent areas.
+- Tie weather + risk together: heavy rain/hujan increases blockage, backflow, and odor in low-lying and river-adjacent areas.
 - GIS maps in admin/ops show these zones colour-coded; customers can ask you instead of reading the map.
 
 SECTION 14 - NEARBY DRAINAGE ALERTS (5 KM)
