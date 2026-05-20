@@ -96,6 +96,23 @@
     .leaflet-container .leaflet-interactive:focus {
         outline: none !important;
     }
+    .gis-layer-toggles { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.85rem; align-items: center; }
+    .gis-layer-toggle {
+        display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+        padding: 0.45rem 0.85rem; background: var(--bg-secondary);
+        border: 1px solid rgba(106, 150, 255, 0.25); border-radius: 8px;
+        color: var(--text-secondary); font-size: 0.875rem; user-select: none;
+    }
+    .gis-layer-toggle.active { color: var(--accent-blue); border-color: var(--accent-blue); }
+    .gis-risk-legend { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .gis-risk-legend-item {
+        display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
+        padding: 0.25rem 0.55rem; border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.15); color: var(--text-primary);
+    }
+    .gis-risk-legend-swatch { width: 0.65rem; height: 0.65rem; border-radius: 50%; }
+    .gis-risk-popup h4 { margin: 0 0 0.35rem; font-size: 0.95rem; }
+    .gis-risk-popup ul { margin: 0.35rem 0 0; padding-left: 1.1rem; font-size: 0.82rem; }
 </style>
 @endpush
 
@@ -113,6 +130,16 @@
 
 <div class="card" id="admin-ops-map-section" style="padding: 1.5rem; overflow: hidden;">
     <h3 class="section-head" style="margin: 0 0 1rem;">Operations map</h3>
+    <p class="section-desc" style="margin: 0 0 0.75rem;">Terrain view + colour-coded drainage risk zones (red = very high/high, yellow = moderate).</p>
+    <div class="gis-risk-legend" aria-label="Drainage risk legend">
+        @foreach(($bruneiGisLayers['legend'] ?? []) as $item)
+            <span class="gis-risk-legend-item"><span class="gis-risk-legend-swatch" style="background:{{ $item['color'] }};"></span>{{ $item['label'] }}</span>
+        @endforeach
+    </div>
+    <div class="gis-layer-toggles">
+        <label class="gis-layer-toggle" id="toggle-terrain"><span>Terrain map</span></label>
+        <label class="gis-layer-toggle active" id="toggle-risk-zones"><span>Drainage risk zones</span></label>
+    </div>
     <div class="layer-toggles">
         <label class="layer-toggle report active" id="toggle-reports">
             <span class="dot">R</span>
@@ -148,6 +175,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+@include('partials.gis-brunei-layers')
 <script>
 (function () {
     var reports = @json($mapReports);
@@ -260,15 +288,15 @@
         markerZoomAnimation: true,
         zoomControl: true,
     });
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    var satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri',
         maxZoom: 18,
         maxNativeZoom: 18,
         updateWhenZooming: false,
         updateWhenIdle: true,
         keepBuffer: 10
-    }).addTo(map);
-    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    });
+    var satelliteLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Labels &copy; Esri',
         opacity: 0.9,
         maxZoom: 18,
@@ -276,7 +304,8 @@
         updateWhenZooming: false,
         updateWhenIdle: true,
         keepBuffer: 10
-    }).addTo(map);
+    });
+    var satelliteGroup = L.layerGroup([satelliteImagery, satelliteLabels]).addTo(map);
     map.setMaxBounds(bruneiBounds);
     var minOpsZoom = map.getBoundsZoom(bruneiBounds, true);
     if (minOpsZoom > map.getMinZoom()) {
@@ -289,6 +318,18 @@
         map.panInsideBounds(bruneiBounds, { animate: false });
     });
     addDistrictLayer(map);
+
+    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup });
+    document.getElementById('toggle-terrain').addEventListener('click', function () {
+        var on = !this.classList.contains('active');
+        this.classList.toggle('active', on);
+        bruneiLayers.setBaseTerrain(on);
+    });
+    document.getElementById('toggle-risk-zones').addEventListener('click', function () {
+        var on = !this.classList.contains('active');
+        this.classList.toggle('active', on);
+        bruneiLayers.toggleRisk(on);
+    });
 
     var reportLayer = L.layerGroup();
     var workOrderLayer = L.layerGroup();

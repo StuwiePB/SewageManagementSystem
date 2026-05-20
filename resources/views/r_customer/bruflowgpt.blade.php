@@ -303,6 +303,7 @@
 
         var pendingImage = null;
         var chatUrl = '{{ route("customer.chat") }}';
+        var nearbyAlertUrl = '{{ route("customer.chat.nearby-alert") }}';
         var reportUrl = '{{ route("customer.rproblem", ["name" => $user->profileSlug()]) }}';
         var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
@@ -321,12 +322,36 @@
 
         var cachedUserLat = null;
         var cachedUserLng = null;
+        function fetchNearbyDrainageAlert(force) {
+            if (cachedUserLat == null || cachedUserLng == null) return;
+            fetch(nearbyAlertUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({
+                    latitude: cachedUserLat,
+                    longitude: cachedUserLng,
+                    force: !!force,
+                }),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data || !data.show || !data.reply) return;
+                appendBotReply(data.reply, null, [], data.show_report_button === true);
+            })
+            .catch(function() {});
+        }
+
         (function prefetchLocation() {
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(
                 function(pos) {
                     cachedUserLat = pos.coords.latitude;
                     cachedUserLng = pos.coords.longitude;
+                    fetchNearbyDrainageAlert(false);
                 },
                 function() {},
                 { enableHighAccuracy: false, maximumAge: 180000, timeout: 12000 }
@@ -340,8 +365,7 @@
                 callback(payload);
                 return;
             }
-            var wantsNearby = /near|nearest|dekat|closest|around\s*(me|here)|nearby|sekitar|berhampiran|terdekat|radius/i.test(text || '');
-            if (wantsNearby && navigator.geolocation) {
+            if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     function(pos) {
                         cachedUserLat = pos.coords.latitude;
@@ -351,7 +375,7 @@
                         callback(payload);
                     },
                     function() { callback(payload); },
-                    { enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 }
+                    { enableHighAccuracy: false, maximumAge: 180000, timeout: 10000 }
                 );
                 return;
             }

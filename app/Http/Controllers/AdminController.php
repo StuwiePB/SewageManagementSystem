@@ -346,7 +346,9 @@ class AdminController extends Controller
             'updated_at' => $r->updated_at?->format('jS M Y'),
         ])->values()->all();
 
-        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView'));
+        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload();
+
+        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView', 'bruneiGisLayers'));
     }
 
     /**

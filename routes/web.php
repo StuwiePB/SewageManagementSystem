@@ -405,6 +405,8 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
 
 Route::post('/customer/chat', ChatController::class)
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.chat');
+Route::post('/customer/chat/nearby-alert', [ChatController::class, 'nearbyAlert'])
+    ->middleware(['auth', 'verified', 'role:customer'])->name('customer.chat.nearby-alert');
 
 Route::get('/customer/support/messages', [App\Http\Controllers\Customer\SupportController::class, 'index'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.support.messages');
