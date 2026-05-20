@@ -158,12 +158,14 @@
         L.latLng(3.70, 113.75),
         L.latLng(5.60, 115.85)
     );
-    var districtBorderStyle = {
-    color: 'rgba(255, 255, 255, 0.6)',      // White lines
-    weight: 1.5,
-    opacity: 0.7,
-    fill: false                              // No fill color
-};
+  var districtBorderStyle = {
+        color: 'rgba(106, 150, 255, 0.9)',
+        weight: 2.5,
+        opacity: 0.95,
+        fill: true,
+        fillColor: '#6A96FF',
+        fillOpacity: 0.02
+    };
     var districtHoverStyle = {
         color: '#8ab0ff',
         weight: 3.2,
