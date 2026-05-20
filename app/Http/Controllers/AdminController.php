@@ -311,20 +311,25 @@ class AdminController extends Controller
             ->with('crew')
             ->get();
 
-        $mapReports = $reports->map(fn ($r) => [
-            'lat' => (float) $r->latitude,
-            'lng' => (float) $r->longitude,
-            'number' => $r->report_number,
-            'address' => $r->location_address,
-        ])->values()->all();
+        $inBrunei = fn ($lat, $lng): bool =>
+            $lat >= 4.0 && $lat <= 5.1 && $lng >= 114.07 && $lng <= 115.40;
 
-        $mapWorkOrders = $workOrders->map(fn ($w) => [
-            'lat' => (float) $w->latitude,
-            'lng' => (float) $w->longitude,
-            'number' => $w->work_order_number,
-            'address' => $w->location_address,
-            'crew' => $w->crew?->name,
-        ])->values()->all();
+        $mapReports = $reports->filter(fn ($r) => $inBrunei((float) $r->latitude, (float) $r->longitude))
+            ->map(fn ($r) => [
+                'lat' => (float) $r->latitude,
+                'lng' => (float) $r->longitude,
+                'number' => $r->report_number,
+                'address' => $r->location_address,
+            ])->values()->all();
+
+        $mapWorkOrders = $workOrders->filter(fn ($w) => $inBrunei((float) $w->latitude, (float) $w->longitude))
+            ->map(fn ($w) => [
+                'lat' => (float) $w->latitude,
+                'lng' => (float) $w->longitude,
+                'number' => $w->work_order_number,
+                'address' => $w->location_address,
+                'crew' => $w->crew?->name,
+            ])->values()->all();
 
         $customerReports = Report::query()
             ->whereNotNull('latitude')
@@ -332,19 +337,20 @@ class AdminController extends Controller
             ->orderByUnsentToOperationsFirst()
             ->get();
 
-        $mapCustomerReports = $customerReports->map(fn ($r) => [
-            'id' => $r->id,
-            'lat' => (float) $r->latitude,
-            'lng' => (float) $r->longitude,
-            'number' => 'CR-'.$r->id,
-            'status' => $r->status,
-            'problem_type' => $r->problem_type,
-            'address' => $r->address,
-            'description' => $r->description,
-            'photo_url' => $r->photo_path ? Storage::url($r->photo_path) : null,
-            'created_at' => $r->created_at?->format('jS M Y'),
-            'updated_at' => $r->updated_at?->format('jS M Y'),
-        ])->values()->all();
+        $mapCustomerReports = $customerReports->filter(fn ($r) => $inBrunei((float) $r->latitude, (float) $r->longitude))
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'lat' => (float) $r->latitude,
+                'lng' => (float) $r->longitude,
+                'number' => 'CR-'.$r->id,
+                'status' => $r->status,
+                'problem_type' => $r->problem_type,
+                'address' => $r->address,
+                'description' => $r->description,
+                'photo_url' => $r->photo_path ? Storage::url($r->photo_path) : null,
+                'created_at' => $r->created_at?->format('jS M Y'),
+                'updated_at' => $r->updated_at?->format('jS M Y'),
+            ])->values()->all();
 
         return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView'));
     }

@@ -130,19 +130,24 @@ class OperationsController extends Controller
             ->whereIn('status', ['pending', 'assigned', 'in_progress'])
             ->get();
 
-        $mapReports = $reports->map(fn ($r) => [
-            'lat' => (float) $r->latitude,
-            'lng' => (float) $r->longitude,
-            'number' => $r->report_number,
-            'address' => $r->location_address,
-        ])->values()->all();
+        $inBrunei = fn ($lat, $lng): bool =>
+            $lat >= 4.0 && $lat <= 5.1 && $lng >= 114.07 && $lng <= 115.40;
 
-        $mapWorkOrders = $workOrders->map(fn ($w) => [
-            'lat' => (float) $w->latitude,
-            'lng' => (float) $w->longitude,
-            'number' => $w->work_order_number,
-            'address' => $w->location_address,
-        ])->values()->all();
+        $mapReports = $reports->filter(fn ($r) => $inBrunei((float) $r->latitude, (float) $r->longitude))
+            ->map(fn ($r) => [
+                'lat' => (float) $r->latitude,
+                'lng' => (float) $r->longitude,
+                'number' => $r->report_number,
+                'address' => $r->location_address,
+            ])->values()->all();
+
+        $mapWorkOrders = $workOrders->filter(fn ($w) => $inBrunei((float) $w->latitude, (float) $w->longitude))
+            ->map(fn ($w) => [
+                'lat' => (float) $w->latitude,
+                'lng' => (float) $w->longitude,
+                'number' => $w->work_order_number,
+                'address' => $w->location_address,
+            ])->values()->all();
 
         return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders'));
     }
