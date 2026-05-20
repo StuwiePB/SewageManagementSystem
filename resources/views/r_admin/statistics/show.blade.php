@@ -252,7 +252,12 @@
     var reportMapPoints = @json($stats['report_map_points'] ?? []);
     var workOrderMapPoints = @json($stats['work_order_map_points'] ?? []);
 
-    var map = L.map('hotspot-map').setView([4.5, 114.7], 9);
+    var BRUNEI_BOUNDS = L.latLngBounds([[3.8, 113.8], [5.3, 115.6]]);
+    var map = L.map('hotspot-map', {
+        minZoom: 9,
+        maxBounds: BRUNEI_BOUNDS,
+        maxBoundsViscosity: 1.0
+    }).setView([4.5, 114.7], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
 
     // Pane above district fill so point markers stay clickable (polygons would cover them otherwise)
