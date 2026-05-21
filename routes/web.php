@@ -319,10 +319,7 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         ]);
     })->name('customer.myhistory');
     Route::get('/{name}/custatistics', function () {
-        $reports = Report::query()
-            ->whereNull('reports.deleted_at')
-            ->whereHas('operationsReport')
-            ->get();
+        $reports = Report::queryForCustomerStatistics()->get();
         $days = collect(range(6, 0))->map(function (int $offset) {
             return Carbon::today()->subDays($offset);
         });
@@ -334,8 +331,6 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         $chartValues = $days->map(fn (Carbon $d) => (int) ($countsByDate[$d->toDateString()] ?? 0))->values()->all();
         $chartDayIso = $days->map(fn (Carbon $d) => (int) $d->format('N'))->values()->all();
 
-        $start7 = Carbon::today()->subDays(6)->startOfDay();
-        $reports7d = $reports->filter(fn ($r) => $r->created_at && $r->created_at->gte($start7));
         $statusReportLabels = [__('Pending'), __('In progress'), __('Resolved')];
         $statusByDay = $days->map(function (Carbon $d) use ($reports) {
             $dateStr = $d->toDateString();
@@ -343,7 +338,7 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
 
             return [
                 (int) $onDay->where('status', 'pending')->count(),
-                (int) $onDay->whereIn('status', ['in_progress', 'under_review'])->count(),
+                (int) $onDay->where('status', 'in_progress')->count(),
                 (int) $onDay->where('status', 'resolved')->count(),
             ];
         })->values()->all();

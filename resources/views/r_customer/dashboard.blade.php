@@ -54,16 +54,152 @@
             .tab-btn-active { color: #040929; }
             .tab-btn:hover { color: #04BCFF; }
             .tab-btn-locked { opacity: 0.55; position: relative; }
-            .dashboard-filter-chip {
-                padding: 3px 8px; border-radius: 7px; background: rgba(66, 106, 120, 0.16);
-                outline: 1px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px);
-                flex-shrink: 0; display: flex; align-items: center; cursor: pointer; border: none; font: inherit;
-                color: white; font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;
-                transition: outline-color 0.15s ease, background 0.15s ease;
-            }
-            .dashboard-filter-chip:hover { outline-color: rgba(4, 188, 255, 0.5); }
-            .dashboard-filter-chip--active { outline: 1.2px solid #04BCFF; background: rgba(4, 188, 255, 0.2); }
             .dashboard-incident-card[hidden] { display: none !important; }
+            .dashboard-incident-cards-track {
+                overflow-y: visible;
+            }
+            .dashboard-glass-filter-slot {
+                position: relative;
+                width: 32px;
+                height: 32px;
+                flex-shrink: 0;
+            }
+            .dashboard-glass-filter-box {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                flex-direction: column;
+                border-radius: 8px;
+                background: rgba(97, 107, 110, 0.15);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 0.7px solid rgba(255, 255, 255, 0.18);
+                box-sizing: border-box;
+                overflow: hidden;
+                z-index: 12;
+                transition:
+                    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                    height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                    border-radius 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+            .dashboard-glass-filter-box.is-open {
+                width: 128px;
+                height: 108px;
+                border-radius: 9px;
+            }
+            .dashboard-glass-filter-trigger { flex-shrink: 0; }
+            .dashboard-glass-filter-box.is-open .dashboard-glass-filter-trigger,
+            .dashboard-glass-filter-box.is-closing .dashboard-glass-filter-trigger {
+                display: flex;
+                justify-content: flex-end;
+                height: 20px;
+                padding: 0 3px 0;
+                overflow: hidden;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .dashboard-glass-filter-box.is-open .dashboard-glass-filter-icon,
+            .dashboard-glass-filter-box.is-closing .dashboard-glass-filter-icon {
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dashboard-glass-filter-box.is-closing .dashboard-glass-filter-options {
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.12s ease;
+            }
+            .dashboard-glass-filter-btn {
+                width: 32px;
+                height: 32px;
+                border: none;
+                background: transparent;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                flex-shrink: 0;
+            }
+            .dashboard-glass-filter-options {
+                flex: 1;
+                min-height: 0;
+                overflow: hidden;
+                opacity: 0;
+                visibility: hidden;
+                padding: 0 5px;
+                transition: opacity 0.16s ease;
+            }
+            .dashboard-glass-filter-box.is-open .dashboard-glass-filter-options {
+                flex: 0 0 auto;
+                opacity: 1;
+                visibility: visible;
+                margin-top: -5px;
+                padding: 0 5px 6px;
+                pointer-events: none;
+                transition: opacity 0.2s ease 0.14s;
+            }
+            .dashboard-glass-filter-option {
+                width: 100%;
+                border: none;
+                background: transparent;
+                color: rgba(255, 255, 255, 0.88);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 4px;
+                white-space: nowrap;
+                border-radius: 6px;
+                font-family: Poppins, sans-serif;
+                font-size: 8px;
+                font-weight: 500;
+                text-align: left;
+                cursor: pointer;
+                position: relative;
+                flex-shrink: 0;
+                pointer-events: auto;
+            }
+            .dashboard-glass-filter-option + .dashboard-glass-filter-option {
+                margin-top: 3px;
+            }
+            .dashboard-glass-filter-option + .dashboard-glass-filter-option::before {
+                content: '';
+                position: absolute;
+                top: -2px;
+                left: 5px;
+                right: 5px;
+                border-top: 0.7px solid rgba(255, 255, 255, 0.18);
+            }
+            .dashboard-glass-filter-option:hover,
+            .dashboard-glass-filter-option:focus,
+            .dashboard-glass-filter-option:active {
+                background: transparent;
+                outline: none;
+            }
+            .dashboard-glass-filter-dot {
+                width: 10px;
+                min-width: 10px;
+                height: 10px;
+                border-radius: 9999px;
+                border: 0.7px solid rgba(255, 255, 255, 0.85);
+                background: transparent;
+                flex-shrink: 0;
+                box-sizing: border-box;
+                position: relative;
+            }
+            .dashboard-glass-filter-option.is-selected .dashboard-glass-filter-dot::after {
+                content: '';
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: 4px;
+                height: 4px;
+                border-radius: 9999px;
+                background: #ffffff;
+                transform: translate(-50%, -50%);
+            }
         </style>
     @endpush
     {{-- Desktop: normal background --}}
@@ -82,10 +218,10 @@
         $photoUrl = $photoPath ? \Illuminate\Support\Facades\Storage::url($photoPath) : null;
     @endphp
     <div style="position: fixed; top: 4vh; left: 20px; right: 20px; z-index: 10; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="{{ asset('images/logo.png') }}" alt="BruDMS" style="width: 36px; height: 36px; object-fit: contain;" />
+        <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="press-btn {{ $guestMode ? '' : 'delayed-nav' }}" style="display: flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer;" aria-label="{{ __('Home') }}">
+            <img src="{{ asset('images/logo.png') }}" alt="" style="width: 36px; height: 36px; object-fit: contain;" />
             <span style="color: white; font-size: 24px; font-weight: 600; font-family: Poppins, sans-serif;">BruDMS</span>
-        </div>
+        </a>
         <a href="{{ $guestMode ? route('login') : route('customer.general', ['name' => $user->profileSlug()]) }}" class="press-btn {{ $guestMode ? '' : 'delayed-nav' }}" style="cursor: pointer; display: flex; align-items: center; justify-content: center; text-decoration: none;" title="{{ $guestMode ? __('Account — sign in') : '' }}">
         @if($guestMode)
             <span style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -122,19 +258,39 @@
     {{-- Active incidents section --}}
     <div style="position: fixed; top: 22vh; left: 22px; right: 22px; z-index: 10;">
         {{-- Header row --}}
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <span style="color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; flex-shrink: 0; margin-left: 8px;">Active incidents</span>
-            <div id="dashboard-report-filters" style="display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 2px; margin-left: 16px;" role="group" aria-label="{{ __('Filter incidents') }}">
-                <button type="button" class="dashboard-filter-chip dashboard-filter-chip--active" data-dashboard-filter="all" aria-pressed="true">All</button>
-                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="owner_review" aria-pressed="false">{{ __('Under review') }}</button>
-                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="pending" aria-pressed="false">{{ __('Pending') }}</button>
-                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="in_progress" aria-pressed="false">{{ __('In progress') }}</button>
-                <button type="button" class="dashboard-filter-chip" data-dashboard-filter="resolved" aria-pressed="false">{{ __('Resolved') }}</button>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 10px;">
+            <span style="color: white; font-size: 15px; font-weight: 700; font-family: Poppins, sans-serif; flex-shrink: 0; margin-left: 8px; line-height: 1;">Active incidents</span>
+            <div class="dashboard-glass-filter-slot">
+            <div id="dashboard-glass-filter-box" class="dashboard-glass-filter-box" role="group" aria-label="{{ __('Filter incidents') }}">
+                <div class="dashboard-glass-filter-trigger">
+                    <button id="dashboard-glass-filter-btn" type="button" class="dashboard-glass-filter-btn press-btn" aria-label="{{ __('Filter incidents') }}" aria-expanded="false" aria-haspopup="menu">
+                        <img class="dashboard-glass-filter-icon" src="{{ asset('images/Vectors/livemap_filter.svg') }}" alt="" style="width: 12px; height: 12px; object-fit: contain;" />
+                    </button>
+                </div>
+                <div id="dashboard-glass-filter-options" class="dashboard-glass-filter-options" role="menu">
+                    <button type="button" class="dashboard-glass-filter-option is-selected" data-dashboard-filter="owner_review" role="menuitemcheckbox" aria-checked="true">
+                        <span class="dashboard-glass-filter-dot"></span>
+                        <span>{{ __('Under review') }}</span>
+                    </button>
+                    <button type="button" class="dashboard-glass-filter-option is-selected" data-dashboard-filter="pending" role="menuitemcheckbox" aria-checked="true">
+                        <span class="dashboard-glass-filter-dot"></span>
+                        <span>{{ __('Pending') }}</span>
+                    </button>
+                    <button type="button" class="dashboard-glass-filter-option is-selected" data-dashboard-filter="in_progress" role="menuitemcheckbox" aria-checked="true">
+                        <span class="dashboard-glass-filter-dot"></span>
+                        <span>{{ __('In progress') }}</span>
+                    </button>
+                    <button type="button" class="dashboard-glass-filter-option is-selected" data-dashboard-filter="resolved" role="menuitemcheckbox" aria-checked="true">
+                        <span class="dashboard-glass-filter-dot"></span>
+                        <span>{{ __('Resolved') }}</span>
+                    </button>
+                </div>
+            </div>
             </div>
         </div>
 
         {{-- Horizontally scrolling cards --}}
-        <div style="display: flex; gap: 10px; overflow-x: auto; padding: 4px 4px 8px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+        <div class="dashboard-incident-cards-track" style="display: flex; gap: 10px; overflow-x: auto; padding: 2px 4px 10px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
             {{-- Add new card: requests location permission before navigating --}}
             <a href="{{ $guestMode ? route('login') : route('customer.rproblem', ['name' => $user->profileSlug()]) }}" id="add-report-card" class="press-btn" style="width: 110px; min-width: 110px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; cursor: pointer; text-decoration: none;">
                 <img src="{{ asset('images/Vectors/dashboard_addreport.svg') }}" alt="" style="width: 55px; height: 55px; object-fit: contain;" />
@@ -161,7 +317,7 @@
             @endphp
             <div class="incident-card dashboard-incident-card" data-card-owner-review="{{ $cardOwnerReview ? '1' : '0' }}" data-card-pending="{{ $cardPending ? '1' : '0' }}" data-card-in-progress="{{ $cardInProgress ? '1' : '0' }}" data-card-resolved="{{ $cardResolved ? '1' : '0' }}" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
                 @if($reportPhotoOk)
-                <div style="position: relative; width: 100%; height: 75px; min-width: 0; border-top-left-radius: 9px; border-top-right-radius: 9px; overflow: hidden; outline: 0.7px solid rgba(255, 255, 255, 0.21);">
+                <div style="position: relative; width: 100%; height: 75px; min-width: 0; border-top-left-radius: 9px; border-top-right-radius: 9px; overflow: hidden;">
                     <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; filter: {{ $isOwnerUnderReview ? 'brightness(0.42) blur(1.6px)' : ($isRejected ? 'brightness(0.55) grayscale(0.35)' : 'none') }};" />
                     @if($isOwnerUnderReview)
                     <div style="position: absolute; inset: 0; background: rgba(6, 10, 22, 0.38); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px;">
@@ -175,7 +331,7 @@
                     @endif
                 </div>
                 @else
-                <div style="width: 100%; height: 75px; background: {{ $isRejected ? 'rgba(75, 85, 99, 0.55)' : 'rgba(139, 105, 20, 0.5)' }}; border-top-left-radius: 9px; border-top-right-radius: 9px; outline: 0.7px solid rgba(255, 255, 255, 0.21); display: flex; align-items: center; justify-content: center;">
+                <div style="width: 100%; height: 75px; background: {{ $isRejected ? 'rgba(75, 85, 99, 0.55)' : 'rgba(139, 105, 20, 0.5)' }}; border-top-left-radius: 9px; border-top-right-radius: 9px; display: flex; align-items: center; justify-content: center;">
                     @if($isRejected)
                         <span style="color: #9CA3AF; font-size: 7px; font-weight: 600; font-family: Poppins, sans-serif;">Rejected</span>
                     @endif
@@ -217,7 +373,7 @@
 
         {{-- View Live Map section --}}
         <div style="margin-top: 20px;">
-            <span style="color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">View Live Map</span>
+            <span style="color: white; font-size: 15px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">View Live Map</span>
             @if($guestMode)
             {{-- Map = real Leaflet tiles (background). Not inside <a> so tiles mount correctly; tap overlay goes to login. --}}
             <div class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
@@ -244,7 +400,7 @@
         </div>
         {{-- Statistics (links to customer statistics) --}}
         <div style="margin-top: 20px;">
-            <span style="display: block; color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 8px;">{{ __('Statistics') }}</span>
+            <span style="display: block; color: white; font-size: 15px; font-weight: 700; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 8px;">{{ __('Statistics') }}</span>
             @if($guestMode)
             <a href="{{ route('login') }}" class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
@@ -299,7 +455,6 @@
                     'rproblem_address',
                     'rproblem_lat',
                     'rproblem_lng',
-                    'rproblem_severity',
                     'rproblem_description'
                 ].forEach(function (k) { sessionStorage.removeItem(k); });
             } catch (e) {}
@@ -362,36 +517,36 @@
     </script>
     <script>
         (function () {
-            var chips = document.querySelectorAll('.dashboard-filter-chip');
+            var filterBox = document.getElementById('dashboard-glass-filter-box');
+            var filterBtn = document.getElementById('dashboard-glass-filter-btn');
+            var filterOptions = document.getElementById('dashboard-glass-filter-options');
+            var optionNodes = filterOptions
+                ? Array.prototype.slice.call(filterOptions.querySelectorAll('.dashboard-glass-filter-option'))
+                : [];
             var cards = document.querySelectorAll('.dashboard-incident-card');
-            if (!chips.length) {
+
+            if (!filterBox || !filterBtn || !optionNodes.length) {
                 return;
             }
-            function applyDashboardFilter(key) {
-                if (!key) {
-                    key = 'all';
-                }
-                var k = String(key);
+
+            var selectedFilters = {
+                owner_review: true,
+                pending: true,
+                in_progress: true,
+                resolved: true
+            };
+
+            function applyDashboardFilter() {
                 for (var i = 0; i < cards.length; i++) {
                     var card = cards[i];
                     var isOwnerReview = card.getAttribute('data-card-owner-review') === '1';
                     var isPending = card.getAttribute('data-card-pending') === '1';
                     var isInProgress = card.getAttribute('data-card-in-progress') === '1';
                     var isResolved = card.getAttribute('data-card-resolved') === '1';
-                    var show;
-                    if (k === 'all') {
-                        show = true;
-                    } else if (k === 'owner_review') {
-                        show = isOwnerReview;
-                    } else if (k === 'pending') {
-                        show = isPending;
-                    } else if (k === 'in_progress') {
-                        show = isInProgress;
-                    } else if (k === 'resolved') {
-                        show = isResolved;
-                    } else {
-                        show = true;
-                    }
+                    var show = (selectedFilters.owner_review && isOwnerReview)
+                        || (selectedFilters.pending && isPending)
+                        || (selectedFilters.in_progress && isInProgress)
+                        || (selectedFilters.resolved && isResolved);
                     if (show) {
                         card.removeAttribute('hidden');
                     } else {
@@ -399,20 +554,59 @@
                     }
                 }
             }
-            for (var c = 0; c < chips.length; c++) {
-                (function (btn) {
-                    btn.addEventListener('click', function () {
-                        var key = btn.getAttribute('data-dashboard-filter') || 'all';
-                        for (var j = 0; j < chips.length; j++) {
-                            chips[j].classList.remove('dashboard-filter-chip--active');
-                            chips[j].setAttribute('aria-pressed', 'false');
-                        }
-                        btn.classList.add('dashboard-filter-chip--active');
-                        btn.setAttribute('aria-pressed', 'true');
-                        applyDashboardFilter(key);
-                    });
-                })(chips[c]);
+
+            function closeFilterBox() {
+                if (!filterBox.classList.contains('is-open')) {
+                    return;
+                }
+                filterBox.classList.add('is-closing');
+                filterBox.classList.remove('is-open');
+                filterBtn.setAttribute('aria-expanded', 'false');
             }
+
+            filterBox.addEventListener('transitionend', function (ev) {
+                if (ev.target !== filterBox) {
+                    return;
+                }
+                if (ev.propertyName !== 'width' && ev.propertyName !== 'height') {
+                    return;
+                }
+                filterBox.classList.remove('is-closing');
+            });
+
+            filterBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (filterBox.classList.contains('is-open')) {
+                    closeFilterBox();
+                } else if (!filterBox.classList.contains('is-closing')) {
+                    filterBox.classList.add('is-open');
+                    filterBtn.setAttribute('aria-expanded', 'true');
+                }
+            });
+
+            filterBox.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+
+            optionNodes.forEach(function (optionEl) {
+                optionEl.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var key = optionEl.getAttribute('data-dashboard-filter');
+                    if (!key || !(key in selectedFilters)) {
+                        return;
+                    }
+                    selectedFilters[key] = !selectedFilters[key];
+                    optionEl.classList.toggle('is-selected', selectedFilters[key]);
+                    optionEl.setAttribute('aria-checked', selectedFilters[key] ? 'true' : 'false');
+                    applyDashboardFilter();
+                });
+            });
+
+            document.addEventListener('click', function () {
+                closeFilterBox();
+            });
+
+            applyDashboardFilter();
         })();
     </script>
     <script>
@@ -453,7 +647,7 @@
         }
         @endunless
         @if(session('status') === 'report-submitted')
-        try { ['rpicture','rproblem_photo','rproblem_choice','rproblem_address','rproblem_lat','rproblem_lng','rproblem_severity','rproblem_description'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(x){}
+        try { ['rpicture','rproblem_photo','rproblem_choice','rproblem_address','rproblem_lat','rproblem_lng','rproblem_description'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(x){}
         alert('Submitted!');
         @endif
     </script>

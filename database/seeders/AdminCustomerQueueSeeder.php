@@ -52,7 +52,6 @@ class AdminCustomerQueueSeeder extends Seeder
                     'phone' => '+6738000002',
                     'reporter_name' => $customer->name,
                     'problem_type' => $row['type'],
-                    'severity' => 'urgent',
                     'description' => 'Admin queue seeded report (not yet sent to operations).',
                     'address' => $row['address'],
                     'latitude' => $row['lat'],

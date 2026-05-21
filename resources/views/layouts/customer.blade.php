@@ -13,8 +13,8 @@
     @unless($bare)
     {{-- Top bar: left = BruDMS, right = Welcome back + profile photo (frosted) --}}
     <header class="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 py-3 border-b border-zinc-700/50 bg-zinc-900/70" style="backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);">
-        <a href="{{ route('customer.dashboard', ['name' => auth()->user()->profileSlug()]) }}" class="flex items-center gap-2 shrink-0" wire:navigate>
-            <img src="{{ asset('images/logo.png') }}" alt="BruDMS" class="h-8 w-8 object-contain" />
+        <a href="{{ route('customer.dashboard', ['name' => auth()->user()->profileSlug()]) }}" class="press-btn flex items-center gap-2 shrink-0" wire:navigate aria-label="{{ __('Home') }}">
+            <img src="{{ asset('images/logo.png') }}" alt="" class="h-8 w-8 object-contain" />
             <span class="font-semibold text-zinc-100">BruDMS</span>
         </a>
         @php

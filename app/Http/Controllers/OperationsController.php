@@ -93,9 +93,6 @@ class OperationsController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        if ($request->filled('severity')) {
-            $query->where('severity', $request->severity);
-        }
         if ($request->filled('issue_type')) {
             $query->where('issue_type', $request->issue_type);
         }
