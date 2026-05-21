@@ -54,7 +54,6 @@ class CustomerHistorySeeder extends Seeder
                     'phone' => '+6738000001',
                     'reporter_name' => $customer->name,
                     'problem_type' => $row['type'],
-                    'severity' => 'urgent',
                     'description' => 'Customer history seeded report linked to operations.',
                     'address' => $row['address'],
                     'latitude' => $row['lat'],
@@ -66,9 +65,8 @@ class CustomerHistorySeeder extends Seeder
             OperationsReport::query()->updateOrCreate(
                 ['customer_report_id' => $report->id],
                 [
-                    'report_number' => 'RPT-'.$row['code'],
+                    'report_number' => $report->reference_code,
                     'issue_type' => $row['type'],
-                    'severity' => 'urgent',
                     'description' => $report->description,
                     'reporter_name' => $report->reporter_name,
                     'reporter_contact' => $report->phone,

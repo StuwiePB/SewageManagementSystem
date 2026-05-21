@@ -54,10 +54,6 @@ class DmsArchiveWorkOrder extends Model
 
     public static function generateWorkOrderNumber(): string
     {
-        do {
-            $number = 'WO-ARC-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6));
-        } while (self::where('work_order_number', $number)->exists());
-
-        return $number;
+        return Report::generateReferenceCode();
     }
 }

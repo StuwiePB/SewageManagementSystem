@@ -26,14 +26,6 @@
             </select>
         </div>
         <div class="form-group">
-            <label class="form-label" for="severity">Severity</label>
-            <select id="severity" name="severity" class="form-control">
-                <option value="">All Severities</option>
-                <option value="urgent" {{ request('severity') == 'urgent' ? 'selected' : '' }}>Urgent</option>
-                <option value="nonurgent" {{ request('severity') == 'nonurgent' ? 'selected' : '' }}>Non-Urgent</option>
-            </select>
-        </div>
-        <div class="form-group">
             <label class="form-label" for="district">District</label>
             <select id="district" name="district" class="form-control">
                 <option value="">All Districts</option>
@@ -69,7 +61,6 @@
                     <th>District</th>
                     <th>Mukim</th>
                     <th>Location</th>
-                    <th>Severity</th>
                     <th>Status</th>
                     <th>Work Order</th>
                     <th>Date</th>
@@ -83,11 +74,6 @@
                         <td>{{ $report->district_display ?? '—' }}</td>
                         <td>{{ $report->mukim_display ?? '—' }}</td>
                         <td>{{ $report->location_address }}</td>
-                        <td>
-                            <span class="badge badge-{{ $report->severity === 'urgent' ? 'high' : 'low' }}">
-                                {{ $report->severity === 'urgent' ? 'Urgent' : 'Non-Urgent' }}
-                            </span>
-                        </td>
                         <td>
                             @php
                                 $reportStatusClass = match($report->status) {
@@ -111,7 +97,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="cell-muted">No reports found</td>
+                        <td colspan="8" class="cell-muted">No reports found</td>
                     </tr>
                 @endforelse
             </tbody>

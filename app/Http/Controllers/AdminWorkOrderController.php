@@ -52,15 +52,16 @@ class AdminWorkOrderController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $validated['work_order_number'] = WorkOrder::generateWorkOrderNumber();
+        $operationsReport = $request->report_id
+            ? OperationsReport::with('customerReport')->find($request->report_id)
+            : null;
+
+        $validated['work_order_number'] = WorkOrder::workOrderNumberForOperationsReport($operationsReport);
         $validated['status'] = 'pending';
 
-        if ($request->report_id) {
-            $report = OperationsReport::find($request->report_id);
-            if ($report) {
-                $validated['district'] = $validated['district'] ?? $report->district;
-                $validated['mukim'] = $validated['mukim'] ?? $report->mukim;
-            }
+        if ($operationsReport) {
+            $validated['district'] = $validated['district'] ?? $operationsReport->district;
+            $validated['mukim'] = $validated['mukim'] ?? $operationsReport->mukim;
         }
 
         $bounds = config('brunei.bounds', ['lat_min' => 4.0, 'lat_max' => 5.2, 'lng_min' => 114.0, 'lng_max' => 115.5]);
