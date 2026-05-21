@@ -1,4 +1,5 @@
 <x-layouts::customer :title="__('Home') . ' – BruDMS'" :bare="true">
+    <div class="brudms-customer-ui dashboard-page">
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -48,32 +49,38 @@
                 transform: scale(0.93) !important;
             }
             .tab-btn:hover {
-                outline-color: #04BCFF !important;
+                outline-color: var(--accent-blue) !important;
             }
-            .tab-btn { color: #9CA3AF; }
-            .tab-btn-active { color: #040929; }
-            .tab-btn:hover { color: #04BCFF; }
+            .tab-btn { color: var(--text-secondary); }
+            .tab-btn-active { color: var(--text-primary); }
+            .tab-btn:hover { color: var(--accent-blue); }
             .tab-btn-locked { opacity: 0.55; position: relative; }
             .dashboard-filter-chip {
-                padding: 3px 8px; border-radius: 7px; background: rgba(66, 106, 120, 0.16);
-                outline: 1px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px);
+                padding: 3px 8px; border-radius: 7px;
+                background: var(--brudms-chip-bg);
+                outline: 1px solid var(--brudms-chip-border);
+                backdrop-filter: blur(1.5px);
                 flex-shrink: 0; display: flex; align-items: center; cursor: pointer; border: none; font: inherit;
-                color: white; font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;
+                color: var(--text-primary); font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;
                 transition: outline-color 0.15s ease, background 0.15s ease;
             }
-            .dashboard-filter-chip:hover { outline-color: rgba(4, 188, 255, 0.5); }
-            .dashboard-filter-chip--active { outline: 1.2px solid #04BCFF; background: rgba(4, 188, 255, 0.2); }
+            .dashboard-filter-chip:hover { outline-color: var(--accent-blue); }
+            .dashboard-filter-chip--active {
+                outline: 1.2px solid var(--accent-blue);
+                background: var(--brudms-primary);
+            }
+            .cust-glass {
+                background: var(--brudms-chip-bg);
+                outline: 0.7px solid var(--brudms-chip-border);
+            }
+            html[data-theme='dark'] .dashboard-page .cust-glass,
+            html.dark .dashboard-page .cust-glass {
+                background: rgba(66, 106, 120, 0.16);
+                outline: 0.7px solid rgba(255, 255, 255, 0.21);
+            }
             .dashboard-incident-card[hidden] { display: none !important; }
         </style>
     @endpush
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
-
     {{-- Header: logo + BruDMS + profile photo --}}
     @php
         $guestMode = filter_var($guestMode ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -84,7 +91,7 @@
     <div style="position: fixed; top: 4vh; left: 20px; right: 20px; z-index: 10; display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 8px;">
             <img src="{{ asset('images/logo.png') }}" alt="BruDMS" style="width: 36px; height: 36px; object-fit: contain;" />
-            <span style="color: white; font-size: 24px; font-weight: 600; font-family: Poppins, sans-serif;">BruDMS</span>
+            <span class="cust-section-title" style="color: var(--text-primary); font-size: 24px; font-weight: 600; font-family: Poppins, sans-serif;">BruDMS</span>
         </div>
         <a href="{{ $guestMode ? route('login') : route('customer.general', ['name' => $user->profileSlug()]) }}" class="press-btn {{ $guestMode ? '' : 'delayed-nav' }}" style="cursor: pointer; display: flex; align-items: center; justify-content: center; text-decoration: none;" title="{{ $guestMode ? __('Account — sign in') : '' }}">
         @if($guestMode)
@@ -101,20 +108,20 @@
         </a>
     </div>
 
-    <div style="position: fixed; left: 6px; right: 6px; top: 11vh; bottom: -50vh; border-radius: 21px 21px 0 0; background: rgba(217, 217, 217, 0.07); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); z-index: 1;"></div>
+    <div class="cust-dashboard-shell" style="position: fixed; left: 6px; right: 6px; top: 11vh; bottom: -50vh; border-radius: 21px 21px 0 0; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); z-index: 1;"></div>
 
     {{-- Tab buttons (inside rectangle) --}}
     <div style="position: fixed; top: 13.5vh; left: 22px; right: 22px; z-index: 10; display: flex; justify-content: center; gap: 10px;">
         {{-- Home (active) --}}
-        <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #04BCFF; backdrop-filter: blur(1.5px);">
+        <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px);">
             <img src="{{ asset('images/Vectors/tab_home-active.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
         {{-- Chat (Ziqah AI) — sign in when guest --}}
-        <a href="{{ $guestMode ? route('login') : route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ $guestMode ? route('login') : route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_chat.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
         {{-- History — your reports only; sign in when guest --}}
-        <a href="{{ $guestMode ? route('login') : route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ $guestMode ? route('login') : route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_myhistory.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
     </div>
@@ -123,7 +130,7 @@
     <div style="position: fixed; top: 22vh; left: 22px; right: 22px; z-index: 10;">
         {{-- Header row --}}
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <span style="color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; flex-shrink: 0; margin-left: 8px;">Active incidents</span>
+            <span class="cust-section-title" style="font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; flex-shrink: 0; margin-left: 8px;">Active incidents</span>
             <div id="dashboard-report-filters" style="display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 2px; margin-left: 16px;" role="group" aria-label="{{ __('Filter incidents') }}">
                 <button type="button" class="dashboard-filter-chip dashboard-filter-chip--active" data-dashboard-filter="all" aria-pressed="true">All</button>
                 <button type="button" class="dashboard-filter-chip" data-dashboard-filter="owner_review" aria-pressed="false">{{ __('Under review') }}</button>
@@ -136,7 +143,7 @@
         {{-- Horizontally scrolling cards --}}
         <div style="display: flex; gap: 10px; overflow-x: auto; padding: 4px 4px 8px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
             {{-- Add new card: requests location permission before navigating --}}
-            <a href="{{ $guestMode ? route('login') : route('customer.rproblem', ['name' => $user->profileSlug()]) }}" id="add-report-card" class="press-btn" style="width: 110px; min-width: 110px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; cursor: pointer; text-decoration: none;">
+            <a href="{{ $guestMode ? route('login') : route('customer.rproblem', ['name' => $user->profileSlug()]) }}" id="add-report-card" class="press-btn cust-glass" style="width: 110px; min-width: 110px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 9px; backdrop-filter: blur(1.5px); flex-shrink: 0; cursor: pointer; text-decoration: none;">
                 <img src="{{ asset('images/Vectors/dashboard_addreport.svg') }}" alt="" style="width: 55px; height: 55px; object-fit: contain;" />
             </a>
 
@@ -159,7 +166,7 @@
                 $cardResolved = ! $isRejected && $stForFilter === 'resolved';
                 $cardPending = ! $isRejected && ! $cardOwnerReview && ! $cardResolved && ! $cardInProgress;
             @endphp
-            <div class="incident-card dashboard-incident-card" data-card-owner-review="{{ $cardOwnerReview ? '1' : '0' }}" data-card-pending="{{ $cardPending ? '1' : '0' }}" data-card-in-progress="{{ $cardInProgress ? '1' : '0' }}" data-card-resolved="{{ $cardResolved ? '1' : '0' }}" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
+            <div class="incident-card dashboard-incident-card cust-glass" data-card-owner-review="{{ $cardOwnerReview ? '1' : '0' }}" data-card-pending="{{ $cardPending ? '1' : '0' }}" data-card-in-progress="{{ $cardInProgress ? '1' : '0' }}" data-card-resolved="{{ $cardResolved ? '1' : '0' }}" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
                 @if($reportPhotoOk)
                 <div style="position: relative; width: 100%; height: 75px; min-width: 0; border-top-left-radius: 9px; border-top-right-radius: 9px; overflow: hidden; outline: 0.7px solid rgba(255, 255, 255, 0.21);">
                     <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; filter: {{ $isOwnerUnderReview ? 'brightness(0.42) blur(1.6px)' : ($isRejected ? 'brightness(0.55) grayscale(0.35)' : 'none') }};" />
@@ -217,10 +224,10 @@
 
         {{-- View Live Map section --}}
         <div style="margin-top: 20px;">
-            <span style="color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">View Live Map</span>
+            <span class="cust-section-title" style="font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">View Live Map</span>
             @if($guestMode)
             {{-- Map = real Leaflet tiles (background). Not inside <a> so tiles mount correctly; tap overlay goes to login. --}}
-            <div class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+            <div class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
                     <div id="live-map" style="position: absolute; inset: 0; width: 100%; height: 100%; min-height: 120px; filter: brightness(0.5); z-index: 1;"></div>
                     <a href="{{ route('login') }}" aria-label="{{ __('Sign in') }}" style="position: absolute; inset: 0; z-index: 2; border-radius: 7px; text-decoration: none; cursor: pointer;"></a>
@@ -231,7 +238,7 @@
                 </div>
             </div>
             @else
-            <div class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+            <div class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
                     <div id="live-map" style="position: absolute; inset: 0; width: 100%; height: 100%; min-height: 120px; filter: brightness(0.5); z-index: 1;"></div>
                     <a href="{{ route('customer.livemap', ['name' => $user->profileSlug()]) }}" class="delayed-nav" aria-label="{{ __('Open live map') }}" style="position: absolute; inset: 0; z-index: 2; border-radius: 7px; text-decoration: none; cursor: pointer;"></a>
@@ -244,9 +251,9 @@
         </div>
         {{-- Statistics (links to customer statistics) --}}
         <div style="margin-top: 20px;">
-            <span style="display: block; color: white; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 8px;">{{ __('Statistics') }}</span>
+            <span class="cust-section-title" style="display: block; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 8px;">{{ __('Statistics') }}</span>
             @if($guestMode)
-            <a href="{{ route('login') }}" class="press-btn" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
+            <a href="{{ route('login') }}" class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
                     <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                         <defs>
@@ -263,7 +270,7 @@
                 </div>
             </a>
             @else
-            <a href="{{ route('customer.custatistics', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
+            <a href="{{ route('customer.custatistics', ['name' => $user->profileSlug()]) }}" class="press-btn cust-glass delayed-nav" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
                 <div style="width: 100%; height: 100%; min-height: 120px; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative;">
                     {{-- Grid pattern --}}
                     <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
@@ -458,4 +465,4 @@
         @endif
     </script>
     @endpush
-</x-layouts::customer>
+    </x-layouts::customer>

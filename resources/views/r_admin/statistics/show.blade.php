@@ -112,8 +112,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function() {
-    const blue = '#6A96FF';
-    const colors = ['#6A96FF', '#56FF8B', '#059669', '#d97706', '#FF5B5B', '#A86AFF', '#22d3ee', '#65a30d'];
+    const blue = 'var(--brudms-primary)';
+    const colors = ['var(--brudms-primary)', '#56FF8B', '#059669', '#d97706', '#FF5B5B', '#A86AFF', '#22d3ee', '#65a30d'];
     const textColor = '#B0B0B0';
     const gridColor = 'rgba(106, 150, 255, 0.1)';
 
@@ -311,7 +311,7 @@
     function renderPointMarkers() {
         markersLayer.clearLayers();
         var pts = currentMetric === 'reports' ? reportMapPoints : workOrderMapPoints;
-        var fill = currentMetric === 'reports' ? '#6A96FF' : '#f97316';
+        var fill = currentMetric === 'reports' ? 'var(--brudms-primary)' : '#f97316';
         pts.forEach(function (p) {
             var lat = Number(p.lat);
             var lng = Number(p.lng);

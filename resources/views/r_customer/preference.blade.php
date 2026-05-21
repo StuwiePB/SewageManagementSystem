@@ -1,15 +1,7 @@
 <x-layouts::customer :title="__('Preferences') . ' – BruDMS'" :bare="true">
-    @push('styles')
+        @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     @endpush
-
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
 
     @php
         $user = auth()->user();
@@ -22,7 +14,7 @@
         <a href="{{ route('customer.general', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; text-decoration: none; transition: transform 0.1s ease;" aria-label="{{ __('Back') }}">
             <img src="{{ asset('images/Vectors/all_backarrow.svg') }}" alt="" style="width: 21px; height: 21px;" />
         </a>
-        <span style="color: white; font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">{{ __('Preferences') }}</span>
+        <span class="cust-title" style="font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">{{ __('Preferences') }}</span>
     </div>
 
     {{-- Content: Appearance, Language Select, Anonymous Report --}}
@@ -30,19 +22,19 @@
         {{-- Appearance --}}
         <div>
             <label style="display: block; color: rgba(255, 255, 255, 0.5); font-size: 12px; font-weight: 600; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 10px;">{{ __('Appearance') }}</label>
-            <div style="min-height: 220px; border-radius: 10px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: flex-start; justify-content: center; gap: 24px; padding: 32px 20px 20px;">
+            <div class="cust-settings-card" style="min-height: 220px; border-radius: 10px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: flex-start; justify-content: center; gap: 24px; padding: 32px 20px 20px;">
                 <div class="appearance-opt" data-theme="dark" style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;">
                     <img src="{{ asset('images/Vectors/preference_darkmode.svg') }}" alt="{{ __('Dark mode') }}" style="height: 120px; width: auto; object-fit: contain;">
                     <span style="font-size: 10px; font-weight: 500; font-family: Poppins, sans-serif; color: rgba(255, 255, 255, 0.6);">{{ __('Dark') }}</span>
                     <div class="appearance-radio press-btn" style="width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid rgba(255, 255, 255, 0.9); display: flex; align-items: center; justify-content: center; margin-top: -2px;">
-                        <div class="appearance-radio-dot {{ ($prefAppearance ?? 'dark') === 'dark' ? 'appearance-radio-selected' : '' }}" style="width: 6px; height: 6px; border-radius: 50%; {{ ($prefAppearance ?? 'dark') === 'dark' ? 'background: white;' : '' }}"></div>
+                        <div class="appearance-radio-dot {{ ($prefAppearance ?? 'light') === 'dark' ? 'appearance-radio-selected' : '' }}" style="width: 6px; height: 6px; border-radius: 50%; {{ ($prefAppearance ?? 'light') === 'dark' ? 'background: white;' : '' }}"></div>
                     </div>
                 </div>
                 <div class="appearance-opt" data-theme="light" style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;">
                     <img src="{{ asset('images/Vectors/preference_lightmode.svg') }}" alt="{{ __('Light mode') }}" style="height: 120px; width: auto; object-fit: contain;">
                     <span style="font-size: 10px; font-weight: 500; font-family: Poppins, sans-serif; color: rgba(255, 255, 255, 0.6);">{{ __('Light') }}</span>
                     <div class="appearance-radio press-btn" style="width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid rgba(255, 255, 255, 0.9); display: flex; align-items: center; justify-content: center; margin-top: -2px;">
-                        <div class="appearance-radio-dot {{ ($prefAppearance ?? 'dark') === 'light' ? 'appearance-radio-selected' : '' }}" style="width: 6px; height: 6px; border-radius: 50%; {{ ($prefAppearance ?? 'dark') === 'light' ? 'background: white;' : '' }}"></div>
+                        <div class="appearance-radio-dot {{ ($prefAppearance ?? 'light') === 'light' ? 'appearance-radio-selected' : '' }}" style="width: 6px; height: 6px; border-radius: 50%; {{ ($prefAppearance ?? 'light') === 'light' ? 'background: white;' : '' }}"></div>
                     </div>
                 </div>
             </div>
@@ -50,7 +42,7 @@
         {{-- Language Select --}}
         <div>
             <label style="display: block; color: rgba(255, 255, 255, 0.5); font-size: 12px; font-weight: 600; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 10px;">{{ __('Language Select') }}</label>
-            <div style="min-height: 100px; border-radius: 10px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: flex-start; justify-content: center; gap: 24px; padding: 8px 20px 10px;">
+            <div class="cust-settings-card" style="min-height: 100px; border-radius: 10px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: flex-start; justify-content: center; gap: 24px; padding: 8px 20px 10px;">
                 <div class="language-opt" data-lang="ms" style="display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;">
                     <img src="{{ asset('images/Vectors/preference_bahasamelayu.svg') }}" alt="{{ __('Bahasa Melayu') }}" style="height: 40px; width: auto; object-fit: contain; margin-top: 4px;">
                     <span style="font-size: 10px; font-weight: 500; font-family: Poppins, sans-serif; color: rgba(255, 255, 255, 0.6); margin-top: -4px;">{{ __('Bahasa Melayu') }}</span>
@@ -70,7 +62,7 @@
         {{-- Anonymous Report --}}
         <div>
             <label style="display: block; color: rgba(255, 255, 255, 0.5); font-size: 12px; font-weight: 600; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 10px;">{{ __('Anonymous Report') }}</label>
-            <div style="min-height: 200px; border-radius: 10px; background: rgba(66, 106, 120, 0.16); border: 0.7px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: flex-start; justify-content: center; gap: 24px; padding: 32px 20px 14px;">
+            <div class="cust-settings-card" style="min-height: 200px; border-radius: 10px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: flex-start; justify-content: center; gap: 24px; padding: 32px 20px 14px;">
                 <div class="anonymous-opt" data-mode="nonanonymous" style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;">
                     <div style="position: relative; height: 120px; width: fit-content; overflow: hidden; display: flex; align-items: center; justify-content: center;">
                         <img src="{{ asset('images/Vectors/preference_nonanonymous.svg') }}" alt="{{ __('Non-Anonymous') }}" style="height: 120px; width: auto; object-fit: contain; display: block;">
@@ -105,6 +97,12 @@
         var CSRF = '{{ csrf_token() }}';
 
         function applyAppearance(val) {
+            var theme = val === 'light' ? 'light' : 'dark';
+            if (typeof window.__brudmsApplyTheme === 'function') {
+                window.__brudmsApplyTheme(theme);
+            } else if (window.BrudmsTheme && typeof window.BrudmsTheme.apply === 'function') {
+                window.BrudmsTheme.apply(theme);
+            }
             document.querySelectorAll('.appearance-opt').forEach(function(opt) {
                 var dot = opt.querySelector('.appearance-radio-dot');
                 if (opt.dataset.theme === val) {
@@ -142,11 +140,23 @@
         }
 
         function savePref(data) {
-            fetch(PREF_URL, {
+            return fetch(PREF_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
                 body: JSON.stringify(data)
-            });
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (payload) {
+                    if (payload && payload.appearance) {
+                        applyAppearance(payload.appearance);
+                        var meta = document.querySelector('meta[name="brudms-theme-default"]');
+                        if (meta) {
+                            meta.setAttribute('content', payload.appearance);
+                        }
+                    }
+                    return payload;
+                })
+                .catch(function () {});
         }
 
         document.querySelectorAll('.appearance-opt').forEach(function(opt) {
@@ -170,6 +180,12 @@
                 savePref({ anonymous: val });
             });
         });
+        document.addEventListener('DOMContentLoaded', function () {
+            var current = document.documentElement.getAttribute('data-theme')
+                || @json($prefAppearance ?? 'light');
+            applyAppearance(current === 'light' ? 'light' : 'dark');
+        });
+
         document.querySelectorAll('.delayed-nav').forEach(function(el) {
             el.style.transition = 'transform 0.1s ease';
             el.addEventListener('click', function(e) {
@@ -184,4 +200,4 @@
         });
     </script>
     @endpush
-</x-layouts::customer>
+    </x-layouts::customer>

@@ -4,14 +4,14 @@
  * Brunei drainage / sewer infrastructure risk zones for GIS maps and Ziqah AI context.
  *
  * risk_level: very_high | high | moderate | low
- * map_color:  red (very_high + high) | yellow (moderate) | green (low)
+ * map_color: yellow (elevated / high drainage risk) | green (lower risk)
  */
 return [
 
     'map_colors' => [
-        'very_high' => ['fill' => '#dc2626', 'stroke' => '#991b1b', 'label' => 'Very high risk'],
-        'high' => ['fill' => '#ef4444', 'stroke' => '#b91c1c', 'label' => 'High risk'],
-        'moderate' => ['fill' => '#eab308', 'stroke' => '#a16207', 'label' => 'Moderate risk'],
+        'very_high' => ['fill' => '#ca8a04', 'stroke' => '#854d0e', 'label' => 'High risk area'],
+        'high' => ['fill' => '#eab308', 'stroke' => '#a16207', 'label' => 'Elevated risk'],
+        'moderate' => ['fill' => '#fde047', 'stroke' => '#ca8a04', 'label' => 'Moderate risk'],
         'low' => ['fill' => '#22c55e', 'stroke' => '#15803d', 'label' => 'Lower risk'],
     ],
 

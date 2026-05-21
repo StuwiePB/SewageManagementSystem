@@ -255,7 +255,7 @@
         <a href="{{ route('customer.profilesettings', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; text-decoration: none; transition: transform 0.1s ease;" aria-label="{{ __('Back') }}">
             <img src="{{ asset('images/Vectors/all_backarrow.svg') }}" alt="" style="width: 21px; height: 21px;" />
         </a>
-        <span style="color: white; font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">Email Binding</span>
+        <span class="cust-title" style="font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">Email Binding</span>
     </div>
 
     <script>

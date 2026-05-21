@@ -11,7 +11,7 @@
         border: 1px solid rgba(106, 150, 255, 0.25); border-radius: 8px;
         color: #cbd5e1; font-size: 0.875rem;
     }
-    .gis-layer-toggle.active { color: #8ab0ff; border-color: #6A96FF; }
+    .gis-layer-toggle.active { color: #8ab0ff; border-color: var(--brudms-primary); }
     .gis-risk-legend { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
     .gis-risk-legend-item {
         display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
@@ -24,7 +24,7 @@
 <header class="topbar">
     <div>
         <h1>GIS Map</h1>
-        <p>Brunei terrain + drainage risk zones (red = very high/high, yellow = moderate)</p>
+        <p>Brunei terrain + drainage risk zones (yellow = higher, green = lower). Live rain data in top-right.</p>
     </div>
 </header>
 
@@ -42,7 +42,9 @@
         <span class="map-legend-item"><span class="map-legend-dot report">R</span> Report</span>
         <span class="map-legend-item"><span class="map-legend-dot workorder">W</span> Work Order</span>
     </div>
-    <div id="operations-map" class="map-container"></div>
+    <div id="operations-map-wrapper" style="position: relative; overflow: visible;">
+        <div id="operations-map" class="map-container"></div>
+    </div>
 </section>
 
 <section class="grid-cards" aria-label="Map lists">
@@ -79,6 +81,8 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 @include('partials.gis-brunei-layers')
+@include('partials.gis-weather-widget')
+@include('partials.gis-safe-route')
 <script>
 (function () {
     var reports = @json($mapReports);
@@ -99,7 +103,10 @@
     });
     var baseGroup = L.layerGroup([osmLayer]).addTo(map);
 
-    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: baseGroup });
+    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: baseGroup, instanceKey: 'ops' });
+    if (window.BruneiGisWeather) {
+        window.BruneiGisWeather.init(map, { hostId: 'operations-map-wrapper' });
+    }
 
     document.getElementById('toggle-terrain').addEventListener('click', function () {
         var on = !this.classList.contains('active');
@@ -113,7 +120,7 @@
     });
 
     reports.forEach(function (r) {
-        L.marker([r.lat, r.lng], { icon: L.divIcon({ className: 'report-marker', html: '<span style="background:#6A96FF;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>' }) })
+        L.marker([r.lat, r.lng], { icon: L.divIcon({ className: 'report-marker', html: '<span style="background:var(--brudms-primary);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>' }) })
             .addTo(map)
             .bindPopup('<strong>' + (r.number || 'Report') + '</strong><br>' + (r.address || ''));
     });
@@ -128,6 +135,14 @@
         map.fitBounds(L.latLngBounds(all), { padding: [40, 40], maxZoom: 14 });
     } else {
         map.fitBounds(bruneiBounds, { padding: [20, 20] });
+    }
+
+    if (window.GisSafeRoute) {
+        window.GisSafeRoute.init(map, {
+            containerId: 'operations-map-wrapper',
+            analyzeUrl: @json(route('safe-route.analyze')),
+            csrf: @json(csrf_token())
+        });
     }
 })();
 </script>

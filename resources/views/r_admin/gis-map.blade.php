@@ -12,7 +12,7 @@
     .layer-toggle:hover { color: var(--text-primary); border-color: rgba(106, 150, 255, 0.4); }
     .layer-toggle.active { color: var(--accent-blue); border-color: var(--accent-blue); }
     .layer-toggle .dot { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
-    .layer-toggle.report .dot { background: #6A96FF; color: #fff; }
+    .layer-toggle.report .dot { background: var(--brudms-primary); color: #fff; }
     .layer-toggle.workorder .dot { background: var(--accent-green); color: var(--bg-primary); }
     .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
     .customer-gis-stats {
@@ -128,9 +128,9 @@
     <p>Interactive map view of incidents and work orders</p>
 </div>
 
-<div class="card" id="admin-ops-map-section" style="padding: 1.5rem; overflow: hidden;">
+<div class="card" id="admin-ops-map-section" style="padding: 1.5rem; overflow: visible;">
     <h3 class="section-head" style="margin: 0 0 1rem;">Operations map</h3>
-    <p class="section-desc" style="margin: 0 0 0.75rem;">Terrain view + colour-coded drainage risk zones (red = very high/high, yellow = moderate).</p>
+    <p class="section-desc" style="margin: 0 0 0.75rem;">Terrain view + drainage risk zones (yellow = higher, green = lower). Live Brunei rain affects zones and routing.</p>
     <div class="gis-risk-legend" aria-label="Drainage risk legend">
         @foreach(($bruneiGisLayers['legend'] ?? []) as $item)
             <span class="gis-risk-legend-item"><span class="gis-risk-legend-swatch" style="background:{{ $item['color'] }};"></span>{{ $item['label'] }}</span>
@@ -150,7 +150,9 @@
             <span>Work Order</span>
         </label>
     </div>
-    <div id="gis-map"></div>
+    <div id="gis-map-wrapper" style="position: relative; overflow: visible;">
+        <div id="gis-map"></div>
+    </div>
 </div>
 
 <div class="card" id="customer-map-section" style="padding: 1.5rem; overflow: hidden; margin-top: 1.5rem; display: none;">
@@ -171,11 +173,15 @@
         </div>
     </div>
     <div id="customer-gis-legend" class="customer-gis-legend" aria-label="Customer report legend"></div>
-    <div id="gis-map-customer"></div>
+    <div id="gis-map-customer-wrapper" style="position: relative; overflow: visible;">
+        <div id="gis-map-customer"></div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 @include('partials.gis-brunei-layers')
+@include('partials.gis-weather-widget')
+@include('partials.gis-safe-route')
 <script>
 (function () {
     var reports = @json($mapReports);
@@ -191,7 +197,7 @@
         weight: 2.5,
         opacity: 0.95,
         fill: true,
-        fillColor: '#6A96FF',
+        fillColor: 'var(--brudms-primary)',
         fillOpacity: 0.02
     };
     var districtHoverStyle = {
@@ -319,7 +325,10 @@
     });
     addDistrictLayer(map);
 
-    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup });
+    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'admin-ops' });
+    if (window.BruneiGisWeather) {
+        window.BruneiGisWeather.init(map, { hostId: 'gis-map-wrapper' });
+    }
     document.getElementById('toggle-terrain').addEventListener('click', function () {
         var on = !this.classList.contains('active');
         this.classList.toggle('active', on);
@@ -338,7 +347,7 @@
         L.marker([r.lat, r.lng], {
             icon: L.divIcon({
                 className: 'report-marker',
-                html: '<span style="background:#6A96FF;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>'
+                html: '<span style="background:var(--brudms-primary);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>'
             })
         })
             .addTo(reportLayer)
@@ -348,7 +357,7 @@
         L.marker([w.lat, w.lng], {
             icon: L.divIcon({
                 className: 'wo-marker',
-                html: '<span style="background:#56FF8B;color:#1A1D2B;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>'
+                html: '<span style="background:#56FF8B;color:var(--text-primary);border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>'
             })
         })
             .addTo(workOrderLayer)
@@ -399,6 +408,12 @@
     customerMap.on('zoomend', function () {
         customerMap.panInsideBounds(bruneiBounds, { animate: false });
     });
+
+    var customerSatellite = L.layerGroup();
+    window.BruneiGisLayers.init(customerMap, { satelliteLayer: customerSatellite, instanceKey: 'admin-customer' });
+    if (window.BruneiGisWeather) {
+        window.BruneiGisWeather.init(customerMap, { hostId: 'gis-map-customer-wrapper' });
+    }
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri',
@@ -510,6 +525,19 @@
         }, 120);
     }
     applyMapSelection(currentView);
+
+    if (window.GisSafeRoute) {
+        window.GisSafeRoute.init(map, {
+            containerId: 'gis-map-wrapper',
+            analyzeUrl: @json(route('safe-route.analyze')),
+            csrf: @json(csrf_token())
+        });
+        window.GisSafeRoute.init(customerMap, {
+            containerId: 'gis-map-customer-wrapper',
+            analyzeUrl: @json(route('safe-route.analyze')),
+            csrf: @json(csrf_token())
+        });
+    }
 })();
 </script>
 @endsection

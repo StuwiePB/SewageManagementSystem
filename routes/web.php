@@ -12,6 +12,8 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\Operations\StatisticsController as OperationsStatisticsController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PasswordPanelController;
+use App\Http\Controllers\MapWeatherController;
+use App\Http\Controllers\SafeRouteController;
 use App\Http\Controllers\WorkOrderController;
 use App\Models\Report;
 use App\Models\User;
@@ -110,6 +112,14 @@ Route::get('/dashboard', function () {
 
     return redirect()->route('customer.dashboard', ['name' => $user->profileSlug()]);
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::post('/safe-route/analyze', [SafeRouteController::class, 'analyze'])
+    ->middleware(['auth', 'verified'])
+    ->name('safe-route.analyze');
+
+Route::get('/api/gis/weather', [MapWeatherController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('gis.weather');
 
 Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified', 'role:operator'])->group(function () {
     Route::get('/dashboard', [OperationsController::class, 'dashboard'])->name('dashboard');
@@ -304,7 +314,7 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         $user = auth()->user();
 
         return view('r_customer.preference', [
-            'prefAppearance' => $user->preference_appearance ?? 'dark',
+            'prefAppearance' => $user->preference_appearance ?? 'light',
             'prefLanguage' => $user->preference_language ?? 'ms',
             'prefAnonymous' => $user->preference_anonymous ?? 'nonanonymous',
         ]);
@@ -375,7 +385,12 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
             ->latest()
             ->get();
 
+        $mapWeather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
+        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($mapWeather);
+
         return view('r_customer.livemap', [
+            'bruneiGisLayers' => $bruneiGisLayers,
+            'mapWeather' => $mapWeather,
             'reports' => $reports->map(fn ($r) => [
                 'id' => $r->id,
                 'problem_type' => $r->problem_type,

@@ -2,21 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    @php
+        $opsThemeDefault = in_array(auth()->user()->preference_appearance ?? 'light', ['light', 'dark'], true)
+            ? auth()->user()->preference_appearance
+            : 'light';
+    @endphp
+    <meta name="brudms-theme-default" content="{{ $opsThemeDefault }}">
+    <meta name="brudms-theme-prefer-server" content="1">
+    @include('partials.brudms-theme', ['brudmsThemeDefault' => $opsThemeDefault])
+    @vite(['resources/css/brudms-theme.css', 'resources/js/app.js'])
     <title>DMS Ops - Operations Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-primary: #1A1D2B;
-            --bg-secondary: #272B3C;
-            --text-primary: #FFFFFF;
-            --text-secondary: #B0B0B0;
-            --accent-blue: #6A96FF;
-            --accent-red: #FF5B5B;
-            --accent-green: #56FF8B;
-            --accent-purple: #A86AFF;
-            --border-subtle: rgba(106, 150, 255, 0.15);
+            --border-subtle: var(--border-light);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -39,7 +40,7 @@
         .sidebar-header {
             padding: 2rem 1.5rem;
             text-align: center;
-            border-bottom: 1px solid rgba(106, 150, 255, 0.2);
+            border-bottom: 1px solid rgba(var(--brudms-primary-rgb), 0.2);
         }
         .sidebar-header i { font-size: 2.5rem; color: var(--accent-blue); margin-bottom: 0.75rem; display: block; }
         .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
@@ -65,11 +66,11 @@
             border-left: 3px solid transparent;
         }
         .nav a:hover {
-            background: rgba(106, 150, 255, 0.1);
+            background: rgba(var(--brudms-primary-rgb), 0.1);
             color: var(--text-primary);
         }
         .nav a.active {
-            background: rgba(106, 150, 255, 0.2);
+            background: rgba(var(--brudms-primary-rgb), 0.2);
             color: var(--accent-blue);
             border-left-color: var(--accent-blue);
         }
@@ -168,7 +169,7 @@
         }
         .btn-primary { background: var(--accent-blue); color: white; }
         .btn-primary:hover { opacity: 0.9; }
-        .btn-secondary { background: rgba(106, 150, 255, 0.2); color: var(--accent-blue); }
+        .btn-secondary { background: rgba(var(--brudms-primary-rgb), 0.2); color: var(--accent-blue); }
         .btn-secondary:hover { opacity: 0.9; }
 
         input[type="text"],
@@ -182,7 +183,7 @@
         textarea {
             font-family: inherit;
             background: var(--bg-primary);
-            border: 1px solid rgba(106, 150, 255, 0.3);
+            border: 1px solid rgba(var(--brudms-primary-rgb), 0.3);
             color: var(--text-primary);
         }
         input::placeholder, textarea::placeholder { color: var(--text-secondary); opacity: 0.6; }
@@ -196,7 +197,7 @@
         textarea:focus {
             outline: none;
             border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(106, 150, 255, 0.2);
+            box-shadow: 0 0 0 3px rgba(var(--brudms-primary-rgb), 0.2);
         }
 
         .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9375rem; }
@@ -225,7 +226,7 @@
         .form-control:focus {
             outline: none;
             border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(106, 150, 255, 0.2);
+            box-shadow: 0 0 0 3px rgba(var(--brudms-primary-rgb), 0.2);
         }
         .btn-submit {
             background: var(--accent-blue);
@@ -248,11 +249,11 @@
             font-size: 13px;
             color: var(--text-secondary);
             font-weight: 600;
-            border-bottom: 1px solid rgba(106, 150, 255, 0.15);
+            border-bottom: 1px solid rgba(var(--brudms-primary-rgb), 0.15);
         }
         .ops-table td {
             padding: 12px 8px;
-            border-bottom: 1px solid rgba(106, 150, 255, 0.08);
+            border-bottom: 1px solid rgba(var(--brudms-primary-rgb), 0.08);
             color: var(--text-primary);
         }
         .ops-table tbody tr:last-child td { border-bottom: none; }
@@ -262,8 +263,8 @@
         .badge-critical { background: rgba(255, 91, 91, 0.25); color: #ff8888; }
         .badge-high { background: rgba(255, 165, 0, 0.25); color: #FFA500; }
         .badge-medium { background: rgba(255, 165, 0, 0.2); color: #FFA500; }
-        .badge-low { background: rgba(106, 150, 255, 0.2); color: var(--accent-blue); }
-        .badge-status { background: rgba(106, 150, 255, 0.2); color: var(--accent-blue); }
+        .badge-low { background: rgba(var(--brudms-primary-rgb), 0.2); color: var(--accent-blue); }
+        .badge-status { background: rgba(var(--brudms-primary-rgb), 0.2); color: var(--accent-blue); }
         .badge-status-amber { background: rgba(255, 165, 0, 0.25); color: #FFA500; }
         .badge-status-teal { background: rgba(34, 211, 238, 0.25); color: #22d3ee; }
         .badge-status-green { background: rgba(86, 255, 139, 0.2); color: var(--accent-green); }
@@ -271,14 +272,14 @@
         .badge-report-new { background: rgba(255, 91, 91, 0.25); color: var(--accent-red); }
         .badge-report-progress { background: rgba(255, 165, 0, 0.2); color: #FFA500; }
         .badge-report-resolved { background: rgba(86, 255, 139, 0.2); color: var(--accent-green); }
-        .badge-report-closed { background: rgba(106, 150, 255, 0.1); color: var(--text-secondary); }
+        .badge-report-closed { background: rgba(var(--brudms-primary-rgb), 0.1); color: var(--text-secondary); }
         .badge-change { color: var(--accent-red); margin-top: 6px; font-size: 12px; }
 
         .link-primary { color: var(--accent-blue); text-decoration: none; font-weight: 500; }
         .link-primary:hover { text-decoration: underline; }
 
         .list-unstyled { list-style: none; padding: 0; margin: 0; }
-        .list-item { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(106, 150, 255, 0.1); }
+        .list-item { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(var(--brudms-primary-rgb), 0.1); }
         .list-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         .list-item strong { display: block; margin-bottom: 4px; color: var(--text-primary); }
         .list-item small { color: var(--text-secondary); font-size: 12px; }
@@ -286,7 +287,7 @@
         .pagination-bar {
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid rgba(106, 150, 255, 0.1);
+            border-top: 1px solid rgba(var(--brudms-primary-rgb), 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -302,14 +303,14 @@
             padding: 8px 14px;
             font-size: 13px;
             border-radius: 8px;
-            border: 1px solid rgba(106, 150, 255, 0.25);
+            border: 1px solid rgba(var(--brudms-primary-rgb), 0.25);
             text-decoration: none;
             font-weight: 500;
             color: var(--accent-blue);
-            background: rgba(106, 150, 255, 0.1);
+            background: rgba(var(--brudms-primary-rgb), 0.1);
             cursor: pointer;
         }
-        .btn-page:hover:not(.disabled) { background: rgba(106, 150, 255, 0.2); }
+        .btn-page:hover:not(.disabled) { background: rgba(var(--brudms-primary-rgb), 0.2); }
         .btn-page:disabled, .btn-page.disabled {
             color: var(--text-secondary);
             opacity: 0.5;
@@ -331,14 +332,14 @@
             display: inline-flex;
             align-items: center;
             padding: 6px 14px;
-            background: rgba(106, 150, 255, 0.2);
+            background: rgba(var(--brudms-primary-rgb), 0.2);
             color: var(--accent-blue);
             text-decoration: none;
             font-size: 13px;
             font-weight: 500;
             border-radius: 8px;
         }
-        .btn-edit:hover { background: rgba(106, 150, 255, 0.3); color: var(--accent-blue); }
+        .btn-edit:hover { background: rgba(var(--brudms-primary-rgb), 0.3); color: var(--accent-blue); }
 
         .card-map { padding: 0; overflow: hidden; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; }
         .map-legend {
@@ -364,12 +365,12 @@
         .map-legend-dot.workorder { background: #22d3ee; }
         .map-container { height: 600px; width: 100%; }
         .map-list { list-style: none; padding: 0; margin-top: 12px; }
-        .map-list li { padding: 8px 0; border-bottom: 1px solid rgba(106, 150, 255, 0.1); font-size: 13px; color: var(--text-primary); }
+        .map-list li { padding: 8px 0; border-bottom: 1px solid rgba(var(--brudms-primary-rgb), 0.1); font-size: 13px; color: var(--text-primary); }
         .map-list li:last-child { border-bottom: none; }
         .map-list .muted { color: var(--text-secondary); }
         .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
 
-        .ops-border-subtle { border-color: rgba(106, 150, 255, 0.15) !important; }
+        .ops-border-subtle { border-color: rgba(var(--brudms-primary-rgb), 0.15) !important; }
 
         /* Inline form fields in operator views (create/edit) */
         .main input[type="text"]:not([class*="btn"]),
@@ -380,7 +381,7 @@
         .main select,
         .main textarea {
             background: var(--bg-primary) !important;
-            border: 1px solid rgba(106, 150, 255, 0.3) !important;
+            border: 1px solid rgba(var(--brudms-primary-rgb), 0.3) !important;
             color: var(--text-primary) !important;
         }
 

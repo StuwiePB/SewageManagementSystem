@@ -80,14 +80,14 @@
 <div class="card" style="margin-bottom:20px; padding:0; overflow:hidden;">
     <div style="padding:16px 20px; border-bottom:1px solid rgba(106, 150, 255, 0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
         <h3 style="margin:0; color:var(--text-primary);">Hotspot Map – Report / Work Order Intensity</h3>
-        <select id="hotspot-metric" style="padding:8px 12px; border:1px solid rgba(106, 150, 255, 0.3); border-radius:8px; font-size:14px; background:#1A1D2B; color:#fff;">
+        <select id="hotspot-metric" style="padding:8px 12px; border:1px solid rgba(106, 150, 255, 0.3); border-radius:8px; font-size:14px; background:var(--text-primary); color:#fff;">
             <option value="reports">Reports</option>
             <option value="work_orders">Work Orders</option>
         </select>
     </div>
     <div style="position:relative;">
         <div id="hotspot-map" style="height:500px; width:100%;"></div>
-        <div id="hotspot-legend" style="position:absolute; bottom:24px; right:24px; background:#272B3C; padding:12px 16px; border-radius:8px; border:1px solid rgba(106, 150, 255, 0.2); box-shadow:0 4px 24px rgba(0,0,0,0.35); z-index:1000; font-size:12px; color:#e5e7eb;">
+        <div id="hotspot-legend" style="position:absolute; bottom:24px; right:24px; background:var(--brudms-secondary); padding:12px 16px; border-radius:8px; border:1px solid rgba(106, 150, 255, 0.2); box-shadow:0 4px 24px rgba(0,0,0,0.35); z-index:1000; font-size:12px; color:#e5e7eb;">
         <div style="font-weight:600; margin-bottom:8px; color:#fff;">Intensity</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;"><span style="display:inline-block; width:16px; height:16px; border-radius:2px; background:#166534;"></span> Very Low (0% – 20%)</div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;"><span style="display:inline-block; width:16px; height:16px; border-radius:2px; background:#22c55e;"></span> Low (21% – 40%)</div>
@@ -112,8 +112,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function() {
-    const primary = '#6A96FF';
-    const colors = ['#6A96FF', '#56FF8B', '#22d3ee', '#d97706', '#dc2626', '#A86AFF', '#0891b2', '#65a30d'];
+    const primary = 'var(--brudms-primary)';
+    const colors = ['var(--brudms-primary)', '#56FF8B', '#22d3ee', '#d97706', '#dc2626', '#A86AFF', '#0891b2', '#65a30d'];
     const darkTick = '#B0B0B0';
     const darkGrid = 'rgba(106, 150, 255, 0.08)';
     const lineScales = {
@@ -316,7 +316,7 @@
     function renderPointMarkers() {
         markersLayer.clearLayers();
         var pts = currentMetric === 'reports' ? reportMapPoints : workOrderMapPoints;
-        var fill = currentMetric === 'reports' ? '#6A96FF' : '#f97316';
+        var fill = currentMetric === 'reports' ? 'var(--brudms-primary)' : '#f97316';
         pts.forEach(function (p) {
             var lat = Number(p.lat);
             var lng = Number(p.lng);

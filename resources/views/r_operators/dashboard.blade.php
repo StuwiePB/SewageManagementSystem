@@ -112,7 +112,7 @@
             datasets: [{
                 label: 'Incidents',
                 data: chartData,
-                borderColor: '#6A96FF',
+                borderColor: 'var(--brudms-primary)',
                 backgroundColor: 'rgba(106, 150, 255, 0.12)',
                 borderWidth: 2,
                 fill: true,

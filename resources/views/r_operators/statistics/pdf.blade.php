@@ -5,7 +5,7 @@
     <title>{{ $stats['title'] ?? 'Statistics' }} – DMS Ops</title>
     <style>
         body { font-family: system-ui, sans-serif; padding: 24px; color: #1f2937; }
-        h1 { margin: 0 0 4px; font-size: 22px; color: #6A96FF; }
+        h1 { margin: 0 0 4px; font-size: 22px; color: var(--brudms-primary); }
         .meta { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
         th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
@@ -22,7 +22,7 @@
 </head>
 <body>
     <div class="no-print" style="margin-bottom:20px;">
-        <button onclick="window.print()" style="padding:8px 16px; background:#6A96FF; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:500;">Print / Save as PDF</button>
+        <button onclick="window.print()" style="padding:8px 16px; background:var(--brudms-primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:500;">Print / Save as PDF</button>
     </div>
 
     <h1>{{ $stats['title'] ?? 'Statistics' }}</h1>

@@ -9,6 +9,8 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+        @include('partials.brudms-theme')
+        @vite(['resources/css/brudms-theme.css', 'resources/js/app.js'])
         <style>
             @keyframes glass-box-enter {
                 from {

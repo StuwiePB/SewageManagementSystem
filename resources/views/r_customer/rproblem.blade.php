@@ -10,17 +10,9 @@
             .choice-card .choice-tagline { font-size: clamp(11px, 7.5cqw, 18px); }
             .choice-card .choice-subtitle { font-size: clamp(9px, 6cqw, 14px); }
             .choice-card { cursor: pointer; transition: box-shadow 0.2s; }
-            .choice-card.selected { box-shadow: 0 0 0 2px #04BCFF; }
+            .choice-card.selected { box-shadow: 0 0 0 2px var(--brudms-primary); }
         </style>
     @endpush
-
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
 
     @php
         $guestReportFlow = filter_var($guestReportFlow ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -40,13 +32,13 @@
 
     <img src="{{ asset('images/Vectors/report_rproblem.svg') }}" alt="" style="position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 30px); z-index: 5; width: 30px; height: 31px;" />
 
-    <button type="button" id="confirm-choice-btn" class="press-btn" style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);">Confirm choice</button>
+    <button type="button" id="confirm-choice-btn" class="press-btn cust-btn-confirm cust-btn-primary" style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: var(--brudms-primary); color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3);">Confirm choice</button>
 
     <div style="position: fixed; left: 6px; right: 6px; bottom: 0; height: 100px; border-radius: 0; background: linear-gradient(to top, rgba(217, 217, 217, 0.02), transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); mask-image: linear-gradient(to top, black 60%, transparent); -webkit-mask-image: linear-gradient(to top, black 60%, transparent); z-index: 6; pointer-events: none;"></div>
 
     <div class="rflow-main-stack">
         <div class="rflow-header-col">
-            <span class="rflow-header-line-primary">Help keep <span style="color: #04BCFF;">Brunei</span> clean and safe by reporting sewage problems accurately</span>
+            <span class="rflow-header-line-primary">Help keep <span style="color: var(--brudms-primary);">Brunei</span> clean and safe by reporting sewage problems accurately</span>
             <span class="rflow-header-line-secondary">State your problem type</span>
         </div>
         <div class="choices-scroll" style="margin-left: 40px; margin-right: 40px; overflow-y: auto; max-height: 75vh; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 8px;">

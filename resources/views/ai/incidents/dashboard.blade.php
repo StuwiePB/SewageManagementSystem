@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg-primary: #1A1D2B; --bg-secondary: #272B3C; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --accent-blue: #6A96FF; --accent-red: #FF5B5B; --accent-green: #56FF8B; --accent-purple: #A86AFF; --warning-yellow: #ffbe0b; }
+        :root { --bg-primary: var(--text-primary); --bg-secondary: var(--brudms-secondary); --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --accent-blue: var(--brudms-primary); --accent-red: #FF5B5B; --accent-green: #56FF8B; --accent-purple: #A86AFF; --warning-yellow: #ffbe0b; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
         h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif; font-weight: 600; color: var(--text-primary); }
         .navbar { background: var(--bg-secondary); border-bottom: 1px solid rgba(106, 150, 255, 0.15); }

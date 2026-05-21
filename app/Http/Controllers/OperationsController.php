@@ -144,8 +144,9 @@ class OperationsController extends Controller
             'address' => $w->location_address,
         ])->values()->all();
 
-        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload();
+        $weather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
+        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($weather);
 
-        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'bruneiGisLayers'));
+        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'bruneiGisLayers', 'weather'));
     }
 }

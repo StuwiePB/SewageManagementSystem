@@ -69,7 +69,7 @@ class NearbyDrainageAlertService
 
         $total = (int) $scan['total'];
         $lines = [
-            "heads up — there ".($total === 1 ? 'is' : 'are')." {$total} drainage "
+            'heads up — there '.($total === 1 ? 'is' : 'are')." {$total} drainage "
             .($total === 1 ? 'report' : 'reports')." within {$radius} km of you. please stay safe.\n",
         ];
 
@@ -171,6 +171,8 @@ class NearbyDrainageAlertService
                     'status' => $report->status,
                     'canonical_type' => $canonical,
                     'address' => $report->address,
+                    'lat' => (float) $report->latitude,
+                    'lng' => (float) $report->longitude,
                     'distance_km' => round($distance, 2),
                     'source' => 'customer_report',
                 ];
@@ -207,6 +209,8 @@ class NearbyDrainageAlertService
                     'status' => $report->status,
                     'canonical_type' => $canonical,
                     'address' => $report->location_address,
+                    'lat' => (float) $report->latitude,
+                    'lng' => (float) $report->longitude,
                     'distance_km' => round($distance, 2),
                     'source' => 'operations_report',
                 ];
@@ -243,6 +247,8 @@ class NearbyDrainageAlertService
                     'status' => $order->status,
                     'canonical_type' => $canonical,
                     'address' => $order->location_address,
+                    'lat' => (float) $order->latitude,
+                    'lng' => (float) $order->longitude,
                     'distance_km' => round($distance, 2),
                     'source' => 'work_order',
                 ];
