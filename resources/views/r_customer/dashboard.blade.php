@@ -218,6 +218,9 @@
         $photoPath = $user?->profile_photo_path ?? null;
         $photoUrl = $photoPath ? \Illuminate\Support\Facades\Storage::url($photoPath) : null;
     @endphp
+    @unless($guestMode)
+        @include('partials.customer-email-bind-popup')
+    @endunless
     <div style="position: fixed; top: 4vh; left: 20px; right: 20px; z-index: 10; display: flex; align-items: center; justify-content: space-between;">
         <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="press-btn {{ $guestMode ? '' : 'delayed-nav' }}" style="display: flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer;" aria-label="{{ __('Home') }}">
             <img src="{{ asset('images/logo.png') }}" alt="" style="width: 36px; height: 36px; object-fit: contain;" />
