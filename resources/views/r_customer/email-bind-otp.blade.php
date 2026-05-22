@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Bind Email OTP - BruDMS</title>
-    <link rel="preload" as="image" href="{{ asset('images/crdboard.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
@@ -172,9 +171,7 @@
     </style>
 </head>
 <body style="min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box;">
-    <div style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('{{ e(asset('images/crdboard.png')) }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
+    <div style="position: fixed; inset: 0; z-index: 0; background: #121820;" aria-hidden="true"></div>
 
     <div class="glass-box" style="position: relative; z-index: 1;">
         <div class="glass-box-left" style="flex: 1; min-width: 0; padding: 0.5rem; box-sizing: border-box; overflow: hidden; border-radius: 0.75rem; position: relative;">

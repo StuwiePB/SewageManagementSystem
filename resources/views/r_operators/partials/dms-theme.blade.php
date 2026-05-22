@@ -22,9 +22,30 @@
     .nav a { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1.5rem; color: var(--text-secondary); font-weight: 500; font-size: 0.9375rem; text-decoration: none; border-left: 3px solid transparent; transition: all 0.2s; }
     .nav a:hover { background: rgba(74, 144, 226, 0.1); color: var(--text-primary); }
     .nav a.active { background: rgba(74, 144, 226, 0.18); color: var(--accent-blue); border-left-color: var(--accent-blue); }
-    .nav a i { width: 20px; text-align: center; }
+    .nav a i { width: 20px; text-align: center; flex-shrink: 0; }
     .nav-group { margin-bottom: 0.25rem; }
-    .nav-group .nav-parent { border-left: 3px solid transparent; }
+    .nav-group .nav-group-label {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        padding: 0.875rem 1.5rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.9375rem;
+        border-left: 3px solid transparent;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .nav-group .nav-group-label.active {
+        background: rgba(74, 144, 226, 0.18);
+        color: var(--accent-blue);
+        border-left-color: var(--accent-blue);
+    }
+    .nav-group .nav-group-label i {
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+    }
     .nav-group .nav-sub { padding-left: 2.75rem; font-size: 0.875rem; }
     .nav-group .nav-sub i { font-size: 0.8rem; opacity: 0.85; }
     .sidebar-footer { padding: 1.5rem; border-top: 1px solid var(--border-subtle); }

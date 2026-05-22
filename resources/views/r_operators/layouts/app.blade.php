@@ -73,7 +73,36 @@
             color: var(--accent-blue);
             border-left-color: var(--accent-blue);
         }
-        .nav a i { width: 20px; text-align: center; }
+        .nav a i { width: 20px; text-align: center; flex-shrink: 0; }
+
+        .nav-group { margin-bottom: 0.25rem; }
+        .nav-group .nav-group-label {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9375rem;
+            border-left: 3px solid transparent;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .nav-group .nav-group-label.active {
+            background: rgba(106, 150, 255, 0.2);
+            color: var(--accent-blue);
+            border-left-color: var(--accent-blue);
+        }
+        .nav-group .nav-group-label i {
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .nav-group .nav-sub {
+            padding-left: 2.75rem;
+            font-size: 0.875rem;
+        }
+        .nav-group .nav-sub i { font-size: 0.8rem; opacity: 0.85; }
 
         .sidebar-footer {
             padding: 1.5rem;
@@ -405,28 +434,7 @@
             <p>Drainage Management System</p>
         </div>
         <div class="layout-inner">
-            <nav class="nav">
-                <a href="{{ route('operations.dashboard') }}" class="{{ request()->routeIs('operations.dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-th-large"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ route('operations.map') }}" class="{{ request()->routeIs('operations.map') ? 'active' : '' }}">
-                    <i class="fas fa-map-location-dot"></i>
-                    <span>GIS Map</span>
-                </a>
-                <a href="{{ route('operations.reports') }}" class="{{ request()->routeIs('operations.reports') ? 'active' : '' }}">
-                    <i class="fas fa-file-lines"></i>
-                    <span>Reports</span>
-                </a>
-                <a href="{{ route('operations.work-orders.index') }}" class="{{ request()->routeIs('operations.work-orders.*') ? 'active' : '' }}">
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Work Orders</span>
-                </a>
-                <a href="{{ route('operations.statistics.index') }}" class="{{ request()->routeIs('operations.statistics.*') ? 'active' : '' }}">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Statistics</span>
-                </a>
-            </nav>
+            @include('r_operators.partials.sidebar-nav')
 
             <div class="sidebar-footer">
                 <form method="POST" action="{{ route('logout') }}">

@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDmsArchiveController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\StatisticsController as AdminStatisticsController;
+use App\Http\Controllers\Operations\DmsArchiveController as OperationsDmsArchiveController;
+use App\Livewire\Operations\ArchiveWorkOrderForm;
+use App\Livewire\Operations\PaperReportForm;
 use App\Http\Controllers\Admin\SupportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminWorkOrderController;
@@ -133,6 +138,11 @@ Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified'
     Route::post('/work-orders/{workOrder}/submit-approval', [WorkOrderController::class, 'submitForApproval'])->whereNumber('workOrder')->name('work-orders.submit-approval');
     Route::post('/work-orders/{workOrder}/photos', [WorkOrderController::class, 'storePhoto'])->whereNumber('workOrder')->name('work-orders.photos.store');
     Route::delete('/work-orders/{workOrder}/photos/{photo}', [WorkOrderController::class, 'destroyPhoto'])->name('work-orders.photos.destroy');
+
+    Route::get('/old-reports', [OperationsDmsArchiveController::class, 'oldReportsIndex'])->name('old-reports.index');
+    Route::get('/old-reports/create', PaperReportForm::class)->name('old-reports.create');
+    Route::get('/old-work-orders', [OperationsDmsArchiveController::class, 'oldWorkOrdersIndex'])->name('old-work-orders.index');
+    Route::get('/old-work-orders/create', ArchiveWorkOrderForm::class)->name('old-work-orders.create');
 });
 
 Route::get('/operator/dashboard', fn () => redirect()->route('operations.dashboard'))
@@ -164,6 +174,8 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
         ->whereNumber('user')
         ->name('admin.civilians.delete');
 
+    Route::get('/admin/audit-log', [AuditLogController::class, 'index'])->name('admin.audit-log.index');
+
     Route::get('/admin/statistics', [AdminStatisticsController::class, 'index'])->name('admin.statistics.index');
     Route::get('/admin/statistics/view', [AdminStatisticsController::class, 'show'])->name('admin.statistics.show');
     Route::get('/admin/statistics/export/csv', [AdminStatisticsController::class, 'exportCsv'])->name('admin.statistics.export.csv');
@@ -181,6 +193,12 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::post('/admin/work-orders/{workOrder}/submit-approval', [AdminWorkOrderController::class, 'submitForApproval'])->whereNumber('workOrder')->name('admin.work-orders.submit-approval');
     Route::post('/admin/work-orders/{workOrder}/photos', [AdminWorkOrderController::class, 'storePhoto'])->whereNumber('workOrder')->name('admin.work-orders.photos.store');
     Route::delete('/admin/work-orders/{workOrder}/photos/{photo}', [AdminWorkOrderController::class, 'destroyPhoto'])->name('admin.work-orders.photos.destroy');
+
+    Route::get('/admin/old-reports', [AdminDmsArchiveController::class, 'oldReportsIndex'])->name('admin.old-reports.index');
+    Route::get('/admin/old-reports/{paperReport}', [AdminDmsArchiveController::class, 'oldReportShow'])->name('admin.old-reports.show');
+    Route::get('/admin/old-reports/{paperReport}/scan', [AdminDmsArchiveController::class, 'oldReportScan'])->name('admin.old-reports.scan');
+    Route::get('/admin/old-work-orders', [AdminDmsArchiveController::class, 'oldWorkOrdersIndex'])->name('admin.old-work-orders.index');
+    Route::get('/admin/old-work-orders/{archiveWorkOrder}', [AdminDmsArchiveController::class, 'oldWorkOrderShow'])->name('admin.old-work-orders.show');
 
     Route::get('/admin/staff', [AdminController::class, 'staffDirectory'])->name('admin.staff.index');
     Route::get('/admin/staff/users/{user}', [AdminController::class, 'showStaffUser'])

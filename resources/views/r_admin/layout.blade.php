@@ -169,6 +169,17 @@
                     <span>Work Order Archive</span>
                 </a>
             @endif
+            <div class="nav-dropdown {{ request()->routeIs('admin.old-reports.*') || request()->routeIs('admin.old-work-orders.*') ? 'open' : '' }}">
+                <button type="button" class="nav-item nav-dropdown-toggle {{ request()->routeIs('admin.old-reports.*') || request()->routeIs('admin.old-work-orders.*') ? 'active' : '' }}" onclick="this.closest('.nav-dropdown').classList.toggle('open')">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Paper Archive</span>
+                    <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <a href="{{ route('admin.old-reports.index') }}" class="{{ request()->routeIs('admin.old-reports.*') ? 'active' : '' }}"><i class="fas fa-file-lines"></i> Old Reports</a>
+                    <a href="{{ route('admin.old-work-orders.index') }}" class="{{ request()->routeIs('admin.old-work-orders.*') ? 'active' : '' }}"><i class="fas fa-archive"></i> Old Work Orders</a>
+                </div>
+            </div>
             <a href="{{ route('admin.support.chat') }}" class="nav-item {{ request()->routeIs('admin.support.chat') ? 'active' : '' }}">
                 <i class="fas fa-comments"></i>
                 <span>Customer chat</span>
@@ -190,6 +201,10 @@
             @endif
         </nav>
         <div class="sidebar-footer">
+            <a href="{{ route('admin.audit-log.index') }}" class="nav-item {{ request()->routeIs('admin.audit-log.*') ? 'active' : '' }}">
+                <i class="fas fa-clock-rotate-left"></i>
+                <span>Audit Log</span>
+            </a>
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf
                 <button type="submit" class="nav-item">

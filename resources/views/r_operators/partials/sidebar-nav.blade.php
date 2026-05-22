@@ -7,22 +7,23 @@
         <i class="fas fa-map-location-dot"></i>
         <span>GIS Map</span>
     </a>
+    <a href="{{ route('operations.reports') }}" class="{{ request()->routeIs('operations.reports') ? 'active' : '' }}">
+        <i class="fas fa-file-lines"></i>
+        <span>Reports</span>
+    </a>
+    <a href="{{ route('operations.work-orders.index') }}" class="{{ request()->routeIs('operations.work-orders.*') && ! request()->routeIs('operations.old-work-orders*') ? 'active' : '' }}">
+        <i class="fas fa-clipboard-list"></i>
+        <span>Work Orders</span>
+    </a>
 
-    <div class="nav-group {{ request()->routeIs('operations.reports') || request()->routeIs('operations.old-reports*') ? 'is-open' : '' }}">
-        <a href="{{ route('operations.reports') }}" class="nav-parent {{ request()->routeIs('operations.reports') ? 'active' : '' }}">
-            <i class="fas fa-file-lines"></i>
-            <span>Reports</span>
-        </a>
-        <a href="{{ route('operations.old-reports.index') }}" class="nav-sub {{ request()->routeIs('operations.old-reports*') ? 'active' : '' }}">
+    <div class="nav-group {{ request()->routeIs('operations.old-reports*') || request()->routeIs('operations.old-work-orders*') ? 'is-open' : '' }}">
+        <span class="nav-group-label {{ request()->routeIs('operations.old-reports*') || request()->routeIs('operations.old-work-orders*') ? 'active' : '' }}">
             <i class="fas fa-folder-open"></i>
+            <span>Paper Archive</span>
+        </span>
+        <a href="{{ route('operations.old-reports.index') }}" class="nav-sub {{ request()->routeIs('operations.old-reports*') ? 'active' : '' }}">
+            <i class="fas fa-file-lines"></i>
             <span>Old Reports</span>
-        </a>
-    </div>
-
-    <div class="nav-group {{ request()->routeIs('operations.work-orders.*') || request()->routeIs('operations.old-work-orders*') ? 'is-open' : '' }}">
-        <a href="{{ route('operations.work-orders.index') }}" class="nav-parent {{ request()->routeIs('operations.work-orders.*') && ! request()->routeIs('operations.old-work-orders*') ? 'active' : '' }}">
-            <i class="fas fa-clipboard-list"></i>
-            <span>Work Orders</span>
         </a>
         <a href="{{ route('operations.old-work-orders.index') }}" class="nav-sub {{ request()->routeIs('operations.old-work-orders*') ? 'active' : '' }}">
             <i class="fas fa-archive"></i>

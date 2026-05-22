@@ -4,6 +4,15 @@
 <head>
     @include('partials.head')
     <style>
+        :root {
+            --customer-page-bg: #121820;
+        }
+        .customer-page-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: var(--customer-page-bg);
+        }
         .press-btn { transition: transform 0.1s ease; }
         .press-btn:active { transform: scale(0.93) !important; }
     </style>
