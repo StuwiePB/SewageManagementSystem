@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +38,7 @@ class AdminWorkOrderController extends Controller
         return view('r_admin.work-orders.create', compact('reports', 'districts', 'mukims'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SnsNotifier $snsNotifier)
     {
         $validated = $request->validate([
             'report_id' => 'nullable|exists:operations_reports,id',
@@ -73,6 +74,8 @@ class AdminWorkOrderController extends Controller
         }
 
         $workOrder = WorkOrder::create($validated);
+
+        $snsNotifier->workOrderCreated($workOrder);
 
         $this->syncLinkedReportStatuses($workOrder, 'in_progress');
 

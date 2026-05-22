@@ -13,6 +13,7 @@ use App\Services\AI\GoogleVisionService;
 use App\Services\AI\SewageClassifier;
 use App\Services\Reports\CustomerReportDrainageScan;
 use App\Services\Reports\CustomerReportOperationsSync;
+use App\Services\Sns\SnsNotifier;
 use App\Support\AccountEmail;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -259,10 +260,14 @@ class AdminController extends Controller
         ]);
     }
 
-    public function customerReportSendToOperations(Request $request, Report $report): RedirectResponse
+    public function customerReportSendToOperations(Request $request, Report $report, SnsNotifier $snsNotifier): RedirectResponse
     {
         $already = $report->operationsReport()->exists();
-        CustomerReportOperationsSync::syncFromCustomerReport($report);
+        $operationsReport = CustomerReportOperationsSync::syncFromCustomerReport($report);
+
+        if (! $already) {
+            $snsNotifier->customerReportSentToOperations($report, $operationsReport);
+        }
 
         $message = $already
             ? 'Report was already linked to operations.'

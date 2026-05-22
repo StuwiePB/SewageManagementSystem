@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class ReportController extends Controller
 {
-    public function submit(Request $request): JsonResponse|RedirectResponse
+    public function submit(Request $request, SnsNotifier $snsNotifier): JsonResponse|RedirectResponse
     {
         $isGuest = ! $request->user();
 
@@ -77,6 +78,8 @@ class ReportController extends Controller
             'photo_path' => $photoPath,
             'status' => Report::STATUS_PENDING,
         ]);
+
+        $snsNotifier->customerReportSubmitted($report);
 
         if ($request->expectsJson()) {
             $senderName = $report->reporter_name

@@ -12,7 +12,7 @@
     .layer-toggle:hover { color: var(--text-primary); border-color: rgba(106, 150, 255, 0.4); }
     .layer-toggle.active { color: var(--accent-blue); border-color: var(--accent-blue); }
     .layer-toggle .dot { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
-    .layer-toggle.report .dot { background: #6A96FF; color: #fff; }
+    .layer-toggle.report .dot { background: var(--brudms-primary); color: #fff; }
     .layer-toggle.workorder .dot { background: var(--accent-green); color: var(--bg-primary); }
     .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
     .customer-gis-stats {
@@ -96,6 +96,23 @@
     .leaflet-container .leaflet-interactive:focus {
         outline: none !important;
     }
+    .gis-layer-toggles { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.85rem; align-items: center; }
+    .gis-layer-toggle {
+        display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+        padding: 0.45rem 0.85rem; background: var(--bg-secondary);
+        border: 1px solid rgba(106, 150, 255, 0.25); border-radius: 8px;
+        color: var(--text-secondary); font-size: 0.875rem; user-select: none;
+    }
+    .gis-layer-toggle.active { color: var(--accent-blue); border-color: var(--accent-blue); }
+    .gis-risk-legend { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .gis-risk-legend-item {
+        display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
+        padding: 0.25rem 0.55rem; border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.15); color: var(--text-primary);
+    }
+    .gis-risk-legend-swatch { width: 0.65rem; height: 0.65rem; border-radius: 50%; }
+    .gis-risk-popup h4 { margin: 0 0 0.35rem; font-size: 0.95rem; }
+    .gis-risk-popup ul { margin: 0.35rem 0 0; padding-left: 1.1rem; font-size: 0.82rem; }
 </style>
 @endpush
 
@@ -111,8 +128,18 @@
     <p>Interactive map view of incidents and work orders</p>
 </div>
 
-<div class="card" id="admin-ops-map-section" style="padding: 1.5rem; overflow: hidden;">
+<div class="card" id="admin-ops-map-section" style="padding: 1.5rem; overflow: visible;">
     <h3 class="section-head" style="margin: 0 0 1rem;">Operations map</h3>
+    <p class="section-desc" style="margin: 0 0 0.75rem;">Terrain view + drainage risk zones (yellow = higher, green = lower). Live Brunei rain affects zones and routing.</p>
+    <div class="gis-risk-legend" aria-label="Drainage risk legend">
+        @foreach(($bruneiGisLayers['legend'] ?? []) as $item)
+            <span class="gis-risk-legend-item"><span class="gis-risk-legend-swatch" style="background:{{ $item['color'] }};"></span>{{ $item['label'] }}</span>
+        @endforeach
+    </div>
+    <div class="gis-layer-toggles">
+        <label class="gis-layer-toggle" id="toggle-terrain"><span>Terrain map</span></label>
+        <label class="gis-layer-toggle active" id="toggle-risk-zones"><span>Drainage risk zones</span></label>
+    </div>
     <div class="layer-toggles">
         <label class="layer-toggle report active" id="toggle-reports">
             <span class="dot">R</span>
@@ -123,7 +150,9 @@
             <span>Work Order</span>
         </label>
     </div>
-    <div id="gis-map"></div>
+    <div id="gis-map-wrapper" style="position: relative; overflow: visible;">
+        <div id="gis-map"></div>
+    </div>
 </div>
 
 <div class="card" id="customer-map-section" style="padding: 1.5rem; overflow: hidden; margin-top: 1.5rem; display: none;">
@@ -144,10 +173,15 @@
         </div>
     </div>
     <div id="customer-gis-legend" class="customer-gis-legend" aria-label="Customer report legend"></div>
-    <div id="gis-map-customer"></div>
+    <div id="gis-map-customer-wrapper" style="position: relative; overflow: visible;">
+        <div id="gis-map-customer"></div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+@include('partials.gis-brunei-layers')
+@include('partials.gis-weather-widget')
+@include('partials.gis-safe-route')
 <script>
 (function () {
     var reports = @json($mapReports);
@@ -158,12 +192,12 @@
         L.latLng(3.70, 113.75),
         L.latLng(5.60, 115.85)
     );
-  var districtBorderStyle = {
+    var districtBorderStyle = {
         color: 'rgba(106, 150, 255, 0.9)',
         weight: 2.5,
         opacity: 0.95,
         fill: true,
-        fillColor: '#6A96FF',
+        fillColor: 'var(--brudms-primary)',
         fillOpacity: 0.02
     };
     var districtHoverStyle = {
@@ -260,15 +294,15 @@
         markerZoomAnimation: true,
         zoomControl: true,
     });
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    var satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri',
         maxZoom: 18,
         maxNativeZoom: 18,
         updateWhenZooming: false,
         updateWhenIdle: true,
         keepBuffer: 10
-    }).addTo(map);
-    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    });
+    var satelliteLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Labels &copy; Esri',
         opacity: 0.9,
         maxZoom: 18,
@@ -276,7 +310,8 @@
         updateWhenZooming: false,
         updateWhenIdle: true,
         keepBuffer: 10
-    }).addTo(map);
+    });
+    var satelliteGroup = L.layerGroup([satelliteImagery, satelliteLabels]).addTo(map);
     map.setMaxBounds(bruneiBounds);
     var minOpsZoom = map.getBoundsZoom(bruneiBounds, true);
     if (minOpsZoom > map.getMinZoom()) {
@@ -290,6 +325,21 @@
     });
     addDistrictLayer(map);
 
+    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'admin-ops' });
+    if (window.BruneiGisWeather) {
+        window.BruneiGisWeather.init(map, { hostId: 'gis-map-wrapper' });
+    }
+    document.getElementById('toggle-terrain').addEventListener('click', function () {
+        var on = !this.classList.contains('active');
+        this.classList.toggle('active', on);
+        bruneiLayers.setBaseTerrain(on);
+    });
+    document.getElementById('toggle-risk-zones').addEventListener('click', function () {
+        var on = !this.classList.contains('active');
+        this.classList.toggle('active', on);
+        bruneiLayers.toggleRisk(on);
+    });
+
     var reportLayer = L.layerGroup();
     var workOrderLayer = L.layerGroup();
 
@@ -297,7 +347,7 @@
         L.marker([r.lat, r.lng], {
             icon: L.divIcon({
                 className: 'report-marker',
-                html: '<span style="background:#6A96FF;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>'
+                html: '<span style="background:var(--brudms-primary);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>'
             })
         })
             .addTo(reportLayer)
@@ -307,7 +357,7 @@
         L.marker([w.lat, w.lng], {
             icon: L.divIcon({
                 className: 'wo-marker',
-                html: '<span style="background:#56FF8B;color:#1A1D2B;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>'
+                html: '<span style="background:#56FF8B;color:var(--text-primary);border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>'
             })
         })
             .addTo(workOrderLayer)
@@ -358,6 +408,12 @@
     customerMap.on('zoomend', function () {
         customerMap.panInsideBounds(bruneiBounds, { animate: false });
     });
+
+    var customerSatellite = L.layerGroup();
+    window.BruneiGisLayers.init(customerMap, { satelliteLayer: customerSatellite, instanceKey: 'admin-customer' });
+    if (window.BruneiGisWeather) {
+        window.BruneiGisWeather.init(customerMap, { hostId: 'gis-map-customer-wrapper' });
+    }
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri',
@@ -469,6 +525,19 @@
         }, 120);
     }
     applyMapSelection(currentView);
+
+    if (window.GisSafeRoute) {
+        window.GisSafeRoute.init(map, {
+            containerId: 'gis-map-wrapper',
+            analyzeUrl: @json(route('safe-route.analyze')),
+            csrf: @json(csrf_token())
+        });
+        window.GisSafeRoute.init(customerMap, {
+            containerId: 'gis-map-customer-wrapper',
+            analyzeUrl: @json(route('safe-route.analyze')),
+            csrf: @json(csrf_token())
+        });
+    }
 })();
 </script>
 @endsection

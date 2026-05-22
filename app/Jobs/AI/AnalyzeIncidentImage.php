@@ -6,6 +6,7 @@ use App\Models\Incident;
 use App\Services\AI\GoogleVisionService;
 use App\Services\AI\SewageClassifier;
 use App\Services\AI\WinstonService;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,8 @@ class AnalyzeIncidentImage implements ShouldQueue
     public function handle(
         GoogleVisionService $visionService,
         SewageClassifier $classifier,
-        WinstonService $winstonService
+        WinstonService $winstonService,
+        SnsNotifier $snsNotifier,
     ): void {
         $incident = Incident::findOrFail($this->incidentId);
 
@@ -48,6 +50,8 @@ class AnalyzeIncidentImage implements ShouldQueue
                     $fallbackResult = $this->fallbackClassification($incident, $errorMessage, $errorDetails);
                     if ($fallbackResult) {
                         $this->updateIncidentWithResult($incident, $fallbackResult['classification'], $fallbackResult['evidence'], []);
+                        $snsNotifier->incidentHighRisk($incident->fresh());
+
                         return;
                     }
                 }
@@ -75,6 +79,7 @@ class AnalyzeIncidentImage implements ShouldQueue
             }
 
             $this->updateIncidentWithResult($incident, $classification, $evidence, $visionResult);
+            $snsNotifier->incidentHighRisk($incident->fresh());
         } catch (\Exception $e) {
             Log::error("Failed to analyze incident {$incident->id}", [
                 'incident_id' => $incident->id,

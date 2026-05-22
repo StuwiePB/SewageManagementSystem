@@ -7,6 +7,7 @@ use App\Models\DmsArchiveWorkOrder;
 use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -120,7 +121,7 @@ class WorkOrderController extends Controller
         ));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SnsNotifier $snsNotifier)
     {
         $validated = $request->validate([
             'report_id' => [
@@ -160,6 +161,8 @@ class WorkOrderController extends Controller
         }
 
         $workOrder = WorkOrder::create($validated);
+
+        $snsNotifier->workOrderCreated($workOrder);
 
         $this->syncLinkedReportStatuses($workOrder, 'in_progress');
 

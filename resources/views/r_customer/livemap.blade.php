@@ -5,7 +5,9 @@
         <style>
             body, main { overflow: hidden !important; margin: 0; padding: 0; }
             #livemap { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; }
-            .leaflet-container { background: #0b1628 !important; }
+            .leaflet-container { background: var(--brudms-tertiary) !important; }
+            html[data-theme='dark'] .leaflet-container,
+            html.dark .leaflet-container { background: #0b1628 !important; }
             .leaflet-control-attribution { display: none !important; }
             @keyframes marker-spin { to { transform: rotate(360deg); } }
             .marker-spinner-ring { animation: marker-spin 1.5s linear infinite; transform-origin: center; transform-box: fill-box; }
@@ -113,6 +115,11 @@
             .livemap-filter-dot.status-pending { color: #FF0000; }
             .livemap-filter-dot.status-progress { color: #FFAE00; }
             .livemap-filter-dot.status-resolved { color: #00FF26; }
+            #livemap-safe-route-host .gis-safe-route-panel.is-livemap {
+                bottom: max(200px, calc(24vh + env(safe-area-inset-bottom, 0px)));
+                left: 12px;
+                width: min(300px, calc(100vw - 24px));
+            }
             .user-location-marker {
                 position: relative;
                 width: 20px;
@@ -243,10 +250,15 @@
         </button>
     </div>
 
+    <div id="livemap-weather-host" style="position: fixed; inset: 0; pointer-events: none; z-index: 1002;"></div>
+    <div id="livemap-safe-route-host" style="position: fixed; inset: 0; pointer-events: none; z-index: 1000;"></div>
     <div id="livemap"></div>
 
     @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    @include('partials.gis-brunei-layers')
+    @include('partials.gis-weather-widget')
+    @include('partials.gis-safe-route')
     <script>
         var defaultCenter = [4.9031, 114.9398];
         var bruneiBounds = L.latLngBounds(
@@ -290,6 +302,15 @@
             updateWhenIdle: true,
             keepBuffer: 10
         }).addTo(map);
+
+        var satelliteGroup = L.layerGroup();
+        if (window.BruneiGisLayers) {
+            window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'livemap' });
+        }
+        if (window.BruneiGisWeather) {
+            window.BruneiGisWeather.init(map, { hostId: 'livemap-weather-host', livemap: true });
+        }
+
         fetch('{{ asset("geojson/brunei-districts.json") }}')
             .then(function(response) { return response.json(); })
             .then(function(geojson) {
@@ -316,6 +337,9 @@
 
         var panel = document.getElementById('report-detail-panel');
         map.on('click', function() {
+            if (window.GisSafeRoutePicking) {
+                return;
+            }
             if (panel) panel.classList.add('report-panel-hidden');
             if (spinnerRing) { map.removeLayer(spinnerRing); spinnerRing = null; }
         });
@@ -586,6 +610,14 @@
 
         applyStatusFilter();
 
+        if (window.GisSafeRoute) {
+            window.GisSafeRoute.init(map, {
+                containerId: 'livemap-safe-route-host',
+                analyzeUrl: @json(route('safe-route.analyze')),
+                csrf: @json(csrf_token()),
+                livemap: true
+            });
+        }
 
         setTimeout(function() { map.invalidateSize(); }, 200);
     </script>

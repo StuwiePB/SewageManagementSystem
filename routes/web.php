@@ -16,6 +16,7 @@ use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\MapWeatherController;
 use App\Http\Controllers\SafeRouteController;
+use App\Http\Controllers\Webhooks\SnsWebhookController;
 use App\Http\Controllers\WorkOrderController;
 use App\Livewire\Operations\ArchiveWorkOrderForm;
 use App\Livewire\Operations\PaperReportForm;
@@ -460,5 +461,15 @@ Route::post('/customer/profile/bind-email', [ProfileController::class, 'bindEmai
 
 Route::post('/customer/preference', [PreferenceController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.preference.update');
+
+Route::get('/webhooks/sns', function () {
+    return response(
+        'BruDMS SNS webhook is ready. Subscribe this URL in AWS SNS (HTTPS). SNS sends POST only.',
+        200,
+        ['Content-Type' => 'text/plain; charset=UTF-8'],
+    );
+})->name('webhooks.sns.health');
+
+Route::post('/webhooks/sns', SnsWebhookController::class)->name('webhooks.sns');
 
 require __DIR__.'/settings.php';
