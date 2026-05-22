@@ -401,12 +401,10 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
             ->latest()
             ->get();
 
-        $mapWeather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
-        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($mapWeather);
+        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload();
 
         return view('r_customer.livemap', [
             'bruneiGisLayers' => $bruneiGisLayers,
-            'mapWeather' => $mapWeather,
             'reports' => $reports->map(fn ($r) => [
                 'id' => $r->id,
                 'problem_type' => $r->problem_type,

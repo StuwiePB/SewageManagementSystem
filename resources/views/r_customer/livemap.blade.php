@@ -250,14 +250,12 @@
         </button>
     </div>
 
-    <div id="livemap-weather-host" style="position: fixed; inset: 0; pointer-events: none; z-index: 1002;"></div>
     <div id="livemap-safe-route-host" style="position: fixed; inset: 0; pointer-events: none; z-index: 1000;"></div>
     <div id="livemap"></div>
 
     @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     @include('partials.gis-brunei-layers')
-    @include('partials.gis-weather-widget')
     @include('partials.gis-safe-route')
     <script>
         var defaultCenter = [4.9031, 114.9398];
@@ -306,9 +304,6 @@
         var satelliteGroup = L.layerGroup();
         if (window.BruneiGisLayers) {
             window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'livemap' });
-        }
-        if (window.BruneiGisWeather) {
-            window.BruneiGisWeather.init(map, { hostId: 'livemap-weather-host', livemap: true });
         }
 
         fetch('{{ asset("geojson/brunei-districts.json") }}')

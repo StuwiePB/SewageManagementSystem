@@ -10,6 +10,8 @@ class RouteRiskService
     /** @var array<string, mixed>|null */
     private ?array $weatherPayload = null;
 
+    private bool $customerFacing = false;
+
     public function __construct(
         private BruneiDrainageRiskService $riskZones,
         private NearbyDrainageAlertService $nearbyReports,
@@ -20,8 +22,10 @@ class RouteRiskService
      * @param  list<array{0: float, 1: float}>  $coordinates  [lng, lat] pairs from GeoJSON
      * @return array<string, mixed>
      */
-    public function analyze(array $coordinates): array
+    public function analyze(array $coordinates, bool $customerFacing = false): array
     {
+        $this->customerFacing = $customerFacing;
+
         if (count($coordinates) < 2) {
             return [
                 'segments' => [],
@@ -70,7 +74,7 @@ class RouteRiskService
                 ['color' => 'yellow', 'label' => config('safe_route.segment_colors.yellow.label')],
                 ['color' => 'green', 'label' => config('safe_route.segment_colors.green.label')],
             ],
-            'weather' => $this->weatherPayload,
+            'weather' => $this->customerFacing ? null : $this->weatherPayload,
         ];
     }
 
@@ -98,7 +102,9 @@ class RouteRiskService
             ];
         }
 
-        $this->weatherPayload = $this->weather->buildMapWidgetPayload($centerLat, $centerLng);
+        $this->weatherPayload = $this->customerFacing
+            ? null
+            : $this->weather->buildMapWidgetPayload($centerLat, $centerLng);
     }
 
     /**
@@ -108,8 +114,8 @@ class RouteRiskService
     {
         $level = 'low';
         $reasons = [];
-        $heavyPct = (int) ($this->weatherPayload['heavy_rain_pct'] ?? 0);
-        $lightPct = (int) ($this->weatherPayload['light_rain_pct'] ?? 0);
+        $heavyPct = $this->customerFacing ? 0 : (int) ($this->weatherPayload['heavy_rain_pct'] ?? 0);
+        $lightPct = $this->customerFacing ? 0 : (int) ($this->weatherPayload['light_rain_pct'] ?? 0);
 
         foreach ($this->riskZones->areas() as $area) {
             $aLat = (float) ($area['lat'] ?? 0);
@@ -137,20 +143,22 @@ class RouteRiskService
             }
         }
 
-        $boostThreshold = (int) config('safe_route.heavy_rain_route_boost_pct', 35);
-        if ($heavyPct >= $boostThreshold) {
-            if ($this->levelRank('moderate') > $this->levelRank($level)) {
-                $level = 'moderate';
+        if (! $this->customerFacing) {
+            $boostThreshold = (int) config('safe_route.heavy_rain_route_boost_pct', 35);
+            if ($heavyPct >= $boostThreshold) {
+                if ($this->levelRank('moderate') > $this->levelRank($level)) {
+                    $level = 'moderate';
+                }
+                if ($this->levelRank($level) >= $this->levelRank('moderate')) {
+                    $reasons[] = "Live weather: heavy rain ~{$heavyPct}% (Brunei forecast)";
+                }
+            } elseif ($lightPct >= 50 && $this->levelRank($level) >= $this->levelRank('moderate')) {
+                $reasons[] = "Live weather: light rain ~{$lightPct}%";
             }
-            if ($this->levelRank($level) >= $this->levelRank('moderate')) {
-                $reasons[] = "Live weather: heavy rain ~{$heavyPct}% (Brunei forecast)";
-            }
-        } elseif ($lightPct >= 50 && $this->levelRank($level) >= $this->levelRank('moderate')) {
-            $reasons[] = "Live weather: light rain ~{$lightPct}%";
-        }
 
-        if ($heavyPct >= 55 && in_array($level, ['low', 'moderate'], true)) {
-            $level = 'high';
+            if ($heavyPct >= 55 && in_array($level, ['low', 'moderate'], true)) {
+                $level = 'high';
+            }
         }
 
         $reasons = array_values(array_unique($reasons));
@@ -175,9 +183,15 @@ class RouteRiskService
         $yellow = (int) ($counts['yellow'] ?? 0);
         $green = (int) ($counts['green'] ?? 0);
         $total = $yellow + $green;
-        $heavyPct = (int) ($this->weatherPayload['heavy_rain_pct'] ?? 0);
+        $heavyPct = $this->customerFacing ? 0 : (int) ($this->weatherPayload['heavy_rain_pct'] ?? 0);
 
-        if ($yellow > 0 && $heavyPct >= 35) {
+        if ($this->customerFacing) {
+            if ($yellow > 0) {
+                $message = "Notice: {$yellow} sections pass elevated drainage risk. Slow down in those areas.";
+            } else {
+                $message = 'Route shows lower drainage stress along this path.';
+            }
+        } elseif ($yellow > 0 && $heavyPct >= 35) {
             $message = "Caution: {$yellow} of {$total} sections overlap higher drainage/rain risk. Heavy rain ~{$heavyPct}% in Brunei now.";
         } elseif ($yellow > 0) {
             $message = "Notice: {$yellow} sections pass elevated drainage risk. Slow down in those areas.";
@@ -190,7 +204,7 @@ class RouteRiskService
             'yellow' => $yellow,
             'green' => $green,
             'total_segments' => $total,
-            'heavy_rain_pct' => $heavyPct,
+            'heavy_rain_pct' => $this->customerFacing ? null : $heavyPct,
         ];
     }
 

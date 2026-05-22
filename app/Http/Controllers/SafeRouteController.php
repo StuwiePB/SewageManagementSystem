@@ -16,6 +16,7 @@ class SafeRouteController extends Controller
             'start_lng' => ['required', 'numeric', 'between:113.75,115.85'],
             'end_lat' => ['required', 'numeric', 'between:3.7,5.6'],
             'end_lng' => ['required', 'numeric', 'between:113.75,115.85'],
+            'for_customer' => ['sometimes', 'boolean'],
         ]);
 
         $startLat = (float) $validated['start_lat'];
@@ -31,7 +32,8 @@ class SafeRouteController extends Controller
         }
 
         $coordinates = $this->simplifyCoordinates($osrm['coordinates']);
-        $analysis = $routeRisk->analyze($coordinates);
+        $customerFacing = $request->boolean('for_customer');
+        $analysis = $routeRisk->analyze($coordinates, $customerFacing);
 
         return response()->json([
             'start' => ['lat' => $startLat, 'lng' => $startLng],
@@ -42,7 +44,7 @@ class SafeRouteController extends Controller
             'counts' => $analysis['counts'],
             'summary' => $analysis['summary'],
             'legend' => $analysis['legend'],
-            'weather' => $analysis['weather'] ?? null,
+            'weather' => $customerFacing ? null : ($analysis['weather'] ?? null),
         ]);
     }
 

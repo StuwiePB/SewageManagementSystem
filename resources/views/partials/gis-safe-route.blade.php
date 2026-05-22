@@ -123,9 +123,12 @@ window.GisSafeRoute = {
 
         var panel = document.createElement('div');
         panel.className = 'gis-safe-route-panel' + (options.livemap ? ' is-livemap' : '');
+        var intro = options.livemap
+            ? 'Pick start and end on the map. Route highlights drainage risk (yellow = higher, green = lower).'
+            : 'Pick start and end on the map. Route uses live Brunei rain + drainage risk (yellow = higher, green = lower).';
         panel.innerHTML = ''
             + '<h4>Safe route</h4>'
-            + '<p>Pick start and end on the map. Route uses live Brunei rain + drainage risk (yellow = higher, green = lower).</p>'
+            + '<p>' + intro + '</p>'
             + '<div class="gis-safe-route-actions">'
             + '<button type="button" class="gis-safe-route-btn" data-action="pick-start">Set start</button>'
             + '<button type="button" class="gis-safe-route-btn" data-action="pick-end">Set end</button>'
@@ -284,7 +287,8 @@ window.GisSafeRoute = {
                     start_lat: state.start.lat,
                     start_lng: state.start.lng,
                     end_lat: state.end.lat,
-                    end_lng: state.end.lng
+                    end_lng: state.end.lng,
+                    for_customer: !!options.livemap
                 })
             })
                 .then(function (res) {
@@ -298,9 +302,7 @@ window.GisSafeRoute = {
                     }
                     renderSegments(result.body.segments || []);
                     renderSummary(result.body);
-                    var w = result.body.weather || {};
-                    var heavy = w.heavy_rain_pct != null ? w.heavy_rain_pct + '% heavy rain' : '';
-                    setStatus('Route displayed. Yellow = higher risk; green = lower.' + (heavy ? ' (' + heavy + ')' : ''));
+                    setStatus('Route displayed. Yellow = higher risk; green = lower.');
                     var bounds = [];
                     (result.body.segments || []).forEach(function (seg) {
                         if (seg.from) {
