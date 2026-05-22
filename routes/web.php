@@ -21,6 +21,7 @@ use App\Livewire\Operations\ArchiveWorkOrderForm;
 use App\Livewire\Operations\PaperReportForm;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\WorkOrder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -403,9 +404,25 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         $mapWeather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
         $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($mapWeather);
 
+        $mapWorkOrders = WorkOrder::query()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereIn('status', ['pending', 'assigned', 'in_progress', 'on_the_way', 'on_site'])
+            ->get()
+            ->map(fn ($w) => [
+                'lat' => (float) $w->latitude,
+                'lng' => (float) $w->longitude,
+                'number' => $w->work_order_number,
+                'address' => $w->location_address,
+                'status' => $w->status,
+            ])
+            ->values()
+            ->all();
+
         return view('r_customer.livemap', [
             'bruneiGisLayers' => $bruneiGisLayers,
             'mapWeather' => $mapWeather,
+            'mapWorkOrders' => $mapWorkOrders,
             'reports' => $reports->map(fn ($r) => [
                 'id' => $r->id,
                 'problem_type' => $r->problem_type,

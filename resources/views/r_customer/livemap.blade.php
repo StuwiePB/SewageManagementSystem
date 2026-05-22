@@ -305,8 +305,9 @@
 
         var satelliteGroup = L.layerGroup();
         if (window.BruneiGisLayers) {
-            window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'livemap' });
+            window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'livemap', showRiskLayers: false });
         }
+        var mapWorkOrders = @json($mapWorkOrders ?? []);
         if (window.BruneiGisWeather) {
             window.BruneiGisWeather.init(map, { hostId: 'livemap-weather-host', livemap: true });
         }
@@ -615,7 +616,11 @@
                 containerId: 'livemap-safe-route-host',
                 analyzeUrl: @json(route('safe-route.analyze')),
                 csrf: @json(csrf_token()),
-                livemap: true
+                livemap: true,
+                showWorkOrderZones: true,
+                workOrders: mapWorkOrders,
+                workOrderRadiusM: 100,
+                routeIntro: 'Pick start and end, then get a safe route. Yellow/green show route risk; red circles (100 m) mark active work orders while routing.'
             });
         }
 

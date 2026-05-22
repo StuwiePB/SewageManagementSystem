@@ -15,6 +15,7 @@ window.BruneiGisLayers = {
 
     init: function (map, options) {
         options = options || {};
+        var showRiskLayers = options.showRiskLayers !== false;
         var instanceKey = options.instanceKey || 'default';
         if (this._instances[instanceKey]) {
             return this._instances[instanceKey];
@@ -115,8 +116,10 @@ window.BruneiGisLayers = {
         }
 
         redraw(this.payload);
-        riskLayer.addTo(map);
-        highRiskLayer.addTo(map);
+        if (showRiskLayers) {
+            riskLayer.addTo(map);
+            highRiskLayer.addTo(map);
+        }
 
         document.addEventListener('brudms:weather-update', function (ev) {
             if (ev.detail && ev.detail.layers) {
@@ -125,6 +128,7 @@ window.BruneiGisLayers = {
         });
 
         var api = {
+            showRiskLayers: showRiskLayers,
             terrainLayer: terrainLayer,
             riskLayer: riskLayer,
             highRiskLayer: highRiskLayer,
