@@ -449,10 +449,6 @@
             return Math.floor(window.innerHeight * sheetMaxRatio);
         }
 
-        function sheetKeepH() {
-            return Math.floor(window.innerHeight * sheetKeepRatio);
-        }
-
         function applySheetHeight(h) {
             h = Math.min(sheetMaxH(), Math.max(0, h));
             sheet.style.setProperty('--ziqah-sheet-h', h + 'px');
