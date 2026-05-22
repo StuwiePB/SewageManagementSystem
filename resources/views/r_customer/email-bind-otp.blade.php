@@ -57,6 +57,15 @@
             z-index: 2;
             padding: 0;
         }
+        .code-beta-hint {
+            margin: 0.55rem 0 0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.55);
+            text-align: center;
+            letter-spacing: 0.04em;
+        }
         .code-input-row {
             display: grid;
             grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -234,16 +243,18 @@
                     "Everybody does, enter your email"
                 </p>
             </div>
+            @php($betaEmailBindPasscode = '071002')
             <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 31%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
-                <form id="code-form" class="signup-form" action="#" method="post" onsubmit="return false;">
+                <form id="code-form" class="signup-form" action="#" method="post" onsubmit="return false;" autocomplete="off">
                     <div class="code-input-row" id="code-input-row" aria-label="6 digit code">
-                        <input type="text" class="code-digit" id="code-digit-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code">
-                        <input type="text" class="code-digit" id="code-digit-2" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                        <input type="text" class="code-digit" id="code-digit-3" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                        <input type="text" class="code-digit" id="code-digit-4" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                        <input type="text" class="code-digit" id="code-digit-5" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                        <input type="text" class="code-digit" id="code-digit-6" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                        <input type="text" class="code-digit" id="code-digit-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
+                        <input type="text" class="code-digit" id="code-digit-2" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                        <input type="text" class="code-digit" id="code-digit-3" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                        <input type="text" class="code-digit" id="code-digit-4" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                        <input type="text" class="code-digit" id="code-digit-5" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                        <input type="text" class="code-digit" id="code-digit-6" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
                     </div>
+                    <p class="code-beta-hint">BETA: {{ $betaEmailBindPasscode }}</p>
                     <div class="email-invalid-msg" id="code-invalid-msg" data-msg="Invalid code." aria-live="polite"><span></span></div>
                 </form>
             </div>
@@ -297,7 +308,7 @@
         })();
 
         (function() {
-            var BIND_OTP_CODE = '071002';
+            var BIND_OTP_CODE = @json($betaEmailBindPasscode);
             var codeDigits = Array.prototype.slice.call(document.querySelectorAll('.code-digit'));
             var successRedirect = '{{ route('customer.profilesettings', ['name' => $user->profileSlug()]) }}';
             var bindEmailEndpoint = '{{ route('customer.profile.bind-email') }}';

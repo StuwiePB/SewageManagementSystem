@@ -14,6 +14,8 @@ final class CustomerReportOperationsSync
     {
         $existing = OperationsReport::query()->where('customer_report_id', $report->id)->first();
         if ($existing !== null) {
+            $existing->alignsReportNumberWithCustomerReference();
+
             return $existing;
         }
 
@@ -30,9 +32,8 @@ final class CustomerReportOperationsSync
 
         return OperationsReport::create([
             'customer_report_id' => $report->id,
-            'report_number' => OperationsReport::generateReportNumber(),
+            'report_number' => OperationsReport::reportNumberForCustomerReport($report),
             'issue_type' => $report->problem_type,
-            'severity' => $report->severity ?? 'nonurgent',
             'description' => $report->description,
             'reporter_name' => $reporterName,
             'reporter_contact' => $report->phone,

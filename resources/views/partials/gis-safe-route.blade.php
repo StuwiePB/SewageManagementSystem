@@ -124,7 +124,7 @@ window.GisSafeRoute = {
         var panel = document.createElement('div');
         panel.className = 'gis-safe-route-panel' + (options.livemap ? ' is-livemap' : '');
         var intro = options.livemap
-            ? 'Pick start and end on the map. Route highlights drainage risk (yellow = higher, green = lower).'
+            ? 'Pick start and end on the map, then get a suggested driving route.'
             : 'Pick start and end on the map. Route uses live Brunei rain + drainage risk (yellow = higher, green = lower).';
         panel.innerHTML = ''
             + '<h4>Safe route</h4>'
@@ -302,7 +302,9 @@ window.GisSafeRoute = {
                     }
                     renderSegments(result.body.segments || []);
                     renderSummary(result.body);
-                    setStatus('Route displayed. Yellow = higher risk; green = lower.');
+                    setStatus(options.livemap
+                        ? 'Route displayed on the map.'
+                        : 'Route displayed. Yellow = higher risk; green = lower.');
                     var bounds = [];
                     (result.body.segments || []).forEach(function (seg) {
                         if (seg.from) {
