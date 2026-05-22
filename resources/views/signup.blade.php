@@ -821,7 +821,7 @@
                     <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 31%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
                         <form id="login-form" class="signup-form" action="{{ route('login.store') }}" method="post" autocomplete="on">
                             @csrf
-                            <input type="text" class="glass-input" name="email" placeholder="Email or phone number" autocomplete="username" id="login-email" value="{{ old('email') }}" autocapitalize="off" spellcheck="false">
+                            <input type="text" class="glass-input" name="email" placeholder="Email or phone number" autocomplete="email" id="login-email" value="{{ old('email') }}" autocapitalize="off" spellcheck="false">
                             <div class="email-invalid-msg" id="login-email-invalid-msg" data-msg="Enter a valid email or phone number." aria-live="polite"><span></span></div>
                             @if ($errors->has('email'))
                                 @php

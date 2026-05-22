@@ -200,6 +200,7 @@
                 background: #ffffff;
                 transform: translate(-50%, -50%);
             }
+
         </style>
     @endpush
     {{-- Desktop: normal background --}}
@@ -239,18 +240,12 @@
 
     <div style="position: fixed; left: 6px; right: 6px; top: 11vh; bottom: -50vh; border-radius: 21px 21px 0 0; background: rgba(217, 217, 217, 0.07); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); z-index: 1;"></div>
 
-    {{-- Tab buttons (inside rectangle) --}}
+    {{-- Tab buttons — Home | History --}}
     <div style="position: fixed; top: 13.5vh; left: 22px; right: 22px; z-index: 10; display: flex; justify-content: center; gap: 10px;">
-        {{-- Home (active) --}}
-        <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #04BCFF; backdrop-filter: blur(1.5px);">
+        <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn-active" style="flex: 1; min-width: 0; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #04BCFF; backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_home-active.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
-        {{-- Chat (Ziqah AI) — sign in when guest --}}
-        <a href="{{ $guestMode ? route('login') : route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
-            <img src="{{ asset('images/Vectors/tab_chat.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
-        </a>
-        {{-- History — your reports only; sign in when guest --}}
-        <a href="{{ $guestMode ? route('login') : route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ $guestMode ? route('login') : route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; min-width: 0; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_myhistory.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
     </div>
