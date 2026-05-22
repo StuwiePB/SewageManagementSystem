@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FiltersDmsArchiveByDateTime;
+use App\Models\DmsArchiveWorkOrder;
 use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
@@ -12,6 +14,8 @@ use Illuminate\Validation\Rule;
 
 class WorkOrderController extends Controller
 {
+    use FiltersDmsArchiveByDateTime;
+
     public function index(Request $request)
     {
         $query = WorkOrder::with('report');
@@ -26,6 +30,40 @@ class WorkOrderController extends Controller
         $workOrders = $query->orderBy('created_at', 'desc')->paginate(20);
 
         return view('r_operators.work-orders.index', compact('workOrders'));
+    }
+
+    public function oldWorkOrdersIndex(Request $request)
+    {
+        $query = DmsArchiveWorkOrder::with('paperReport');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('work_order_number', 'like', "%{$search}%")
+                    ->orWhere('location_address', 'like', "%{$search}%")
+                    ->orWhere('assigned_crew', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        $this->applyWorkOrderDateFilter($query, $request);
+
+        $dateColumn = match ($request->input('date_on', 'created')) {
+            'started' => 'record_started_at',
+            'completed' => 'record_completed_at',
+            default => 'record_created_at',
+        };
+
+        $archiveWorkOrders = $query->orderByDesc($dateColumn)->paginate(20)->withQueryString();
+
+        return view('r_operators.old-work-orders.index', compact('archiveWorkOrders'));
     }
 
     public function create(Request $request)

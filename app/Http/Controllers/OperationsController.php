@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FiltersDmsArchiveByDateTime;
+use App\Models\DmsPaperReport;
 use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use Illuminate\Http\Request;
@@ -10,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 
 class OperationsController extends Controller
 {
+    use FiltersDmsArchiveByDateTime;
     public function dashboard()
     {
         $activeIncidents = OperationsReport::whereIn('status', ['pending', 'in_progress'])->count();
@@ -116,6 +119,33 @@ class OperationsController extends Controller
             ->paginate(20);
 
         return view('r_operators.reports', compact('reports'));
+    }
+
+    public function oldReports(Request $request)
+    {
+        $query = DmsPaperReport::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('archive_number', 'like', "%{$search}%")
+                    ->orWhere('dds_file_reference', 'like', "%{$search}%")
+                    ->orWhere('service_request_reference', 'like', "%{$search}%")
+                    ->orWhere('contact_name', 'like', "%{$search}%");
+            });
+        }
+
+        $dateColumn = match ($request->input('date_on', 'incident')) {
+            'investigated' => 'investigated_at',
+            'digitized' => 'created_at',
+            default => 'incident_at',
+        };
+
+        $this->applyDateTimeRangeFilter($query, $request, $dateColumn);
+
+        $paperReports = $query->orderByDesc($dateColumn)->paginate(20)->withQueryString();
+
+        return view('r_operators.old-reports.index', compact('paperReports'));
     }
 
     public function map()

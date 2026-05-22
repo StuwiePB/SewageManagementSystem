@@ -159,10 +159,25 @@
                 <i class="fas fa-chart-line"></i>
                 <span>Statistics</span>
             </a>
-            <a href="{{ route('admin.work-orders.index') }}" class="nav-item {{ request()->routeIs('admin.work-orders.*') && !request()->routeIs('admin.work-orders.archived') ? 'active' : '' }}">
-                <i class="fas fa-clipboard-list"></i>
-                <span>Work Orders</span>
+            <a href="{{ route('admin.old-reports.index') }}" class="nav-item {{ request()->routeIs('admin.old-reports.*') ? 'active' : '' }}">
+                <i class="fas fa-file-lines"></i>
+                <span>Old Reports</span>
             </a>
+            <div class="nav-dropdown {{ (request()->routeIs('admin.work-orders.*') && ! request()->routeIs('admin.work-orders.archived')) || request()->routeIs('admin.old-work-orders.*') ? 'open' : '' }}">
+                <button type="button" class="nav-item nav-dropdown-toggle {{ request()->routeIs('admin.work-orders.index') || request()->routeIs('admin.work-orders.show') || request()->routeIs('admin.work-orders.create') || request()->routeIs('admin.work-orders.edit') ? 'active' : '' }}" onclick="this.closest('.nav-dropdown').classList.toggle('open')">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Work Orders</span>
+                    <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <a href="{{ route('admin.work-orders.index') }}" class="{{ request()->routeIs('admin.work-orders.index') || request()->routeIs('admin.work-orders.show') || request()->routeIs('admin.work-orders.create') || request()->routeIs('admin.work-orders.edit') ? 'active' : '' }}">
+                        <i class="fas fa-list"></i> Live work orders
+                    </a>
+                    <a href="{{ route('admin.old-work-orders.index') }}" class="{{ request()->routeIs('admin.old-work-orders.*') ? 'active' : '' }}">
+                        <i class="fas fa-folder-open"></i> Old work orders
+                    </a>
+                </div>
+            </div>
             @if(auth()->user()?->isSuperAdmin())
                 <a href="{{ route('admin.work-orders.archived') }}" class="nav-item {{ request()->routeIs('admin.work-orders.archived') ? 'active' : '' }}">
                     <i class="fas fa-box-archive"></i>
@@ -189,7 +204,11 @@
                 </div>
             @endif
         </nav>
-        <div class="sidebar-footer">
+        <div class="sidebar-footer" style="padding-top: 0;">
+            <a href="{{ route('admin.audit-log.index') }}" class="nav-item {{ request()->routeIs('admin.audit-log.*') ? 'active' : '' }}" style="margin-bottom: 0.25rem;">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Audit logging</span>
+            </a>
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf
                 <button type="submit" class="nav-item">
