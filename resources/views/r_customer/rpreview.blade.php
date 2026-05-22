@@ -83,7 +83,7 @@
                 height: 32px;
                 animation: temp-spin 0.85s linear infinite;
                 transition: opacity 0.25s ease;
-                color: #04BCFF;
+                color: var(--brudms-primary);
             }
             .temp-half-spinner-arc {
                 fill: none;
@@ -96,7 +96,7 @@
                 position: absolute;
                 width: 30px;
                 height: 30px;
-                color: #04BCFF;
+                color: var(--brudms-primary);
                 opacity: 0;
                 transform: scale(0.6);
                 transition: opacity 0.25s ease, transform 0.25s ease;
@@ -220,14 +220,6 @@
         </style>
     @endpush
 
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
-
     @php
         $guestReportFlow = filter_var($guestReportFlow ?? false, FILTER_VALIDATE_BOOLEAN);
         $user = auth()->user();
@@ -298,7 +290,7 @@
         <input type="hidden" name="latitude" id="submit-latitude" value="">
         <input type="hidden" name="longitude" id="submit-longitude" value="">
         <input type="hidden" name="photo" id="submit-photo" value="">
-        <button type="submit" class="press-btn" id="submit-report-btn" disabled style="width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);">Submit report</button>
+        <button type="submit" class="press-btn" id="submit-report-btn" class="cust-btn-confirm cust-btn-primary" class="cust-btn-confirm cust-btn-primary" disabled style="width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: var(--brudms-primary); color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3);">Submit report</button>
     </form>
     <span id="preview-problem-text" style="position: fixed; left: 50%; top: calc(11vh + 106px); margin-left: 12px; max-width: calc(50vw - 12px - 24px); padding-right: 12px; z-index: 2; line-height: 1.2;"></span>
     <img src="{{ asset('images/Vectors/all_calempty.svg') }}" alt="" style="position: fixed; left: 50%; top: calc(11vh + 134px); margin-left: 12px; width: 15px; height: 15px; z-index: 2;" />

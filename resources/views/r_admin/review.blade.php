@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg-primary: #1A1D2B; --bg-secondary: #272B3C; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --accent-blue: #6A96FF; --accent-red: #FF5B5B; --accent-green: #56FF8B; --accent-purple: #A86AFF; }
+        :root { --bg-primary: var(--text-primary); --bg-secondary: var(--brudms-secondary); --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --accent-blue: var(--brudms-primary); --accent-red: #FF5B5B; --accent-green: #56FF8B; --accent-purple: #A86AFF; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
         h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif; font-weight: 600; color: var(--text-primary); }
         .navbar { background: var(--bg-secondary); border-bottom: 1px solid rgba(106, 150, 255, 0.15); }
@@ -32,8 +32,8 @@
         .evidence-badge { display: inline-block; padding: 0.25rem 0.5rem; margin: 0.25rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
         .evidence-badge.true { background: rgba(86, 255, 139, 0.2); color: var(--accent-green); }
         .evidence-badge.false { background: rgba(106, 150, 255, 0.15); color: var(--text-secondary); }
-        .btn-confirm { background: var(--accent-green); border-color: var(--accent-green); color: #1A1D2B; }
-        .btn-confirm:hover { background: var(--accent-green); opacity: 0.9; border-color: var(--accent-green); color: #1A1D2B; }
+        .btn-confirm { background: var(--accent-green); border-color: var(--accent-green); color: var(--text-primary); }
+        .btn-confirm:hover { background: var(--accent-green); opacity: 0.9; border-color: var(--accent-green); color: var(--text-primary); }
         .btn-reject { background: var(--accent-red); border-color: var(--accent-red); color: white; }
         .btn-reject:hover { background: var(--accent-red); opacity: 0.9; border-color: var(--accent-red); color: white; }
         .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-secondary); }
@@ -45,8 +45,8 @@
         .review-actions textarea { width: 100%; padding: 0.75rem; background: var(--bg-primary); border: 1px solid rgba(106, 150, 255, 0.3); border-radius: 8px; color: var(--text-primary); font-size: 0.9375rem; min-height: 90px; resize: vertical; }
         .review-actions textarea::placeholder { color: var(--text-secondary); opacity: 0.7; }
         .review-actions .btn-wrap { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
-        .review-actions .btn-send { background: var(--accent-green); color: #1A1D2B; border: none; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; }
-        .review-actions .btn-send:hover { opacity: 0.9; color: #1A1D2B; }
+        .review-actions .btn-send { background: var(--accent-green); color: var(--text-primary); border: none; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; }
+        .review-actions .btn-send:hover { opacity: 0.9; color: var(--text-primary); }
         .review-actions .btn-delete { background: rgba(255, 91, 91, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; }
         .review-actions .btn-delete:hover { background: rgba(255, 91, 91, 0.3); color: var(--accent-red); }
     </style>

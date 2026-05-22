@@ -69,14 +69,14 @@
                     padding:24px;
                     border:2px solid rgba(106, 150, 255, 0.2);
                     border-radius:16px;
-                    background:#1A1D2B;
+                    background:var(--text-primary);
                     color:var(--text-primary);
                     cursor:pointer;
                     transition: all 0.2s;
                     font-family:inherit;
                     min-height:220px;
                 ">
-                    <div style="width:52px; height:52px; border-radius:12px; background:linear-gradient(135deg, #6A96FF 0%, #4f46e5 100%); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:16px;">
+                    <div style="width:52px; height:52px; border-radius:12px; background:linear-gradient(135deg, var(--brudms-primary) 0%, #4f46e5 100%); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:16px;">
                         <i class="fas fa-file-lines"></i>
                     </div>
                     <span style="font-weight:700; font-size:18px; color:var(--text-primary); margin-bottom:8px;">Reports</span>
@@ -97,7 +97,7 @@
                     padding:24px;
                     border:2px solid rgba(106, 150, 255, 0.2);
                     border-radius:16px;
-                    background:#1A1D2B;
+                    background:var(--text-primary);
                     color:var(--text-primary);
                     cursor:pointer;
                     transition: all 0.2s;
@@ -125,7 +125,7 @@
                     padding:24px;
                     border:2px solid rgba(106, 150, 255, 0.2);
                     border-radius:16px;
-                    background:#1A1D2B;
+                    background:var(--text-primary);
                     color:var(--text-primary);
                     cursor:pointer;
                     transition: all 0.2s;

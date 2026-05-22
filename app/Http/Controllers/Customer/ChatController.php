@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Services\BruneiDrainageRiskService;
+use App\Services\BruneiWeatherService;
+use App\Services\NearbyDrainageAlertService;
 use App\Services\ZiqahDatabaseBridge;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +16,13 @@ use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
-    public function __invoke(Request $request, ZiqahDatabaseBridge $dbBridge): JsonResponse
+    public function __invoke(
+        Request $request,
+        ZiqahDatabaseBridge $dbBridge,
+        BruneiWeatherService $weatherService,
+        BruneiDrainageRiskService $riskService,
+        NearbyDrainageAlertService $nearbyAlerts,
+    ): JsonResponse
     {
         $request->validate([
             'message' => ['nullable', 'string', 'max:4000'],
@@ -82,22 +91,72 @@ class ChatController extends Controller
             $request->session()->put('ziqah_last_lng', $coords['lng']);
         }
 
+        if ($this->messageRequestsWeather($message)) {
+            $lat = $coords['lat'] ?? $request->session()->get('ziqah_last_lat');
+            $lng = $coords['lng'] ?? $request->session()->get('ziqah_last_lng');
+
+            return response()->json([
+                'reply' => $weatherService->buildChatReply(
+                    $lat !== null ? (float) $lat : null,
+                    $lng !== null ? (float) $lng : null,
+                ),
+                'show_report_button' => false,
+                'report_image_url' => null,
+                'quick_actions' => [],
+            ]);
+        }
+
+        if ($this->messageRequestsDrainageRiskOverview($message)) {
+            return response()->json([
+                'reply' => $riskService->buildHighRiskOverviewReply(),
+                'show_report_button' => false,
+                'report_image_url' => null,
+                'quick_actions' => [],
+            ]);
+        }
+
+        $riskArea = $riskService->findByMessage($message) ?? ($rememberedArea !== '' ? $riskService->findByMessage($rememberedArea) : null);
+        if ($riskArea !== null && $this->messageAsksAboutDrainageRisk($message)) {
+            return response()->json([
+                'reply' => $riskService->buildChatReplyForArea($riskArea),
+                'show_report_button' => $this->shouldSuggestReportForRisk((string) ($riskArea['risk_level'] ?? '')),
+                'report_image_url' => null,
+                'quick_actions' => [],
+            ]);
+        }
+
+        if ($coords !== null && $this->messageRequestsNearbyIssues($message)) {
+            $nearbyRisk = $riskService->areasNear($coords['lat'], $coords['lng'], 3);
+            if ($nearbyRisk !== []) {
+                $lines = ["based on your location, nearby drainage risk zones:\n"];
+                foreach ($nearbyRisk as $area) {
+                    $lines[] = '• '.$riskService->buildChatReplyForArea($area);
+                    $lines[] = '';
+                }
+                $request->session()->put('ziqah_last_topic', 'issues');
+
+                return response()->json([
+                    'reply' => trim(implode("\n", $lines)),
+                    'show_report_button' => true,
+                    'report_image_url' => null,
+                    'quick_actions' => [],
+                ]);
+            }
+        }
+
         if ($this->messageRequestsNearbyIssues($message)) {
             $lat = $coords['lat'] ?? $request->session()->get('ziqah_last_lat');
             $lng = $coords['lng'] ?? $request->session()->get('ziqah_last_lng');
 
             if ($lat !== null && $lng !== null) {
-                $nearbyReply = $this->buildNearbyIssuesReply((float) $lat, (float) $lng, $dbBridge, 8, 10.0);
-                if ($nearbyReply !== null) {
-                    $request->session()->put('ziqah_last_topic', 'issues');
+                $request->session()->put('ziqah_last_topic', 'issues');
 
-                    return response()->json([
-                        'reply' => $nearbyReply,
-                        'show_report_button' => false,
-                        'report_image_url' => null,
-                        'quick_actions' => [],
-                    ]);
-                }
+                return response()->json([
+                    'reply' => $nearbyAlerts->buildDetailedNearbyReply((float) $lat, (float) $lng),
+                    'show_report_button' => true,
+                    'report_image_url' => null,
+                    'quick_actions' => [],
+                ]);
             }
 
             return response()->json([
@@ -106,6 +165,23 @@ class ChatController extends Controller
                 'report_image_url' => null,
                 'quick_actions' => [],
             ]);
+        }
+
+        if ($coords !== null && trim((string) $message) === '' && empty($imageData)) {
+            $autoReply = $this->buildProactiveNearbyAlertIfNeeded(
+                $request,
+                $nearbyAlerts,
+                $coords['lat'],
+                $coords['lng'],
+            );
+            if ($autoReply !== null) {
+                return response()->json([
+                    'reply' => $autoReply,
+                    'show_report_button' => true,
+                    'report_image_url' => null,
+                    'quick_actions' => [],
+                ]);
+            }
         }
 
         $lastTopic = (string) $request->session()->get('ziqah_last_topic', '');
@@ -183,9 +259,16 @@ class ChatController extends Controller
         $dbContext = $schemaEnabled ? $dbBridge->buildSchemaContext() : '';
 
         $bruDmsData = $this->bruDmsDatabaseDomainContext();
+        $weatherLat = $coords['lat'] ?? $request->session()->get('ziqah_last_lat');
+        $weatherLng = $coords['lng'] ?? $request->session()->get('ziqah_last_lng');
+        $liveContext = "\n\n".$weatherService->buildSummaryForAi(
+            is_numeric($weatherLat) ? (float) $weatherLat : null,
+            is_numeric($weatherLng) ? (float) $weatherLng : null,
+        )."\n\n".$riskService->buildAiContextBlock();
+
         $systemPrompt = $unrestrictedMode
-            ? $this->generalAssistantSystemPrompt().$bruDmsData.$dbContext."\n\n".$this->buildAppContext()
-            : $this->baseSystemPrompt().$bruDmsData.$dbContext;
+            ? $this->generalAssistantSystemPrompt().$bruDmsData.$dbContext.$liveContext."\n\n".$this->buildAppContext()
+            : $this->baseSystemPrompt().$bruDmsData.$dbContext.$liveContext;
 
         if ($toolsEnabled) {
             $systemPrompt .= <<<'TXT'
@@ -238,12 +321,110 @@ TXT;
         $reportImageUrl = $this->resolveRequestedReportImageUrl((string) $message, (int) $request->user()->id);
         $quickActions = $this->buildQuickActions((string) $message, $reply);
 
+        $nearbyNote = null;
+        if ($coords !== null && trim((string) $message) !== '') {
+            $nearbyNote = $this->buildProactiveNearbyAlertIfNeeded(
+                $request,
+                $nearbyAlerts,
+                $coords['lat'],
+                $coords['lng'],
+            );
+        }
+        if ($nearbyNote !== null && ! str_contains($reply, 'within')) {
+            $reply = $nearbyNote."\n\n".$reply;
+        }
+
         return response()->json([
             'reply' => $reply,
             'show_report_button' => $showReportButton,
             'report_image_url' => $reportImageUrl,
             'quick_actions' => $quickActions,
         ]);
+    }
+
+    /**
+     * Proactive 5 km drainage alert for Ziqah (called on chat open with GPS).
+     */
+    public function nearbyAlert(Request $request, NearbyDrainageAlertService $nearbyAlerts): JsonResponse
+    {
+        $request->validate([
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'force' => ['sometimes', 'boolean'],
+        ]);
+
+        $coords = $this->validatedBruneiCoordinates($request);
+        if ($coords === null) {
+            return response()->json([
+                'show' => false,
+                'reply' => null,
+                'scan' => null,
+            ]);
+        }
+
+        $request->session()->put('ziqah_last_lat', $coords['lat']);
+        $request->session()->put('ziqah_last_lng', $coords['lng']);
+
+        $scan = $nearbyAlerts->scan($coords['lat'], $coords['lng']);
+        $signature = $nearbyAlerts->alertSignature($scan);
+        $force = $request->boolean('force');
+        $lastSignature = (string) $request->session()->get('ziqah_nearby_alert_sig', '');
+
+        if (! $force && $lastSignature === $signature) {
+            return response()->json([
+                'show' => false,
+                'reply' => null,
+                'scan' => $this->publicScanSummary($scan),
+            ]);
+        }
+
+        $request->session()->put('ziqah_nearby_alert_sig', $signature);
+        $request->session()->put('ziqah_nearby_alert_at', now()->toIso8601String());
+
+        return response()->json([
+            'show' => true,
+            'reply' => $nearbyAlerts->buildAlertMessage($scan),
+            'scan' => $this->publicScanSummary($scan),
+            'show_report_button' => (bool) ($scan['has_alert'] ?? false),
+        ]);
+    }
+
+    private function buildProactiveNearbyAlertIfNeeded(
+        Request $request,
+        NearbyDrainageAlertService $nearbyAlerts,
+        float $lat,
+        float $lng,
+    ): ?string {
+        $scan = $nearbyAlerts->scan($lat, $lng);
+        if (! ($scan['has_alert'] ?? false)) {
+            return null;
+        }
+
+        $signature = $nearbyAlerts->alertSignature($scan);
+        $lastSignature = (string) $request->session()->get('ziqah_nearby_alert_sig', '');
+        if ($lastSignature === $signature) {
+            return null;
+        }
+
+        $request->session()->put('ziqah_nearby_alert_sig', $signature);
+        $request->session()->put('ziqah_nearby_alert_at', now()->toIso8601String());
+
+        return $nearbyAlerts->buildAlertMessage($scan);
+    }
+
+    /**
+     * @param  array<string, mixed>  $scan
+     * @return array<string, mixed>
+     */
+    private function publicScanSummary(array $scan): array
+    {
+        return [
+            'has_alert' => (bool) ($scan['has_alert'] ?? false),
+            'total' => (int) ($scan['total'] ?? 0),
+            'radius_km' => (float) ($scan['radius_km'] ?? 5),
+            'by_type' => (array) ($scan['by_type'] ?? []),
+            'nearest_km' => $scan['nearest_km'] ?? null,
+        ];
     }
 
     private function baseSystemPrompt(): string
@@ -413,6 +594,21 @@ SECTION 12 - URGENCY RECOMMENDATION
 - Treat as urgent when there is active overflow/flooding, sewage backing up, strong contamination risk, or immediate public safety risk (road hazard, near homes/schools, etc.).
 - Treat as non-urgent when signs are minor/contained with no immediate safety risk, but still recommend submitting a report.
 - Keep this recommendation practical and concise.
+
+SECTION 13 - BRUNEI WEATHER & DRAINAGE RISK ZONES
+- You receive live Brunei weather summary and drainage risk zone reference data after this prompt.
+- When users ask about weather, rain, cuaca, or storms: use the live weather block; explain how rain affects drains and sewers in Brunei.
+- When users ask which areas have drainage/sewer/flood risk: use the BRUNEI DRAINAGE RISK ZONES list.
+- Red zones (very high/high): Kedayan D2, Damuan D6, Sungai Brunei/Kampong Ayer, Gadong, Subok, Kota Batu, Bunut, Panaga, etc.
+- Yellow zones: moderate recurring risk (Lambak Kanan, Berakas, Serusop, Mata-Mata, etc.).
+- Tie weather + risk together: heavy rain/hujan increases blockage, backflow, and odor in low-lying and river-adjacent areas.
+- GIS maps in admin/ops show these zones colour-coded; customers can ask you instead of reading the map.
+
+SECTION 14 - NEARBY DRAINAGE ALERTS (5 KM)
+- The app tracks active reports within 5 km of the customer for these six issue types only:
+  Damaged pipelines, Clogged Drains, Street Pooling, Manhole issues, Sewage overflow, Odor complaint.
+- When the system detects nearby issues, warn the user clearly: stay safe, give counts by type, mention nearest distance.
+- If no nearby issues: reassure them but still suggest reporting new problems during heavy rain.
 TXT;
     }
 
@@ -1034,7 +1230,22 @@ TXT;
             return null;
         }
 
+        $riskArea = app(BruneiDrainageRiskService::class)->findByMessage($message);
+        if ($riskArea !== null) {
+            return strtolower((string) ($riskArea['name'] ?? ''));
+        }
+
         $areas = $this->bruneiAreaCandidates();
+        foreach ((array) config('brunei_drainage_risk.areas', []) as $configured) {
+            foreach ((array) ($configured['aliases'] ?? []) as $alias) {
+                if (is_string($alias) && $alias !== '') {
+                    $areas[] = strtolower($alias);
+                }
+            }
+            if (! empty($configured['name'])) {
+                $areas[] = strtolower((string) $configured['name']);
+            }
+        }
 
         usort($areas, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
 
@@ -1576,5 +1787,49 @@ TXT;
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earth * $c;
+    }
+
+    private function messageRequestsWeather(string $message): bool
+    {
+        $m = strtolower(trim($message));
+        if ($m === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(weather|cuaca|forecast|rain|hujan|storm|ribut|thunder|kilat|monsoon|musim\s+hujan|panas|hot|wind|angin)\b/u',
+            $m
+        );
+    }
+
+    private function messageRequestsDrainageRiskOverview(string $message): bool
+    {
+        $m = strtolower(trim($message));
+        if ($m === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(high\s+risk|highest\s+risk|risk\s+area|risk\s+zone|drainage\s+risk|sewer\s+risk|flood\s+prone|kawasan\s+berisiko|kawasan\s+risiko|saliran\s+berisiko|which\s+area|senarai\s+kawasan)\b/u',
+            $m
+        ) && ! $this->isCountingQuestion($message);
+    }
+
+    private function messageAsksAboutDrainageRisk(string $message): bool
+    {
+        $m = strtolower(trim($message));
+        if ($m === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(risk|risiko|drainage|saliran|sewer|pembetungan|flood|banjir|overflow|backflow|clog|tersumbat|pipe\s+leak|bocor)\b/u',
+            $m
+        );
+    }
+
+    private function shouldSuggestReportForRisk(string $level): bool
+    {
+        return in_array($level, ['very_high', 'high', 'moderate'], true);
     }
 }

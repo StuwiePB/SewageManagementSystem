@@ -10,14 +10,6 @@
         </style>
     @endpush
 
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
-
     @php
         $guestReportFlow = filter_var($guestReportFlow ?? false, FILTER_VALIDATE_BOOLEAN);
         $user = auth()->user();
@@ -59,7 +51,7 @@
     </div>
 
     <div style="position: fixed; left: 6px; right: 6px; bottom: 0; height: 100px; border-radius: 0; background: linear-gradient(to top, rgba(217, 217, 217, 0.02), transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); mask-image: linear-gradient(to top, black 60%, transparent); -webkit-mask-image: linear-gradient(to top, black 60%, transparent); z-index: 6; pointer-events: none;"></div>
-    <button type="button" id="confirm-details-btn" class="press-btn" style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);">Confirm details</button>
+    <button type="button" id="confirm-details-btn" class="press-btn cust-btn-confirm cust-btn-primary" style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: var(--brudms-primary); color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3);">Confirm details</button>
 
     @push('scripts')
     <script>
@@ -89,7 +81,7 @@
                     o.style.color = 'rgba(255, 255, 255, 0.5)';
                     o.style.textDecoration = 'none';
                 });
-                this.style.color = '#04BCFF';
+                this.style.color = 'var(--brudms-primary)';
                 this.style.textDecoration = 'underline';
                 selectedSeverity = this.getAttribute('data-value');
                 try { sessionStorage.setItem('rproblem_severity', selectedSeverity); } catch (e) {}

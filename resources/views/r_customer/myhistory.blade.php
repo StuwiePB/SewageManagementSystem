@@ -11,20 +11,12 @@
             .tab-btn-active { transition: transform 0.1s ease; }
             .press-btn { transition: transform 0.1s ease; }
             .press-btn:active { transform: scale(0.93) !important; }
-            .tab-btn:hover { outline-color: #04BCFF !important; }
+            .tab-btn:hover { outline-color: var(--accent-blue) !important; }
             .tab-btn { color: #9CA3AF; }
             .tab-btn-active { color: #040929; }
-            .tab-btn:hover { color: #04BCFF; }
+            .tab-btn:hover { color: var(--accent-blue); }
         </style>
     @endpush
-
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
 
     @php
         $user = auth()->user();
@@ -54,15 +46,15 @@
     {{-- Tab buttons --}}
     <div style="position: fixed; top: 13.5vh; left: 22px; right: 22px; z-index: 10; display: flex; justify-content: center; gap: 10px;">
         {{-- Home --}}
-        <a href="{{ route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; class="tab-btn" style="backdrop-filter: blur(1.5px); text-decoration: none; outline: 1.7px solid var(--brudms-chip-border);">
             <img src="{{ asset('images/Vectors/tab_home.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
         {{-- Chat --}}
-        <a href="{{ route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; class="tab-btn" style="backdrop-filter: blur(1.5px); text-decoration: none; outline: 1.7px solid var(--brudms-chip-border);">
             <img src="{{ asset('images/Vectors/tab_chat.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
         {{-- History (active) --}}
-        <a href="{{ route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #04BCFF; backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; class="tab-btn tab-btn-active" style="backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_myhistory-active.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
     </div>

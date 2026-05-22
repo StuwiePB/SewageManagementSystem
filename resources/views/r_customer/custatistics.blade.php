@@ -90,24 +90,16 @@
         </style>
     @endpush
 
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
-
     <div style="position: fixed; top: 4vh; left: 20px; right: 20px; z-index: 10; display: flex; align-items: center; gap: 6px;">
         <a href="{{ route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; text-decoration: none; transition: transform 0.1s ease;" aria-label="{{ __('Back') }}">
             <img src="{{ asset('images/Vectors/all_backarrow.svg') }}" alt="" style="width: 21px; height: 21px;" />
         </a>
-        <span style="color: white; font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">Statistics</span>
+        <span class="cust-title" style="font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">Statistics</span>
     </div>
 
     <div style="position: fixed; top: 12vh; left: 22px; right: 22px; bottom: 20px; z-index: 5; overflow-y: auto; -webkit-overflow-scrolling: touch;">
         <span style="color: rgba(255, 255, 255, 0.72); font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">{{ __('Incidents last 7 days') }}</span>
-        <div style="position: relative; width: 100%; margin-top: 6px; height: 15vh; min-height: 132px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+        <div class="cust-stat-panel" style="position: relative; width: 100%; margin-top: 6px; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
             <div style="width: 100%; height: 100%; min-height: 120px; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative; padding: 12px 10px 10px; box-sizing: border-box;">
                 <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                     <defs>
@@ -142,7 +134,7 @@
                 <select
                     id="status-dow"
                     aria-label="{{ __('Filter status by day of week') }}"
-                    style="margin: 0; appearance: none; -webkit-appearance: none; padding: 5px 24px 5px 9px; border-radius: 8px; border: 0.7px solid rgba(255,255,255,0.21); background: rgba(66, 106, 120, 0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: rgba(255,255,255,0.9); font-family: Poppins, sans-serif; font-size: 10px; font-weight: 600; cursor: pointer; line-height: 1.2; min-height: 28px; max-width: 42vw;"
+                    style="margin: 0; appearance: none; -webkit-appearance: none; padding: 5px 24px 5px 9px; class="cust-stat-select" style="border-radius: 8px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-family: Poppins, sans-serif; font-size: 10px; font-weight: 600; cursor: pointer; line-height: 1.2; min-height: 28px; max-width: 42vw;"
                 >
                     <option value="all">{{ __('All') }}</option>
                     @foreach($weekdayOptions as $isoDow => $dowName)
@@ -152,7 +144,7 @@
                 <span style="pointer-events: none; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.45); font-size: 7px; line-height: 1;" aria-hidden="true">▼</span>
             </div>
         </div>
-        <div style="position: relative; width: 100%; margin-top: 6px; height: min(28vh, 240px); min-height: 200px; border-radius: 9px; background: rgba(66, 106, 120, 0.16); outline: 0.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+        <div class="cust-stat-panel" style="position: relative; width: 100%; margin-top: 6px; height: min(28vh, 240px); min-height: 200px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
             <div style="width: 100%; height: 100%; min-height: 188px; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative; padding: 12px 10px 10px; box-sizing: border-box;">
                 <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                     <defs>

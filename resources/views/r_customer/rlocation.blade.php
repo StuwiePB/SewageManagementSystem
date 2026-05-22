@@ -18,9 +18,9 @@
                 transform: translateX(-50%) !important;
             }
             #confirm-location-btn.confirm-location-btn-active {
-                background: #04BCFF !important;
+                background: var(--brudms-primary) !important;
                 color: #0a1628 !important;
-                box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3) !important;
+                box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3) !important;
                 cursor: pointer !important;
             }
             #locate-btn:active { transform: scale(0.92) !important; }
@@ -28,14 +28,6 @@
             .leaflet-control-zoom { display: none !important; }
         </style>
     @endpush
-
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
 
     @php
         $guestReportFlow = filter_var($guestReportFlow ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -60,7 +52,7 @@
         <div id="location-prompt" class="rflow-location-prompt" style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); border-radius: 16px; z-index: 10;">
             <span style="color: white; font-size: 14px; font-weight: 600; font-family: Poppins, sans-serif;">Get your current location</span>
             <span id="location-prompt-hint" style="color: rgba(255, 255, 255, 0.7); font-size: 12px; font-family: Poppins, sans-serif;">Tap below to allow location access</span>
-            <button type="button" id="get-location-btn" class="press-btn" style="width: 100%; max-width: 200px; padding: 12px 20px; border-radius: 12px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 600; font-size: 14px; border: none; cursor: pointer;">📍 Get my location</button>
+            <button type="button" id="get-location-btn" class="press-btn" style="width: 100%; max-width: 200px; padding: 12px 20px; border-radius: 12px; background: var(--brudms-primary); color: #0a1628; font-family: Poppins, sans-serif; font-weight: 600; font-size: 14px; border: none; cursor: pointer;">📍 Get my location</button>
             <span style="color: rgba(255, 255, 255, 0.5); font-size: 11px; font-family: Poppins, sans-serif;">Or tap map to set manually</span>
         </div>
         <button type="button" id="locate-btn" class="press-btn" style="position: absolute; bottom: 12px; right: 12px; z-index: 11; width: 40px; height: 40px; border-radius: 50%; background: white; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px;" title="Locate me">📍</button>
@@ -71,7 +63,7 @@
     </div>
 
     <div style="position: fixed; left: 6px; right: 6px; bottom: 0; height: 100px; border-radius: 0; background: linear-gradient(to top, rgba(217, 217, 217, 0.02), transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); mask-image: linear-gradient(to top, black 60%, transparent); -webkit-mask-image: linear-gradient(to top, black 60%, transparent); z-index: 6; pointer-events: none;"></div>
-    <button type="button" id="confirm-location-btn" class="press-btn" disabled style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: rgba(66, 106, 120, 0.35); color: rgba(255, 255, 255, 0.65); font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: not-allowed; display: flex; align-items: center; justify-content: center; box-shadow: none;">Confirm location</button>
+    <button type="button" id="confirm-location-btn" class="press-btn cust-btn-confirm cust-btn-primary" disabled style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: rgba(66, 106, 120, 0.35); color: rgba(255, 255, 255, 0.65); font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: not-allowed; display: flex; align-items: center; justify-content: center; box-shadow: none;">Confirm location</button>
 
     <div class="rflow-main-stack rflow-main-stack--inert">
         <div class="rflow-header-col">

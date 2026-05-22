@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import './brudms-theme.css';
+@import './customer-ui.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -23,16 +25,19 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
-    --color-accent-foreground: var(--color-white);
+    --color-brudms-primary: #ffffff;
+    --color-brudms-secondary: #e8e8e8;
+    --color-brudms-tertiary: #e8f6fd;
+    --color-accent: #4eb8e0;
+    --color-accent-content: #4eb8e0;
+    --color-accent-foreground: #1a3d52;
 }
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        --color-accent: var(--color-brudms-primary);
+        --color-accent-content: var(--color-brudms-primary);
+        --color-accent-foreground: #1a3d52;
     }
 }
 

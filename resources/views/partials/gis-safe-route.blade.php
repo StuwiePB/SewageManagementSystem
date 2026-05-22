@@ -100,6 +100,11 @@
     }
     .gis-safe-route-marker.start { background: #22c55e; }
     .gis-safe-route-marker.end { background: #3b82f6; }
+    .gis-safe-route-legend-swatch.work-order {
+        border-radius: 2px;
+        width: 0.65rem;
+        height: 0.65rem;
+    }
 </style>
 <script>
 window.GisSafeRoute = {
@@ -121,14 +126,18 @@ window.GisSafeRoute = {
             return null;
         }
 
+        var showWorkOrderZones = !!options.showWorkOrderZones;
+        var workOrders = options.workOrders || [];
+        var workOrderRadiusM = options.workOrderRadiusM || 100;
+        var routeIntro = options.routeIntro
+            || (options.livemap
+                ? 'Pick start and end on the map. Route highlights drainage risk (yellow = higher, green = lower).'
+                : 'Pick start and end on the map. Route uses live Brunei rain + drainage risk (yellow = higher, green = lower).');
         var panel = document.createElement('div');
         panel.className = 'gis-safe-route-panel' + (options.livemap ? ' is-livemap' : '');
-        var intro = options.livemap
-            ? 'Pick start and end on the map. Route highlights drainage risk (yellow = higher, green = lower).'
-            : 'Pick start and end on the map. Route uses live Brunei rain + drainage risk (yellow = higher, green = lower).';
         panel.innerHTML = ''
             + '<h4>Safe route</h4>'
-            + '<p>' + intro + '</p>'
+            + '<p>' + routeIntro + '</p>'
             + '<div class="gis-safe-route-actions">'
             + '<button type="button" class="gis-safe-route-btn" data-action="pick-start">Set start</button>'
             + '<button type="button" class="gis-safe-route-btn" data-action="pick-end">Set end</button>'
@@ -157,10 +166,57 @@ window.GisSafeRoute = {
             start: null,
             end: null,
             routeLayer: L.layerGroup().addTo(map),
+            workOrderLayer: showWorkOrderZones ? L.layerGroup() : null,
             startMarker: null,
             endMarker: null,
             busy: false
         };
+
+        function escapeHtml(v) {
+            return String(v || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function clearWorkOrderZones() {
+            if (!state.workOrderLayer) {
+                return;
+            }
+            state.workOrderLayer.clearLayers();
+            if (map.hasLayer(state.workOrderLayer)) {
+                map.removeLayer(state.workOrderLayer);
+            }
+        }
+
+        function renderWorkOrderZones() {
+            if (!state.workOrderLayer || !workOrders.length) {
+                return;
+            }
+            clearWorkOrderZones();
+            workOrders.forEach(function (wo) {
+                if (wo.lat == null || wo.lng == null) {
+                    return;
+                }
+                L.circle([wo.lat, wo.lng], {
+                    radius: workOrderRadiusM,
+                    color: '#b91c1c',
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.24,
+                    weight: 2.5,
+                    opacity: 0.95
+                })
+                    .bindPopup(
+                        '<div><strong style="color:#ef4444;">Work order area (100 m)</strong><br>'
+                        + escapeHtml(wo.number || 'Work order')
+                        + (wo.address ? '<br>' + escapeHtml(wo.address) : '')
+                        + (wo.status ? '<br><span style="opacity:0.85;">Status: ' + escapeHtml(wo.status) + '</span>' : '')
+                        + '</div>'
+                    )
+                    .addTo(state.workOrderLayer);
+            });
+            state.workOrderLayer.addTo(map);
+        }
 
         function setStatus(text) {
             var el = panel.querySelector('[data-role="status"]');
@@ -212,6 +268,7 @@ window.GisSafeRoute = {
             state.pickMode = null;
             window.GisSafeRoutePicking = false;
             clearRoute();
+            clearWorkOrderZones();
             if (state.startMarker) {
                 map.removeLayer(state.startMarker);
                 state.startMarker = null;
@@ -256,13 +313,18 @@ window.GisSafeRoute = {
             summaryEl.hidden = false;
 
             var legend = data.legend || [];
-            legendEl.innerHTML = legend.map(function (item) {
+            var legendHtml = legend.map(function (item) {
                 var colors = { yellow: '#eab308', green: '#22c55e' };
                 var c = colors[item.color] || '#22c55e';
                 return '<span class="gis-safe-route-legend-item"><span class="gis-safe-route-legend-swatch" style="background:' + c + ';"></span>'
                     + (item.label || item.color) + '</span>';
             }).join('');
-            legendEl.hidden = legend.length === 0;
+            if (showWorkOrderZones && workOrders.length && map.hasLayer(state.workOrderLayer)) {
+                legendHtml += '<span class="gis-safe-route-legend-item"><span class="gis-safe-route-legend-swatch work-order" style="background:#ef4444;"></span>'
+                    + 'Work order zone (100 m)</span>';
+            }
+            legendEl.innerHTML = legendHtml;
+            legendEl.hidden = legendEl.innerHTML.length === 0;
         }
 
         function analyzeRoute() {
@@ -301,8 +363,16 @@ window.GisSafeRoute = {
                         throw new Error((result.body && result.body.message) || 'Route analysis failed.');
                     }
                     renderSegments(result.body.segments || []);
+                    if (showWorkOrderZones) {
+                        renderWorkOrderZones();
+                    }
                     renderSummary(result.body);
-                    setStatus('Route displayed. Yellow = higher risk; green = lower.');
+                    var w = result.body.weather || {};
+                    var heavy = w.heavy_rain_pct != null ? w.heavy_rain_pct + '% heavy rain' : '';
+                    var woNote = (showWorkOrderZones && workOrders.length)
+                        ? ' Red circles = active work orders (100 m).'
+                        : '';
+                    setStatus('Route displayed. Yellow = higher risk; green = lower.' + woNote + (heavy ? ' (' + heavy + ')' : ''));
                     var bounds = [];
                     (result.body.segments || []).forEach(function (seg) {
                         if (seg.from) {

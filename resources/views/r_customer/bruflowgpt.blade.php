@@ -12,18 +12,18 @@
                 transition: transform 0.1s ease;
             }
             .tab-btn:hover {
-                outline-color: #04BCFF !important;
+                outline-color: var(--accent-blue) !important;
             }
             .tab-btn:hover svg {
-                stroke: #04BCFF;
+                stroke: var(--brudms-primary);
                 transition: stroke 0.3s ease;
             }
             #chat-input::placeholder {
-                color: rgba(255, 255, 255, 0.3);
+                color: var(--text-secondary);
                 font-family: Poppins, sans-serif;
             }
             .input-pill:focus-within {
-                outline: 1.7px solid #04BCFF;
+                outline: 1.7px solid var(--accent-blue);
             }
             #chat-send:active {
                 transform: scale(0.9);
@@ -77,8 +77,8 @@
             }
             .msg-user {
                 align-self: flex-end;
-                background: #04BCFF;
-                color: #040929;
+                background: var(--accent-blue);
+                color: var(--brudms-primary);
                 border-radius: 16px 16px 4px 16px;
                 padding: 10px 14px;
                 max-width: 75%;
@@ -88,10 +88,16 @@
                 word-wrap: break-word;
                 animation: msgPop 0.2s ease-out;
             }
+            html[data-theme='dark'] .msg-user,
+            html.dark .msg-user {
+                background: var(--brudms-primary);
+                color: #040929;
+            }
             .msg-bot {
                 align-self: flex-start;
-                background: rgba(255, 255, 255, 0.08);
-                color: white;
+                background: var(--brudms-chip-bg);
+                outline: 1px solid var(--brudms-chip-border);
+                color: var(--text-primary);
                 border-radius: 16px 16px 16px 4px;
                 padding: 10px 14px;
                 max-width: 75%;
@@ -106,7 +112,7 @@
                 padding: 10px 14px;
                 font-size: 11px;
                 font-family: Poppins, sans-serif;
-                color: rgba(255, 255, 255, 0.4);
+                color: var(--text-secondary);
                 font-weight: 300;
                 animation: blink 1s ease-in-out infinite;
             }
@@ -117,13 +123,13 @@
                 height: 34px;
                 padding: 0 14px;
                 border-radius: 10px;
-                background: #04BCFF;
-                color: #0a1628;
+                background: var(--accent-blue);
+                color: var(--brudms-primary);
                 text-decoration: none;
                 font-size: 11px;
                 font-family: Poppins, sans-serif;
                 font-weight: 700;
-                box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);
+                box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3);
                 transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
                 width: 100%;
                 margin-top: 10px;
@@ -133,8 +139,8 @@
                 transform: scale(0.96);
             }
             .msg-action-btn:hover {
-                background: #2acbff;
-                box-shadow: 0 3px 10px rgba(4, 188, 255, 0.38);
+                background: var(--accent-blue);
+                box-shadow: 0 3px 10px rgba(var(--brudms-primary-rgb), 0.38);
             }
             .msg-quick-actions {
                 display: flex;
@@ -146,9 +152,9 @@
             .quick-chip {
                 height: 30px;
                 border-radius: 9999px;
-                border: 1px solid rgba(255, 255, 255, 0.25);
-                background: rgba(66, 106, 120, 0.2);
-                color: #e5e7eb;
+                border: 1px solid var(--brudms-chip-border);
+                background: var(--brudms-chip-bg);
+                color: var(--text-primary);
                 padding: 0 11px;
                 font-size: 10px;
                 font-family: Poppins, sans-serif;
@@ -164,9 +170,9 @@
                 transform: scale(0.96);
             }
             .quick-chip.is-active {
-                border-color: #04BCFF;
+                border-color: var(--brudms-primary);
                 color: #ffffff;
-                background: rgba(4, 188, 255, 0.24);
+                background: rgba(var(--brudms-primary-rgb), 0.24);
             }
             .quick-chip.quick-chip-text {
                 height: auto;
@@ -188,7 +194,7 @@
                 background: transparent;
             }
             .quick-chip:hover {
-                border-color: #04BCFF;
+                border-color: var(--brudms-primary);
                 color: #ffffff;
             }
             @keyframes msgPop {
@@ -201,14 +207,6 @@
             }
         </style>
     @endpush
-
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
 
     {{-- Header: logo + BruDMS + profile photo --}}
     @php
@@ -242,11 +240,11 @@
             <img src="{{ asset('images/Vectors/tab_home.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
         {{-- Ziqah (AI) (active) --}}
-        <a href="{{ route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #04BCFF; backdrop-filter: blur(1.5px);">
+        <a href="{{ route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px);">
             <img src="{{ asset('images/Vectors/tab_chat-active.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
         {{-- History --}}
-        <a href="{{ route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; class="tab-btn" style="backdrop-filter: blur(1.5px); text-decoration: none; outline: 1.7px solid var(--brudms-chip-border);">
             <img src="{{ asset('images/Vectors/tab_myhistory.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
     </div>
@@ -267,13 +265,13 @@
             <button id="chat-preview-remove" class="preview-remove" type="button">×</button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10vh;">
-            <div class="input-pill" style="flex: 1; height: 44px; border-radius: 9999px; border: none; outline: 1.7px solid rgba(255, 255, 255, 0.21); background: rgba(66, 106, 120, 0.16); backdrop-filter: blur(1.5px); display: flex; align-items: center; overflow: hidden;">
+            <div class="input-pill cust-chat-input-wrap" style="flex: 1; height: 44px; border-radius: 9999px; border: none; outline: 1.7px solid var(--brudms-chip-border); backdrop-filter: blur(1.5px); display: flex; align-items: center; overflow: hidden;">
                 <button id="chat-attach" style="width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.1s ease;">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
-                <input id="chat-input" type="text" placeholder="Type a message..." style="flex: 1; height: 44px; border: none; outline: none; background: transparent; padding: 0 16px 0 0; color: white; font-size: 13px; font-family: Poppins, sans-serif;" />
+                <input id="chat-input" class="cust-chat-input" type="text" placeholder="Type a message..." style="flex: 1; height: 44px; border: none; outline: none; background: transparent; padding: 0 16px 0 0; font-size: 13px; font-family: Poppins, sans-serif;" />
             </div>
-            <button id="chat-send" style="width: 44px; height: 44px; border-radius: 9999px; border: none; background: #04BCFF; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease; flex-shrink: 0;">
+            <button id="chat-send" class="cust-chat-send" style="width: 44px; height: 44px; border-radius: 9999px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease; flex-shrink: 0;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#040929" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
             </button>
         </div>
@@ -303,6 +301,7 @@
 
         var pendingImage = null;
         var chatUrl = '{{ route("customer.chat") }}';
+        var nearbyAlertUrl = '{{ route("customer.chat.nearby-alert") }}';
         var reportUrl = '{{ route("customer.rproblem", ["name" => $user->profileSlug()]) }}';
         var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
@@ -321,12 +320,36 @@
 
         var cachedUserLat = null;
         var cachedUserLng = null;
+        function fetchNearbyDrainageAlert(force) {
+            if (cachedUserLat == null || cachedUserLng == null) return;
+            fetch(nearbyAlertUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({
+                    latitude: cachedUserLat,
+                    longitude: cachedUserLng,
+                    force: !!force,
+                }),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data || !data.show || !data.reply) return;
+                appendBotReply(data.reply, null, [], data.show_report_button === true);
+            })
+            .catch(function() {});
+        }
+
         (function prefetchLocation() {
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(
                 function(pos) {
                     cachedUserLat = pos.coords.latitude;
                     cachedUserLng = pos.coords.longitude;
+                    fetchNearbyDrainageAlert(false);
                 },
                 function() {},
                 { enableHighAccuracy: false, maximumAge: 180000, timeout: 12000 }
@@ -340,8 +363,7 @@
                 callback(payload);
                 return;
             }
-            var wantsNearby = /near|nearest|dekat|closest|around\s*(me|here)|nearby|sekitar|berhampiran|terdekat|radius/i.test(text || '');
-            if (wantsNearby && navigator.geolocation) {
+            if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     function(pos) {
                         cachedUserLat = pos.coords.latitude;
@@ -351,7 +373,7 @@
                         callback(payload);
                     },
                     function() { callback(payload); },
-                    { enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 }
+                    { enableHighAccuracy: false, maximumAge: 180000, timeout: 10000 }
                 );
                 return;
             }
