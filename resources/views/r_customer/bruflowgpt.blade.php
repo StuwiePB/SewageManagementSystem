@@ -235,18 +235,12 @@
     {{-- Rectangle --}}
     <div style="position: fixed; left: 6px; right: 6px; top: 11vh; bottom: -50vh; border-radius: 21px 21px 0 0; background: rgba(217, 217, 217, 0.07); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); z-index: 1;"></div>
 
-    {{-- Tab buttons --}}
+    {{-- Tab buttons — Home | History --}}
     <div style="position: fixed; top: 13.5vh; left: 22px; right: 22px; z-index: 10; display: flex; justify-content: center; gap: 10px;">
-        {{-- Home --}}
-        <a href="{{ route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px);">
+        <a href="{{ route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; min-width: 0; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_home.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
-        {{-- Ziqah (AI) (active) --}}
-        <a href="{{ route('customer.brudmsgpt', ['name' => $user->profileSlug()]) }}" class="tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #04BCFF; backdrop-filter: blur(1.5px);">
-            <img src="{{ asset('images/Vectors/tab_chat-active.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
-        </a>
-        {{-- History --}}
-        <a href="{{ route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn delayed-nav" style="flex: 1; min-width: 0; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(66, 106, 120, 0.16); outline: 1.7px solid rgba(255, 255, 255, 0.21); backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_myhistory.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
     </div>
