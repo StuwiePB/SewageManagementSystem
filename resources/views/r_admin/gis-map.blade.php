@@ -192,7 +192,7 @@
         L.latLng(3.70, 113.75),
         L.latLng(5.60, 115.85)
     );
-    var districtBorderStyle = {
+  var districtBorderStyle = {
         color: 'rgba(106, 150, 255, 0.9)',
         weight: 2.5,
         opacity: 0.95,

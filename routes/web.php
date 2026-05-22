@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDmsArchiveController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\StatisticsController as AdminStatisticsController;
 use App\Http\Controllers\Admin\SupportController;
 use App\Http\Controllers\AdminController;
@@ -15,6 +17,8 @@ use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\MapWeatherController;
 use App\Http\Controllers\SafeRouteController;
 use App\Http\Controllers\WorkOrderController;
+use App\Livewire\Operations\ArchiveWorkOrderForm;
+use App\Livewire\Operations\PaperReportForm;
 use App\Models\Report;
 use App\Models\User;
 use Carbon\Carbon;
@@ -124,6 +128,10 @@ Route::get('/api/gis/weather', [MapWeatherController::class, 'show'])
 Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified', 'role:operator'])->group(function () {
     Route::get('/dashboard', [OperationsController::class, 'dashboard'])->name('dashboard');
     Route::get('/reports', [OperationsController::class, 'reports'])->name('reports');
+    Route::get('/old-reports', [OperationsController::class, 'oldReports'])->name('old-reports.index');
+    Route::livewire('/old-reports/upload', PaperReportForm::class)->name('old-reports.create');
+    Route::get('/old-work-orders', [WorkOrderController::class, 'oldWorkOrdersIndex'])->name('old-work-orders.index');
+    Route::livewire('/old-work-orders/add', ArchiveWorkOrderForm::class)->name('old-work-orders.create');
     Route::get('/map', [OperationsController::class, 'map'])->name('map');
 
     Route::get('/statistics', [OperationsStatisticsController::class, 'index'])->name('statistics.index');
@@ -216,6 +224,13 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
     Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
     Route::get('/incidents/{incident}/image', [IncidentController::class, 'showImage'])->name('incidents.image');
+
+    Route::get('/admin/old-reports', [AdminDmsArchiveController::class, 'oldReportsIndex'])->name('admin.old-reports.index');
+    Route::get('/admin/old-reports/{paperReport}', [AdminDmsArchiveController::class, 'oldReportShow'])->whereNumber('paperReport')->name('admin.old-reports.show');
+    Route::get('/admin/old-reports/{paperReport}/scan', [AdminDmsArchiveController::class, 'oldReportScan'])->whereNumber('paperReport')->name('admin.old-reports.scan');
+    Route::get('/admin/old-work-orders', [AdminDmsArchiveController::class, 'oldWorkOrdersIndex'])->name('admin.old-work-orders.index');
+    Route::get('/admin/old-work-orders/{archiveWorkOrder}', [AdminDmsArchiveController::class, 'oldWorkOrderShow'])->whereNumber('archiveWorkOrder')->name('admin.old-work-orders.show');
+    Route::get('/admin/audit-log', [AuditLogController::class, 'index'])->name('admin.audit-log.index');
 
     Route::get('/admin/support', [SupportController::class, 'chat'])->name('admin.support.chat');
     Route::get('/admin/support/conversations', [SupportController::class, 'index'])->name('admin.support.conversations');
