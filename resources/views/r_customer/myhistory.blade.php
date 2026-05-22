@@ -210,23 +210,6 @@
                 background: #ffffff;
                 transform: translate(-50%, -50%);
             }
-            #ziqah-fab { position: fixed; z-index: 10050; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.16); background: rgba(48,58,68,0.62); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); box-shadow: 0 2px 10px rgba(0,0,0,0.22); cursor: grab; touch-action: none; user-select: none; display: flex; align-items: center; justify-content: center; overflow: hidden; right: 12px; bottom: 96px; transition: left 0.28s cubic-bezier(0.22,1,0.36,1), top 0.2s ease; }
-            #ziqah-fab.is-dragging { cursor: grabbing; transition: none; background: rgba(48,58,68,0.72); }
-            #ziqah-fab img { width: 32px; height: 32px; object-fit: contain; pointer-events: none; opacity: 0.05; }
-            #ziqah-overlay { position: fixed; inset: 0; z-index: 10040; visibility: hidden; pointer-events: none; }
-            #ziqah-overlay.is-open { visibility: visible; pointer-events: auto; }
-            #ziqah-overlay-bg { position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background 0.35s ease; }
-            #ziqah-overlay.is-open #ziqah-overlay-bg { background: rgba(0,0,0,0.5); }
-            #ziqah-sheet { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; padding: 16px; padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); box-sizing: border-box; background: rgba(8,12,20,0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transform: scale(0); opacity: 0; transition: transform 0.42s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; overflow: hidden; }
-            #ziqah-sheet.is-expanded { transform: scale(1); opacity: 1; }
-            #ziqah-close { align-self: flex-end; width: 36px; height: 36px; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.2); background: rgba(66,106,120,0.35); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; flex-shrink: 0; }
-            #ziqah-chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin: 10px 0 14px; scrollbar-width: none; }
-            #ziqah-chat-messages .msg-user { align-self: flex-end; background: #04BCFF; color: #040929; border-radius: 16px 16px 4px 16px; padding: 10px 14px; max-width: 75%; font-size: 11px; font-family: Poppins, sans-serif; }
-            #ziqah-chat-messages .msg-bot { align-self: flex-start; background: rgba(255,255,255,0.08); color: #fff; border-radius: 16px 16px 16px 4px; padding: 10px 14px; max-width: 75%; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 300; }
-            #ziqah-chat-messages .msg-typing { align-self: flex-start; color: rgba(255,255,255,0.4); font-size: 11px; font-family: Poppins, sans-serif; }
-            #ziqah-chat-messages .msg-img { max-width: 200px; border-radius: 12px; display: block; }
-            #ziqah-chat-messages .msg-action-btn { display: inline-flex; width: 100%; margin-top: 10px; height: 34px; border-radius: 10px; background: #04BCFF; color: #0a1628; text-decoration: none; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 700; align-items: center; justify-content: center; box-sizing: border-box; }
-            #ziqah-chat-input::placeholder { color: rgba(255,255,255,0.3); font-family: Poppins, sans-serif; }
         </style>
     @endpush
 
@@ -482,40 +465,5 @@
             });
         });
     </script>
-    <script>
-        window.BrudmsZiqahConfig = {
-            userId: {{ (int) $user->id }},
-            chatUrl: @json(route('customer.chat')),
-            reportUrl: @json(route('customer.rproblem', ['name' => $user->profileSlug()])),
-            csrf: @json(csrf_token()),
-        };
-    </script>
-    <script src="{{ asset('js/ziqah-widget.js') }}" defer></script>
     @endpush
-
-    <div id="ziqah-overlay" aria-hidden="true">
-        <div id="ziqah-overlay-bg"></div>
-        <div id="ziqah-sheet">
-            <button type="button" id="ziqah-close" aria-label="Close Ziqah">&times;</button>
-            <span style="color:#fff;font-size:14px;font-weight:600;font-family:Poppins,sans-serif;text-align:center;">Ziqah (AI) 1.0 <span style="font-weight:300;font-size:11px;opacity:0.6;">(Beta)</span></span>
-            <div id="ziqah-chat-messages"><div class="msg-bot">Ziqah handles the flow. What's clogged, leaking, or overflowing? Show me.</div></div>
-            <input id="ziqah-chat-file" type="file" accept="image/*" style="display:none;" />
-            <div id="ziqah-chat-preview" style="display:none;align-items:flex-start;gap:8px;margin-bottom:8px;">
-                <img id="ziqah-chat-preview-img" alt="" style="max-width:56px;max-height:56px;border-radius:8px;object-fit:cover;" />
-                <button type="button" id="ziqah-chat-preview-remove" style="width:20px;height:20px;border-radius:9999px;border:none;background:rgba(255,255,255,0.2);color:#fff;cursor:pointer;">&times;</button>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-                <div style="flex:1;height:44px;border-radius:9999px;outline:1.7px solid rgba(255,255,255,0.21);background:rgba(66,106,120,0.16);display:flex;align-items:center;overflow:hidden;">
-                    <button type="button" id="ziqah-chat-attach" style="width:44px;height:44px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    </button>
-                    <input id="ziqah-chat-input" type="text" placeholder="Type a message..." style="flex:1;height:44px;border:none;outline:none;background:transparent;padding:0 16px 0 0;color:#fff;font-size:13px;font-family:Poppins,sans-serif;" />
-                </div>
-                <button type="button" id="ziqah-chat-send" style="width:44px;height:44px;border-radius:9999px;border:none;background:#04BCFF;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#040929" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-    <button type="button" id="ziqah-fab" aria-label="Open Ziqah AI" title="Ziqah (AI)"><img src="{{ asset('images/logo.png') }}" alt="" /></button>
 </x-layouts::customer>

@@ -1,156 +1,88 @@
 (function () {
     var cfg = window.BrudmsZiqahConfig || {};
-    var fab = document.getElementById('ziqah-fab');
-    var overlay = document.getElementById('ziqah-overlay');
-    var sheet = document.getElementById('ziqah-sheet');
-    if (!fab || !overlay || !sheet) return;
-
     var size = 44;
     var edgePad = 12;
-    var storageKey = 'brudms_ziqah_fab_pos';
-    var dragging = false;
-    var offsetX = 0;
-    var offsetY = 0;
-    var startX = 0;
-    var startY = 0;
-    var dragPx = 0;
-    var chatReady = false;
-    var closeTimer = null;
+    var fabStorageKey = 'brudms_ziqah_fab_pos';
+    var sheetMaxRatio = 0.96;
+    var sheetCloseBelowRatio = 0.7;
+    var defaultFabYRatio = 0.72;
+    var tapThreshold = 10;
 
-    function ptr(e) {
-        if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        return { x: e.clientX, y: e.clientY };
+    function clamp01(n) {
+        return Math.min(1, Math.max(0, n));
     }
 
-    function clampY(y) {
-        var maxY = window.innerHeight - size - edgePad;
-        return Math.min(maxY, Math.max(edgePad, y));
+    function fabMaxY() {
+        return window.innerHeight - size - edgePad;
+    }
+
+    function clampFabY(y) {
+        return Math.min(fabMaxY(), Math.max(edgePad, y));
     }
 
     function xSide(side) {
         return side === 'left' ? edgePad : window.innerWidth - size - edgePad;
     }
 
-    function snap(x, y) {
-        var side = (x + size / 2) < window.innerWidth / 2 ? 'left' : 'right';
-        return { side: side, x: xSide(side), y: clampY(y) };
+    function yFromRatio(ratio) {
+        var span = window.innerHeight - size - edgePad * 2;
+        return edgePad + clamp01(ratio) * Math.max(0, span);
     }
 
-    function setFabPos(x, y) {
+    function ratioFromY(y) {
+        var span = window.innerHeight - size - edgePad * 2;
+        if (span <= 0) return 0;
+        return clamp01((y - edgePad) / span);
+    }
+
+    function snapFab(x, y) {
+        var side = (x + size / 2) < window.innerWidth / 2 ? 'left' : 'right';
+        return { side: side, x: xSide(side), y: clampFabY(y) };
+    }
+
+    function setFabPos(fab, x, y) {
         fab.style.left = x + 'px';
-        fab.style.top = y + 'px';
+        fab.style.top = clampFabY(y) + 'px';
         fab.style.right = 'auto';
         fab.style.bottom = 'auto';
     }
 
-    function saveFab(side, y) {
-        try { localStorage.setItem(storageKey, JSON.stringify({ side: side, y: y })); } catch (e) {}
+    function applyFabEdge(fab, side, yRatio) {
+        var s = side === 'left' ? 'left' : 'right';
+        setFabPos(fab, xSide(s), yFromRatio(typeof yRatio === 'number' ? yRatio : defaultFabYRatio));
+        return s;
     }
 
-    function restoreFab() {
+    function saveFab(side, y) {
         try {
-            var d = JSON.parse(localStorage.getItem(storageKey) || 'null');
-            if (d && (d.side === 'left' || d.side === 'right')) {
-                setFabPos(xSide(d.side), typeof d.y === 'number' ? d.y : edgePad);
-            }
+            localStorage.setItem(fabStorageKey, JSON.stringify({
+                side: side,
+                yRatio: ratioFromY(y),
+            }));
         } catch (e) {}
     }
 
-    function fabOrigin() {
-        var r = fab.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    }
-
-    function openZiqah() {
-        var o = fabOrigin();
-        sheet.style.transformOrigin = o.x + 'px ' + o.y + 'px';
-        sheet.classList.remove('is-expanded');
-        overlay.classList.add('is-open');
-        overlay.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-        fab.style.visibility = 'hidden';
-        requestAnimationFrame(function () {
-            requestAnimationFrame(function () {
-                sheet.classList.add('is-expanded');
-            });
-        });
-        if (!chatReady) {
-            initZiqahChat();
-            chatReady = true;
+    function readFabPrefs() {
+        try {
+            var d = JSON.parse(localStorage.getItem(fabStorageKey) || 'null');
+            if (!d) return { side: 'right', yRatio: defaultFabYRatio };
+            var side = d.side === 'left' ? 'left' : 'right';
+            var yRatio = defaultFabYRatio;
+            if (typeof d.yRatio === 'number') {
+                yRatio = clamp01(d.yRatio);
+            } else if (typeof d.y === 'number') {
+                yRatio = ratioFromY(clampFabY(d.y));
+            }
+            return { side: side, yRatio: yRatio };
+        } catch (e) {
+            return { side: 'right', yRatio: defaultFabYRatio };
         }
     }
 
-    function closeZiqah() {
-        var o = fabOrigin();
-        sheet.style.transformOrigin = o.x + 'px ' + o.y + 'px';
-        sheet.classList.remove('is-expanded');
-        overlay.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-        fab.style.visibility = '';
-        clearTimeout(closeTimer);
-        closeTimer = setTimeout(function () {
-            overlay.classList.remove('is-open');
-        }, 420);
+    function restoreFab(fab) {
+        var p = readFabPrefs();
+        applyFabEdge(fab, p.side, p.yRatio);
     }
-
-    fab.addEventListener('mousedown', function (e) {
-        if (e.button !== 0) return;
-        dragging = true;
-        dragPx = 0;
-        fab.classList.add('is-dragging');
-        var r = fab.getBoundingClientRect();
-        var p = ptr(e);
-        startX = p.x;
-        startY = p.y;
-        offsetX = p.x - r.left;
-        offsetY = p.y - r.top;
-        e.preventDefault();
-    });
-    fab.addEventListener('touchstart', function (e) {
-        dragging = true;
-        dragPx = 0;
-        fab.classList.add('is-dragging');
-        var r = fab.getBoundingClientRect();
-        var p = ptr(e);
-        startX = p.x;
-        startY = p.y;
-        offsetX = p.x - r.left;
-        offsetY = p.y - r.top;
-        e.preventDefault();
-    }, { passive: false });
-
-    function move(e) {
-        if (!dragging) return;
-        var p = ptr(e);
-        var maxX = window.innerWidth - size - edgePad;
-        setFabPos(Math.min(maxX, Math.max(edgePad, p.x - offsetX)), p.y - offsetY);
-        dragPx = Math.max(dragPx, Math.hypot(p.x - startX, p.y - startY));
-        e.preventDefault();
-    }
-
-    function up() {
-        if (!dragging) return;
-        dragging = false;
-        fab.classList.remove('is-dragging');
-        var r = fab.getBoundingClientRect();
-        var s = snap(r.left, r.top);
-        setFabPos(s.x, s.y);
-        saveFab(s.side, s.y);
-        if (dragPx < 10) openZiqah();
-    }
-
-    window.addEventListener('mousemove', move);
-    window.addEventListener('touchmove', move, { passive: false });
-    window.addEventListener('mouseup', up);
-    window.addEventListener('touchend', up);
-    window.addEventListener('touchcancel', up);
-
-    var closeBtn = document.getElementById('ziqah-close');
-    var backdrop = document.getElementById('ziqah-overlay-bg');
-    if (closeBtn) closeBtn.addEventListener('click', closeZiqah);
-    if (backdrop) backdrop.addEventListener('click', closeZiqah);
-
-    restoreFab();
 
     function initZiqahChat() {
         var chatBox = document.getElementById('ziqah-chat-messages');
@@ -161,7 +93,8 @@
         var previewEl = document.getElementById('ziqah-chat-preview');
         var previewImg = document.getElementById('ziqah-chat-preview-img');
         var previewRemove = document.getElementById('ziqah-chat-preview-remove');
-        if (!chatBox || !chatInput || !chatSend) return;
+        if (!chatBox || !chatInput || !chatSend || chatBox.dataset.chatReady === '1') return;
+        chatBox.dataset.chatReady = '1';
 
         var chatStateKey = 'brudms_ai_chat_' + (cfg.userId || '');
         var mockReplies = [
@@ -378,8 +311,8 @@
                 var file = chatFile.files[0];
                 if (!file) return;
                 var reader = new FileReader();
-                reader.onload = function (e) {
-                    pendingImage = e.target.result;
+                reader.onload = function (ev) {
+                    pendingImage = ev.target.result;
                     if (previewImg) previewImg.src = pendingImage;
                     if (previewEl) previewEl.style.display = 'flex';
                     saveChatState();
@@ -413,4 +346,213 @@
             }
         } catch (e) {}
     }
+
+    function mountZiqah() {
+        var fab = document.getElementById('ziqah-fab');
+        var overlay = document.getElementById('ziqah-overlay');
+        var sheet = document.getElementById('ziqah-sheet');
+        if (!fab) return;
+
+        var openSheet = function () {};
+        var sheetOpen = false;
+        var draggingFab = false;
+        var pointerId = null;
+        var offsetX = 0;
+        var offsetY = 0;
+        var startX = 0;
+        var startY = 0;
+        var dragPx = 0;
+        var resizeTimer = null;
+
+        if (fab.dataset.ziqahMounted !== '1') {
+            fab.dataset.ziqahMounted = '1';
+
+            function onPointerDown(e) {
+                if (sheetOpen) return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                draggingFab = true;
+                dragPx = 0;
+                pointerId = e.pointerId;
+                fab.classList.add('is-dragging');
+                var r = fab.getBoundingClientRect();
+                var p = { x: e.clientX, y: e.clientY };
+                startX = p.x;
+                startY = p.y;
+                offsetX = p.x - r.left;
+                offsetY = p.y - r.top;
+                try { fab.setPointerCapture(e.pointerId); } catch (err) {}
+                e.preventDefault();
+            }
+
+            function onPointerMove(e) {
+                if (!draggingFab || e.pointerId !== pointerId) return;
+                dragPx = Math.max(dragPx, Math.hypot(e.clientX - startX, e.clientY - startY));
+                var maxX = window.innerWidth - size - edgePad;
+                var x = Math.min(maxX, Math.max(edgePad, e.clientX - offsetX));
+                setFabPos(fab, x, e.clientY - offsetY);
+                e.preventDefault();
+            }
+
+            function onPointerEnd(e) {
+                if (!draggingFab || e.pointerId !== pointerId) return;
+                draggingFab = false;
+                pointerId = null;
+                fab.classList.remove('is-dragging');
+                var r = fab.getBoundingClientRect();
+                var s = snapFab(r.left, r.top);
+                setFabPos(fab, s.x, s.y);
+                saveFab(s.side, s.y);
+                try { fab.releasePointerCapture(e.pointerId); } catch (err) {}
+                if (dragPx < tapThreshold) openSheet();
+                e.preventDefault();
+            }
+
+            fab.addEventListener('pointerdown', onPointerDown);
+            fab.addEventListener('pointermove', onPointerMove);
+            fab.addEventListener('pointerup', onPointerEnd);
+            fab.addEventListener('pointercancel', onPointerEnd);
+
+            restoreFab(fab);
+
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function () {
+                    if (draggingFab) return;
+                    restoreFab(fab);
+                }, 120);
+            });
+            window.addEventListener('orientationchange', function () {
+                setTimeout(function () {
+                    if (draggingFab) return;
+                    restoreFab(fab);
+                }, 280);
+            });
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden && !draggingFab) restoreFab(fab);
+            });
+        }
+
+        if (!overlay || !sheet || sheet.dataset.ziqahSheetMounted === '1') return;
+        sheet.dataset.ziqahSheetMounted = '1';
+
+        var backdrop = document.getElementById('ziqah-overlay-bg');
+        var closeBtn = document.getElementById('ziqah-sheet-close');
+        var sheetTop = document.getElementById('ziqah-sheet-top');
+        var chatInput = document.getElementById('ziqah-chat-input');
+        var resizingSheet = false;
+        var sheetDragPointerId = null;
+        var resizeStartY = 0;
+        var resizeStartH = 0;
+        var resizeDragPx = 0;
+
+        function sheetMaxH() {
+            return Math.floor(window.innerHeight * sheetMaxRatio);
+        }
+
+        function sheetCloseBelowH() {
+            return Math.floor(window.innerHeight * sheetCloseBelowRatio);
+        }
+
+        function applySheetHeight(h) {
+            var maxH = sheetMaxH();
+            var minDragH = Math.floor(window.innerHeight * 0.12);
+            h = Math.min(maxH, Math.max(minDragH, h));
+            sheet.style.setProperty('--ziqah-sheet-h', h + 'px');
+            sheet.style.height = h + 'px';
+            return h;
+        }
+
+        openSheet = function () {
+            if (sheetOpen) return;
+            sheetOpen = true;
+            applySheetHeight(sheetMaxH());
+            overlay.classList.add('is-open');
+            overlay.setAttribute('aria-hidden', 'false');
+            sheet.classList.add('is-open');
+            sheet.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            initZiqahChat();
+            requestAnimationFrame(function () {
+                if (chatInput) chatInput.focus();
+            });
+        };
+
+        var closeSheet = function () {
+            if (!sheetOpen) return;
+            sheetOpen = false;
+            sheet.classList.remove('is-open', 'is-resizing');
+            sheet.setAttribute('aria-hidden', 'true');
+            if (sheetTop) sheetTop.classList.remove('is-dragging');
+            overlay.classList.remove('is-open');
+            overlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        };
+
+        function onSheetTopDown(e) {
+            if (!sheetOpen || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            if (e.target.closest('#ziqah-sheet-close')) return;
+            resizingSheet = true;
+            resizeDragPx = 0;
+            sheetDragPointerId = e.pointerId;
+            resizeStartY = e.clientY;
+            resizeStartH = sheet.offsetHeight;
+            sheet.classList.add('is-resizing');
+            if (sheetTop) sheetTop.classList.add('is-dragging');
+            try { (sheetTop || sheet).setPointerCapture(e.pointerId); } catch (err) {}
+            e.preventDefault();
+        }
+
+        function onSheetTopMove(e) {
+            if (!resizingSheet || e.pointerId !== sheetDragPointerId) return;
+            resizeDragPx = Math.max(resizeDragPx, Math.abs(e.clientY - resizeStartY));
+            applySheetHeight(resizeStartH + (resizeStartY - e.clientY));
+            e.preventDefault();
+        }
+
+        function onSheetTopEnd(e) {
+            if (!resizingSheet || e.pointerId !== sheetDragPointerId) return;
+            resizingSheet = false;
+            sheetDragPointerId = null;
+            sheet.classList.remove('is-resizing');
+            if (sheetTop) sheetTop.classList.remove('is-dragging');
+            var h = sheet.offsetHeight;
+            var closeBelow = sheetCloseBelowH();
+            if (h <= closeBelow) {
+                closeSheet();
+            } else {
+                applySheetHeight(sheetMaxH());
+            }
+            try { (sheetTop || sheet).releasePointerCapture(e.pointerId); } catch (err) {}
+            e.preventDefault();
+        }
+
+        if (backdrop) backdrop.addEventListener('click', closeSheet);
+        if (closeBtn) closeBtn.addEventListener('click', closeSheet);
+        if (sheetTop) {
+            sheetTop.addEventListener('pointerdown', onSheetTopDown);
+            sheetTop.addEventListener('pointermove', onSheetTopMove);
+            sheetTop.addEventListener('pointerup', onSheetTopEnd);
+            sheetTop.addEventListener('pointercancel', onSheetTopEnd);
+        }
+
+        window.addEventListener('resize', function () {
+            if (!sheetOpen || resizingSheet) return;
+            applySheetHeight(sheetMaxH());
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && sheetOpen) closeSheet();
+        });
+    }
+
+    function boot() {
+        mountZiqah();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+    document.addEventListener('livewire:navigated', boot);
 })();
