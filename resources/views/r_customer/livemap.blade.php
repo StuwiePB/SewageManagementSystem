@@ -5,7 +5,9 @@
         <style>
             body, main { overflow: hidden !important; margin: 0; padding: 0; }
             #livemap { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; }
-            .leaflet-container { background: #0b1628 !important; }
+            .leaflet-container { background: var(--brudms-tertiary) !important; }
+            html[data-theme='dark'] .leaflet-container,
+            html.dark .leaflet-container { background: #0b1628 !important; }
             .leaflet-control-attribution { display: none !important; }
             @keyframes marker-spin { to { transform: rotate(360deg); } }
             .marker-spinner-ring { animation: marker-spin 1.5s linear infinite; transform-origin: center; transform-box: fill-box; }
@@ -20,48 +22,21 @@
                 z-index: 10;
                 width: 32px;
                 height: 32px;
-                display: flex;
-                flex-direction: column;
                 border-radius: 8px;
                 background: rgba(97, 107, 110, 0.15);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
-                border: 0.7px solid rgba(255, 255, 255, 0.18);
+                border: 0.7px solid rgba(255, 255, 255, 0.21);
                 box-sizing: border-box;
                 overflow: hidden;
-                transition:
-                    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-                    height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-                    border-radius 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+                transition: width 0.2s ease, height 0.2s ease, border-radius 0.2s ease;
             }
             .livemap-filter-box.is-open {
-                width: 148px;
+                width: 168px;
                 height: 124px;
                 border-radius: 10px;
+                background: rgba(97, 107, 110, 0.15);
                 z-index: 11;
-            }
-            .livemap-filter-trigger {
-                flex-shrink: 0;
-            }
-            .livemap-filter-box.is-open .livemap-filter-trigger,
-            .livemap-filter-box.is-closing .livemap-filter-trigger {
-                display: flex;
-                justify-content: flex-end;
-                height: 30px;
-                padding: 0 4px 0;
-                overflow: hidden;
-                visibility: hidden;
-                pointer-events: none;
-            }
-            .livemap-filter-box.is-open .livemap-filter-icon,
-            .livemap-filter-box.is-closing .livemap-filter-icon {
-                opacity: 0;
-                visibility: hidden;
-            }
-            .livemap-filter-box.is-closing .livemap-filter-options {
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity 0.12s ease;
             }
             .livemap-filter-btn {
                 width: 32px;
@@ -74,26 +49,26 @@
                 justify-content: center;
                 cursor: pointer;
                 padding: 0;
-                flex-shrink: 0;
             }
+            .livemap-filter-box.is-open .livemap-filter-btn {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+            }
+            .livemap-filter-close {
+                display: none;
+                font-family: Poppins, sans-serif;
+                font-size: 14px;
+                font-weight: 700;
+                line-height: 1;
+            }
+            .livemap-filter-box.is-open .livemap-filter-icon { display: none; }
+            .livemap-filter-box.is-open .livemap-filter-close { display: inline; }
             .livemap-filter-options {
-                flex: 1;
-                min-height: 0;
-                overflow: hidden;
-                opacity: 0;
-                visibility: hidden;
-                padding: 0 6px;
-                transition: opacity 0.16s ease;
+                display: none;
+                padding: 30px 8px 8px;
             }
-            .livemap-filter-box.is-open .livemap-filter-options {
-                flex: 0 0 auto;
-                opacity: 1;
-                visibility: visible;
-                margin-top: -2px;
-                padding: 0 6px 8px;
-                pointer-events: none;
-                transition: opacity 0.2s ease 0.14s;
-            }
+            .livemap-filter-box.is-open .livemap-filter-options { display: block; }
             .livemap-filter-option {
                 width: 100%;
                 border: none;
@@ -103,44 +78,28 @@
                 align-items: center;
                 gap: 8px;
                 padding: 6px 4px;
-                white-space: nowrap;
                 border-radius: 7px;
                 font-family: Poppins, sans-serif;
                 font-size: 10px;
-                font-weight: 500;
+                font-weight: 600;
                 text-align: left;
                 cursor: pointer;
-                position: relative;
-                flex-shrink: 0;
-                pointer-events: auto;
             }
-            .livemap-filter-option + .livemap-filter-option {
-                margin-top: 4px;
-            }
-            .livemap-filter-option + .livemap-filter-option::before {
-                content: '';
-                position: absolute;
-                top: -3px;
-                left: 6px;
-                right: 6px;
-                border-top: 0.7px solid rgba(255, 255, 255, 0.18);
-            }
-            .livemap-filter-option:hover,
-            .livemap-filter-option:focus,
-            .livemap-filter-option:active {
-                background: transparent;
-                outline: none;
+            .livemap-filter-option:hover {
+                background: rgba(66, 106, 120, 0.22);
             }
             .livemap-filter-dot {
                 width: 12px;
-                min-width: 12px;
                 height: 12px;
                 border-radius: 9999px;
-                border: 0.7px solid rgba(255, 255, 255, 0.85);
+                border: 1.4px solid rgba(255, 255, 255, 0.72);
                 background: transparent;
                 flex-shrink: 0;
                 box-sizing: border-box;
                 position: relative;
+            }
+            .livemap-filter-option.is-selected .livemap-filter-dot {
+                border-color: rgba(255, 255, 255, 0.72);
             }
             .livemap-filter-option.is-selected .livemap-filter-dot::after {
                 content: '';
@@ -150,8 +109,16 @@
                 width: 5px;
                 height: 5px;
                 border-radius: 9999px;
-                background: #ffffff;
+                background: currentColor;
                 transform: translate(-50%, -50%);
+            }
+            .livemap-filter-dot.status-pending { color: #FF0000; }
+            .livemap-filter-dot.status-progress { color: #FFAE00; }
+            .livemap-filter-dot.status-resolved { color: #00FF26; }
+            #livemap-safe-route-host .gis-safe-route-panel.is-livemap {
+                bottom: max(200px, calc(24vh + env(safe-area-inset-bottom, 0px)));
+                left: 12px;
+                width: min(300px, calc(100vw - 24px));
             }
             .user-location-marker {
                 position: relative;
@@ -225,22 +192,21 @@
     </div>
 
     <div id="livemap-filter-box" class="livemap-filter-box">
-        <div class="livemap-filter-trigger">
-            <button id="livemap-filter-btn" type="button" class="livemap-filter-btn" aria-label="Filter statuses" aria-expanded="false">
-                <img class="livemap-filter-icon" src="{{ asset('images/Vectors/livemap_filter.svg') }}" alt="" style="width: 14px; height: 14px; object-fit: contain;" />
-            </button>
-        </div>
+        <button id="livemap-filter-btn" type="button" class="livemap-filter-btn" aria-label="Filter statuses" aria-expanded="false">
+            <img class="livemap-filter-icon" src="{{ asset('images/Vectors/livemap_filter.svg') }}" alt="" style="width: 14px; height: 14px; object-fit: contain;" />
+            <span class="livemap-filter-close">X</span>
+        </button>
         <div id="livemap-filter-options" class="livemap-filter-options" role="menu" aria-label="Map status filters">
             <button type="button" class="livemap-filter-option is-selected" data-filter-status="pending" role="menuitemcheckbox" aria-checked="true">
-                <span class="livemap-filter-dot"></span>
+                <span class="livemap-filter-dot status-pending"></span>
                 <span>Active incidents</span>
             </button>
             <button type="button" class="livemap-filter-option is-selected" data-filter-status="in_progress" role="menuitemcheckbox" aria-checked="true">
-                <span class="livemap-filter-dot"></span>
-                <span>In Progress</span>
+                <span class="livemap-filter-dot status-progress"></span>
+                <span>Case in progress</span>
             </button>
             <button type="button" class="livemap-filter-option is-selected" data-filter-status="resolved" role="menuitemcheckbox" aria-checked="true">
-                <span class="livemap-filter-dot"></span>
+                <span class="livemap-filter-dot status-resolved"></span>
                 <span>Resolved</span>
             </button>
         </div>
@@ -284,10 +250,13 @@
         </button>
     </div>
 
+    <div id="livemap-safe-route-host" style="position: fixed; inset: 0; pointer-events: none; z-index: 1000;"></div>
     <div id="livemap"></div>
 
     @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    @include('partials.gis-brunei-layers')
+    @include('partials.gis-safe-route')
     <script>
         var defaultCenter = [4.9031, 114.9398];
         var bruneiBounds = L.latLngBounds(
@@ -331,6 +300,12 @@
             updateWhenIdle: true,
             keepBuffer: 10
         }).addTo(map);
+
+        var satelliteGroup = L.layerGroup();
+        if (window.BruneiGisLayers) {
+            window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'livemap' });
+        }
+
         fetch('{{ asset("geojson/brunei-districts.json") }}')
             .then(function(response) { return response.json(); })
             .then(function(geojson) {
@@ -357,6 +332,9 @@
 
         var panel = document.getElementById('report-detail-panel');
         map.on('click', function() {
+            if (window.GisSafeRoutePicking) {
+                return;
+            }
             if (panel) panel.classList.add('report-panel-hidden');
             if (spinnerRing) { map.removeLayer(spinnerRing); spinnerRing = null; }
         });
@@ -600,33 +578,10 @@
         if (filterBtn && filterBox && filterOptions) {
             var optionNodes = Array.prototype.slice.call(filterOptions.querySelectorAll('.livemap-filter-option'));
 
-            function closeFilterBox() {
-                if (!filterBox.classList.contains('is-open')) {
-                    return;
-                }
-                filterBox.classList.add('is-closing');
-                filterBox.classList.remove('is-open');
-                filterBtn.setAttribute('aria-expanded', 'false');
-            }
-
-            filterBox.addEventListener('transitionend', function(ev) {
-                if (ev.target !== filterBox) {
-                    return;
-                }
-                if (ev.propertyName !== 'width' && ev.propertyName !== 'height') {
-                    return;
-                }
-                filterBox.classList.remove('is-closing');
-            });
-
             filterBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                if (filterBox.classList.contains('is-open')) {
-                    closeFilterBox();
-                } else if (!filterBox.classList.contains('is-closing')) {
-                    filterBox.classList.add('is-open');
-                    filterBtn.setAttribute('aria-expanded', 'true');
-                }
+                var isOpen = filterBox.classList.toggle('is-open');
+                filterBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             });
 
             optionNodes.forEach(function(optionEl) {
@@ -643,12 +598,21 @@
             });
 
             document.addEventListener('click', function() {
-                closeFilterBox();
+                filterBox.classList.remove('is-open');
+                filterBtn.setAttribute('aria-expanded', 'false');
             });
         }
 
         applyStatusFilter();
 
+        if (window.GisSafeRoute) {
+            window.GisSafeRoute.init(map, {
+                containerId: 'livemap-safe-route-host',
+                analyzeUrl: @json(route('safe-route.analyze')),
+                csrf: @json(csrf_token()),
+                livemap: true
+            });
+        }
 
         setTimeout(function() { map.invalidateSize(); }, 200);
     </script>
