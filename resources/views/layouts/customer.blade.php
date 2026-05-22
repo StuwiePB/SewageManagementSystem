@@ -81,7 +81,8 @@
     @if($bare && auth()->check() && ! request()->routeIs('customer.brudmsgpt'))
     @php($ziqahUser = auth()->user())
     <style>
-        #ziqah-fab { position: fixed; z-index: 10050; width: 44px; height: 44px; border-radius: 50%; border: 0.7px solid rgba(255,255,255,0.18); background: rgba(97,107,110,0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: none; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; overflow: hidden; right: 12px; bottom: 96px; transition: left 0.28s cubic-bezier(0.22,1,0.36,1), top 0.2s ease, background 0.2s ease; }
+        #ziqah-fab { position: fixed; z-index: 10050; width: 44px; height: 44px; border-radius: 50%; border: 0.7px solid rgba(255,255,255,0.18); background: rgba(97,107,110,0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; overflow: hidden; right: 12px; bottom: 96px; transition: left 0.28s cubic-bezier(0.22,1,0.36,1), top 0.2s ease, background 0.2s ease; }
+        #ziqah-fab:hover { background: rgba(97,107,110,0.24); }
         #ziqah-fab.is-dragging { cursor: grabbing; transition: none; background: rgba(97,107,110,0.22); }
         #ziqah-fab .ziqah-fab-mark { color: rgba(255,255,255,0.92); font-size: 17px; font-weight: 600; font-family: Arial, Helvetica, sans-serif; line-height: 1; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; pointer-events: none; user-select: none; }
         #ziqah-overlay { position: fixed; inset: 0; z-index: 10045; visibility: hidden; pointer-events: none; }
@@ -156,7 +157,7 @@
             csrf: @json(csrf_token()),
         };
     </script>
-    <script src="{{ asset('js/ziqah-widget.js') }}?v=28" defer></script>
+    <script src="{{ asset('js/ziqah-widget.js') }}?v=29" defer></script>
     @endif
 
     @stack('scripts')
