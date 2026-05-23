@@ -132,6 +132,7 @@ Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified'
     Route::get('/old-reports', [OperationsController::class, 'oldReports'])->name('old-reports.index');
     Route::livewire('/old-reports/upload', PaperReportForm::class)->name('old-reports.create');
     Route::get('/old-work-orders', [WorkOrderController::class, 'oldWorkOrdersIndex'])->name('old-work-orders.index');
+    Route::get('/old-work-orders/{archiveWorkOrder}', [WorkOrderController::class, 'oldWorkOrderShow'])->whereNumber('archiveWorkOrder')->name('old-work-orders.show');
     Route::livewire('/old-work-orders/add', ArchiveWorkOrderForm::class)->name('old-work-orders.create');
     Route::get('/map', [OperationsController::class, 'map'])->name('map');
 

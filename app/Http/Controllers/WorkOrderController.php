@@ -67,6 +67,13 @@ class WorkOrderController extends Controller
         return view('r_operators.old-work-orders.index', compact('archiveWorkOrders'));
     }
 
+    public function oldWorkOrderShow(DmsArchiveWorkOrder $archiveWorkOrder)
+    {
+        $archiveWorkOrder->load(['paperReport', 'digitizedBy', 'photos']);
+
+        return view('r_operators.old-work-orders.show', compact('archiveWorkOrder'));
+    }
+
     public function create(Request $request)
     {
         $reports = OperationsReport::where('status', 'pending')->orderBy('created_at', 'desc')->get();

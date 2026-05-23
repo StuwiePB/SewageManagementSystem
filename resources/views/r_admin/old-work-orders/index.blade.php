@@ -68,7 +68,10 @@
                     <th>Type</th>
                     <th>Location</th>
                     <th>Created</th>
+                    <th>Started</th>
+                    <th>Completed</th>
                     <th>Status</th>
+                    <th>Old Report</th>
                     <th></th>
                 </tr>
             </thead>
@@ -80,11 +83,20 @@
                         <td>{{ ucfirst($archive->work_type) }}</td>
                         <td>{{ $archive->location_address }}</td>
                         <td>{{ $archive->record_created_at?->format('d M Y, H:i') ?? '—' }}</td>
+                        <td>{{ $archive->record_started_at?->format('d M Y, H:i') ?? '—' }}</td>
+                        <td>{{ $archive->record_completed_at?->format('d M Y, H:i') ?? '—' }}</td>
                         <td>{{ ucfirst(str_replace('_', ' ', $archive->status)) }}</td>
+                        <td>
+                            @if($archive->paperReport)
+                                <a href="{{ route('admin.old-reports.show', $archive->paperReport) }}" class="link-primary">{{ $archive->paperReport->archive_number }}</a>
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td><a href="{{ route('admin.old-work-orders.show', $archive) }}" class="link-primary">View</a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="cell-muted">No old work orders match your filters.</td></tr>
+                    <tr><td colspan="10" class="cell-muted">No old work orders match your filters.</td></tr>
                 @endforelse
             </tbody>
         </table>

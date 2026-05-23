@@ -95,7 +95,7 @@ class ArchiveWorkOrderForm extends Component
             'record_created_at' => 'required|date',
             'record_started_at' => 'nullable|date',
             'record_completed_at' => 'nullable|date',
-            'dms_paper_report_id' => 'nullable|exists:dms_paper_reports,id',
+            'dms_paper_report_id' => 'required|exists:dms_paper_reports,id',
             'photos_before.*' => 'nullable|image|max:10240',
             'photos_after.*' => 'nullable|image|max:10240',
         ]);

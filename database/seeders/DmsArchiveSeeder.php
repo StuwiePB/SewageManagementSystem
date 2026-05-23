@@ -223,7 +223,7 @@ class DmsArchiveSeeder extends Seeder
             ],
             [
                 'work_order_number' => 'WO-ARC-SEED-0004',
-                'paper_report' => null,
+                'paper_report' => 'OM-SEED-0004',
                 'priority' => 'low',
                 'assigned_crew' => 'Crew Delta',
                 'work_type' => 'inspection',
@@ -232,11 +232,11 @@ class DmsArchiveSeeder extends Seeder
                 'mukim' => 'berakas-a',
                 'problem_category' => 'retention_pond',
                 'description' => 'Inspect outlet valve and sample water quality.',
-                'site_notes' => 'Standalone archive entry; no linked OM form.',
-                'status' => 'in_progress',
+                'site_notes' => 'Follow-up from OM-SEED-0004 odor complaint at retention pond.',
+                'status' => 'completed',
                 'record_created_at' => '2025-03-11 08:00:00',
                 'record_started_at' => '2025-03-12 09:30:00',
-                'record_completed_at' => null,
+                'record_completed_at' => '2025-03-14 16:00:00',
             ],
             [
                 'work_order_number' => 'WO-ARC-SEED-0005',
@@ -250,10 +250,10 @@ class DmsArchiveSeeder extends Seeder
                 'problem_category' => 'drain',
                 'description' => 'Install temporary cover and schedule permanent replacement.',
                 'site_notes' => 'Road lane partially closed; JKR signage deployed.',
-                'status' => 'pending',
+                'status' => 'completed',
                 'record_created_at' => '2024-12-29 09:00:00',
-                'record_started_at' => null,
-                'record_completed_at' => null,
+                'record_started_at' => '2024-12-29 10:00:00',
+                'record_completed_at' => '2024-12-30 17:30:00',
             ],
         ];
 
@@ -261,11 +261,15 @@ class DmsArchiveSeeder extends Seeder
             $paperKey = $row['paper_report'];
             unset($row['paper_report']);
 
+            if ($paperKey === null || ! isset($reportIds[$paperKey])) {
+                throw new \RuntimeException("Old work order {$row['work_order_number']} must be linked to an old report.");
+            }
+
             DmsArchiveWorkOrder::updateOrCreate(
                 ['work_order_number' => $row['work_order_number']],
                 [
                     ...$row,
-                    'dms_paper_report_id' => $paperKey ? ($reportIds[$paperKey] ?? null) : null,
+                    'dms_paper_report_id' => $reportIds[$paperKey],
                     'digitized_by' => $digitizedBy,
                 ],
             );

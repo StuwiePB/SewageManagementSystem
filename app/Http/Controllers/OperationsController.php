@@ -123,7 +123,7 @@ class OperationsController extends Controller
 
     public function oldReports(Request $request)
     {
-        $query = DmsPaperReport::query();
+        $query = DmsPaperReport::query()->with('archiveWorkOrders');
 
         if ($request->filled('search')) {
             $search = $request->search;
