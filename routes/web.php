@@ -458,6 +458,12 @@ Route::post('/customer/profile', [ProfileController::class, 'update'])
 Route::post('/customer/profile/bind-email', [ProfileController::class, 'bindEmail'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.bind-email');
 
+Route::post('/customer/email-bind-prompt/dismiss', function () {
+    session(['email_bind_prompt_dismissed' => true]);
+
+    return response()->json(['ok' => true]);
+})->middleware(['auth', 'verified', 'role:customer'])->name('customer.email-bind-prompt.dismiss');
+
 Route::post('/customer/preference', [PreferenceController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.preference.update');
 

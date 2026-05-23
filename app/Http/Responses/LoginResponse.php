@@ -13,6 +13,8 @@ class LoginResponse implements LoginResponseContract
      */
     public function toResponse($request): Response
     {
+        $request->session()->forget('email_bind_prompt_dismissed');
+
         $user = $request->user();
 
         if ($user->hasRole(User::ROLE_SUPER_ADMIN) || $user->hasRole(User::ROLE_ADMIN)) {

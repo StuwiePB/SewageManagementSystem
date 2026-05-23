@@ -13,6 +13,8 @@ class RegisterResponse implements RegisterResponseContract
      */
     public function toResponse($request): Response
     {
+        $request->session()->forget('email_bind_prompt_dismissed');
+
         if ($request->wantsJson()) {
             return new JsonResponse('', 201);
         }

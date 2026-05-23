@@ -46,6 +46,7 @@
         auth()->check()
         && auth()->user()->isCustomer()
         && auth()->user()->needsEmailBinding()
+        && ! session('email_bind_prompt_dismissed')
         && ! request()->routeIs('customer.profilesettings', 'customer.email.bind.otp')
     )
         @include('partials.customer-email-bind-popup')

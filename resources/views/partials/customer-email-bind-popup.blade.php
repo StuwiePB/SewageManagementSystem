@@ -45,10 +45,21 @@
             (function () {
                 var popup = document.getElementById('email-bind-popup');
                 var laterBtn = document.getElementById('email-bind-popup-later');
+                var dismissUrl = @json(route('customer.email-bind-prompt.dismiss'));
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
                 if (!popup) return;
                 if (laterBtn) {
                     laterBtn.addEventListener('click', function () {
                         popup.style.display = 'none';
+                        fetch(dismissUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            credentials: 'same-origin',
+                        }).catch(function () {});
                     });
                 }
             })();
