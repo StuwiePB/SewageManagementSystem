@@ -42,6 +42,15 @@
         {{ $slot }}
     </main>
 
+    @if(
+        auth()->check()
+        && auth()->user()->isCustomer()
+        && auth()->user()->needsEmailBinding()
+        && ! request()->routeIs('customer.profilesettings', 'customer.email.bind.otp')
+    )
+        @include('partials.customer-email-bind-popup')
+    @endif
+
     @unless($bare)
     {{-- Bottom tab bar: Home | Map | + Report | Chatbot | Profile (frosted glass – inline blur so it’s always visible) --}}
     <nav class="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around py-2 safe-area-pb lg:relative lg:border-0 lg:py-0 lg:mt-auto border-t border-zinc-700/50 bg-zinc-900/70 lg:bg-zinc-900/80" style="backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);" aria-label="{{ __('Main navigation') }}">

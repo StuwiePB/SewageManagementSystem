@@ -7,10 +7,9 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="email-bind-popup-title"
-        style="display: none; position: fixed; inset: 0; z-index: 10060; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"
+        style="display: flex; position: fixed; inset: 0; z-index: 10060; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"
     >
         <div
-            id="email-bind-popup-backdrop"
             style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);"
         ></div>
         <div
@@ -46,21 +45,12 @@
             (function () {
                 var popup = document.getElementById('email-bind-popup');
                 var laterBtn = document.getElementById('email-bind-popup-later');
-                var backdrop = document.getElementById('email-bind-popup-backdrop');
-                var storageKey = 'brudms_email_bind_popup_dismissed';
                 if (!popup) return;
-                try {
-                    if (sessionStorage.getItem(storageKey) === '1') return;
-                } catch (e) {}
-                popup.style.display = 'flex';
-                function dismiss() {
-                    popup.style.display = 'none';
-                    try {
-                        sessionStorage.setItem(storageKey, '1');
-                    } catch (e) {}
+                if (laterBtn) {
+                    laterBtn.addEventListener('click', function () {
+                        popup.style.display = 'none';
+                    });
                 }
-                if (laterBtn) laterBtn.addEventListener('click', dismiss);
-                if (backdrop) backdrop.addEventListener('click', dismiss);
             })();
         </script>
     @endpush
