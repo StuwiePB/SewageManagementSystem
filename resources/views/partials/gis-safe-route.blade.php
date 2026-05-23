@@ -100,10 +100,306 @@
     }
     .gis-safe-route-marker.start { background: #22c55e; }
     .gis-safe-route-marker.end { background: #3b82f6; }
+
+    /* Customer live map: draggable + minimizable widget */
+    .gis-safe-route-panel.is-livemap.is-livemap-widget {
+        left: 12px;
+        bottom: max(200px, calc(24vh + env(safe-area-inset-bottom, 0px)));
+        width: min(300px, calc(100vw - 24px));
+        max-height: min(62vh, 480px);
+        padding: 0;
+        border-radius: 14px;
+        background: rgba(97, 107, 110, 0.22);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 0.7px solid rgba(255, 255, 255, 0.21);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-dragging {
+        transition: none;
+        cursor: grabbing;
+    }
+    .gis-safe-route-widget-header {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 0.55rem;
+        border-bottom: 0.7px solid rgba(255, 255, 255, 0.12);
+        flex-shrink: 0;
+        cursor: grab;
+        touch-action: none;
+    }
+    .gis-safe-route-widget-grip {
+        width: 14px;
+        height: 18px;
+        border: none;
+        padding: 0;
+        background: transparent;
+        cursor: grab;
+        flex-shrink: 0;
+        opacity: 0.55;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.85) 1.5px, transparent 1.6px);
+        background-size: 7px 7px;
+        background-position: center;
+    }
+    .gis-safe-route-widget-title {
+        flex: 1;
+        min-width: 0;
+        font-family: Poppins, sans-serif;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.95);
+        line-height: 1.2;
+    }
+    .gis-safe-route-widget-toggle {
+        width: 28px;
+        height: 28px;
+        border: 0.7px solid rgba(255, 255, 255, 0.22);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+        flex-shrink: 0;
+        touch-action: manipulation;
+    }
+    .gis-safe-route-widget-body {
+        padding: 0.55rem 0.65rem 0.65rem;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-minimized {
+        width: 52px;
+        height: 52px;
+        max-height: 52px;
+        border-radius: 9999px;
+        padding: 0;
+        cursor: grab;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-minimized .gis-safe-route-widget-body,
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-minimized .gis-safe-route-widget-grip,
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-minimized .gis-safe-route-widget-title,
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-minimized .gis-safe-route-widget-toggle {
+        display: none;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-minimized .gis-safe-route-widget-header {
+        border-bottom: none;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
+    }
+    .gis-safe-route-widget-chip-icon {
+        display: none;
+        width: 22px;
+        height: 22px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 17l4-4 4 4 4-8 4 4'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget.is-minimized .gis-safe-route-widget-chip-icon {
+        display: block;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget .gis-safe-route-widget-body h4 {
+        display: none;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget .gis-safe-route-widget-body p {
+        color: rgba(255, 255, 255, 0.72);
+        font-family: Poppins, sans-serif;
+        font-size: 0.72rem;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget .gis-safe-route-btn {
+        font-family: Poppins, sans-serif;
+        background: rgba(66, 106, 120, 0.35);
+        border-color: rgba(255, 255, 255, 0.18);
+        color: rgba(255, 255, 255, 0.92);
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget .gis-safe-route-btn.primary {
+        background: #04BCFF;
+        border-color: #04BCFF;
+        color: #0a1628;
+    }
+    .gis-safe-route-panel.is-livemap.is-livemap-widget .gis-safe-route-status {
+        color: rgba(255, 255, 255, 0.58);
+        font-family: Poppins, sans-serif;
+        font-size: 0.68rem;
+    }
 </style>
 <script>
 window.GisSafeRoute = {
     _instances: {},
+
+    initLivemapWidget: function (panel) {
+        var body = document.createElement('div');
+        body.className = 'gis-safe-route-widget-body';
+        while (panel.firstChild) {
+            body.appendChild(panel.firstChild);
+        }
+        var header = document.createElement('div');
+        header.className = 'gis-safe-route-widget-header';
+        header.innerHTML = ''
+            + '<button type="button" class="gis-safe-route-widget-grip" aria-hidden="true" tabindex="-1"></button>'
+            + '<span class="gis-safe-route-widget-title">Safe route</span>'
+            + '<button type="button" class="gis-safe-route-widget-toggle" data-action="widget-toggle" aria-label="Minimize safe route">−</button>'
+            + '<span class="gis-safe-route-widget-chip-icon" aria-hidden="true"></span>';
+        panel.appendChild(header);
+        panel.appendChild(body);
+        panel.classList.add('is-livemap-widget');
+
+        var toggleBtn = panel.querySelector('[data-action="widget-toggle"]');
+        var storageKey = 'brudms_livemap_safe_route_widget';
+        var dragThreshold = 8;
+        var dragging = false;
+        var moved = false;
+        var startX = 0;
+        var startY = 0;
+        var startLeft = 0;
+        var startTop = 0;
+
+        function clampPosition(left, top) {
+            var w = panel.offsetWidth;
+            var h = panel.offsetHeight;
+            return {
+                left: Math.max(8, Math.min(window.innerWidth - w - 8, left)),
+                top: Math.max(8, Math.min(window.innerHeight - h - 8, top))
+            };
+        }
+
+        function applyPosition(left, top) {
+            var pos = clampPosition(left, top);
+            panel.style.left = pos.left + 'px';
+            panel.style.top = pos.top + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+            panel.dataset.widgetPositioned = '1';
+            return pos;
+        }
+
+        function readPosition() {
+            var rect = panel.getBoundingClientRect();
+            return { left: rect.left, top: rect.top };
+        }
+
+        function saveWidgetState() {
+            try {
+                var pos = readPosition();
+                sessionStorage.setItem(storageKey, JSON.stringify({
+                    left: pos.left,
+                    top: pos.top,
+                    minimized: panel.classList.contains('is-minimized')
+                }));
+            } catch (e) {}
+        }
+
+        function restoreWidgetState() {
+            try {
+                var raw = sessionStorage.getItem(storageKey);
+                if (!raw) {
+                    return;
+                }
+                var data = JSON.parse(raw);
+                if (data && typeof data.left === 'number' && typeof data.top === 'number') {
+                    applyPosition(data.left, data.top);
+                }
+                if (data && data.minimized) {
+                    setMinimized(true, true);
+                }
+            } catch (e) {}
+        }
+
+        function setMinimized(minimized, skipSave) {
+            panel.classList.toggle('is-minimized', !!minimized);
+            if (toggleBtn) {
+                toggleBtn.textContent = minimized ? '+' : '−';
+                toggleBtn.setAttribute('aria-label', minimized ? 'Expand safe route' : 'Minimize safe route');
+            }
+            if (!minimized && panel.dataset.widgetPositioned === '1') {
+                var pos = readPosition();
+                applyPosition(pos.left, pos.top);
+            }
+            if (!skipSave) {
+                saveWidgetState();
+            }
+        }
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                setMinimized(!panel.classList.contains('is-minimized'));
+            });
+        }
+
+        function onPointerDown(ev) {
+            if (ev.button !== undefined && ev.button !== 0) {
+                return;
+            }
+            if (ev.target.closest('[data-action="widget-toggle"]') || ev.target.closest('.gis-safe-route-btn')) {
+                return;
+            }
+            dragging = true;
+            moved = false;
+            panel.classList.add('is-dragging');
+            var rect = panel.getBoundingClientRect();
+            if (panel.dataset.widgetPositioned !== '1') {
+                applyPosition(rect.left, rect.top);
+            } else {
+                startLeft = rect.left;
+                startTop = rect.top;
+            }
+            startLeft = parseFloat(panel.style.left) || rect.left;
+            startTop = parseFloat(panel.style.top) || rect.top;
+            startX = ev.clientX;
+            startY = ev.clientY;
+            if (panel.setPointerCapture && ev.pointerId !== undefined) {
+                try { panel.setPointerCapture(ev.pointerId); } catch (err) {}
+            }
+            ev.preventDefault();
+        }
+
+        function onPointerMove(ev) {
+            if (!dragging) {
+                return;
+            }
+            var dx = ev.clientX - startX;
+            var dy = ev.clientY - startY;
+            if (!moved && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
+                moved = true;
+            }
+            if (moved) {
+                applyPosition(startLeft + dx, startTop + dy);
+            }
+        }
+
+        function onPointerUp(ev) {
+            if (!dragging) {
+                return;
+            }
+            dragging = false;
+            panel.classList.remove('is-dragging');
+            if (panel.releasePointerCapture && ev.pointerId !== undefined) {
+                try { panel.releasePointerCapture(ev.pointerId); } catch (err) {}
+            }
+            if (!moved && panel.classList.contains('is-minimized')) {
+                setMinimized(false);
+            } else if (moved) {
+                saveWidgetState();
+            }
+        }
+
+        panel.addEventListener('pointerdown', onPointerDown);
+        panel.addEventListener('pointermove', onPointerMove);
+        panel.addEventListener('pointerup', onPointerUp);
+        panel.addEventListener('pointercancel', onPointerUp);
+
+        restoreWidgetState();
+    },
 
     init: function (map, options) {
         if (!map || !options || !options.containerId) {
@@ -141,7 +437,9 @@ window.GisSafeRoute = {
             + '<div class="gis-safe-route-legend" data-role="legend" hidden></div>';
         container.appendChild(panel);
 
-        if (!options.livemap) {
+        if (options.livemap) {
+            this.initLivemapWidget(panel);
+        } else {
             var pos = window.getComputedStyle(container).position;
             if (pos === 'static') {
                 container.style.position = 'relative';

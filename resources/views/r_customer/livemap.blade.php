@@ -116,9 +116,7 @@
             .livemap-filter-dot.status-progress { color: #FFAE00; }
             .livemap-filter-dot.status-resolved { color: #00FF26; }
             #livemap-safe-route-host .gis-safe-route-panel.is-livemap {
-                bottom: max(200px, calc(24vh + env(safe-area-inset-bottom, 0px)));
-                left: 12px;
-                width: min(300px, calc(100vw - 24px));
+                z-index: 1000;
             }
             .user-location-marker {
                 position: relative;
