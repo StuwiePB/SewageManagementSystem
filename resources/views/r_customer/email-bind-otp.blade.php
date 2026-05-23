@@ -243,7 +243,6 @@
                     "Everybody does, enter your email"
                 </p>
             </div>
-            @php($betaEmailBindPasscode = '071002')
             <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 31%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
                 <form id="code-form" class="signup-form" action="#" method="post" onsubmit="return false;" autocomplete="off">
                     <div class="code-input-row" id="code-input-row" aria-label="6 digit code">
@@ -261,7 +260,6 @@
         </div>
     </div>
 
-    @php $user = auth()->user(); @endphp
     <div style="position: fixed; top: 4vh; left: 20px; right: 20px; z-index: 10; display: flex; align-items: center; gap: 6px;">
         <a href="{{ route('customer.profilesettings', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; text-decoration: none; transition: transform 0.1s ease;" aria-label="{{ __('Back') }}">
             <img src="{{ asset('images/Vectors/all_backarrow.svg') }}" alt="" style="width: 21px; height: 21px;" />

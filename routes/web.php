@@ -340,7 +340,14 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         ]);
     })->name('customer.preference');
     Route::get('/{name}/profilesettings', fn () => view('r_customer.profilesettings'))->name('customer.profilesettings');
-    Route::get('/{name}/email-bind-otp', fn () => view('r_customer.email-bind-otp'))->name('customer.email.bind.otp');
+    Route::get('/{name}/email-bind-otp', function () {
+        $user = auth()->user();
+
+        return view('r_customer.email-bind-otp', [
+            'user' => $user,
+            'betaEmailBindPasscode' => '071002',
+        ]);
+    })->name('customer.email.bind.otp');
     Route::get('/{name}/myhistory', function () {
         $user = auth()->user();
 
