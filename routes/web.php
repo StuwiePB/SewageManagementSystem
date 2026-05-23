@@ -161,7 +161,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/customer-reports', [AdminController::class, 'customerReports'])->name('admin.customer-reports.index');
     Route::get('/admin/customer-reports/unscanned-ids', [AdminController::class, 'customerReportsUnscannedIds'])->name('admin.customer-reports.unscanned-ids');
+    Route::get('/admin/customer-reports/rescan-ids', [AdminController::class, 'customerReportsRescanIds'])->name('admin.customer-reports.rescan-ids');
     Route::post('/admin/customer-reports/{report}/scan-drainage', [AdminController::class, 'customerReportScanDrainage'])->name('admin.customer-reports.scan-drainage');
+    Route::post('/admin/customer-reports/{report}/rescan-drainage', [AdminController::class, 'customerReportRescanDrainage'])->name('admin.customer-reports.rescan-drainage');
     Route::get('/admin/customer-reports/{report}', [AdminController::class, 'customerReportShow'])->name('admin.customer-reports.show');
     Route::post('/admin/customer-reports/{report}/send-to-operations', [AdminController::class, 'customerReportSendToOperations'])->name('admin.customer-reports.send-to-operations');
     Route::delete('/admin/customer-reports/{report}', [AdminController::class, 'customerReportDestroy'])->name('admin.customer-reports.destroy');

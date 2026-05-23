@@ -204,7 +204,13 @@ class AdminController extends Controller
             ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
             ->count();
 
-        return view('r_admin.customer-reports.index', compact('reports', 'unscannedWithPhotoCount'));
+        $reportsWithPhotoCount = Report::query()
+            ->whereNotNull('photo_path')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
+            ->count();
+
+        return view('r_admin.customer-reports.index', compact('reports', 'unscannedWithPhotoCount', 'reportsWithPhotoCount'));
     }
 
     /** JSON: IDs of customer reports that have a photo but no AI drainage verdict yet. */
@@ -245,6 +251,47 @@ class AdminController extends Controller
             ]);
 
             return response()->json(['ok' => false, 'message' => 'Scan failed.'], 500);
+        }
+
+        return response()->json(['ok' => true, 'verdict' => $verdict]);
+    }
+
+    /** JSON: IDs of customer reports with photos (for bulk re-scan). */
+    public function customerReportsRescanIds(): JsonResponse
+    {
+        $sentFilter = request()->string('sent')->toString();
+        if (! in_array($sentFilter, ['unsent', 'sent', 'all'], true)) {
+            $sentFilter = 'unsent';
+        }
+
+        $ids = Report::query()
+            ->whereNotNull('photo_path')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
+            ->orderBy('id')
+            ->pluck('id');
+
+        return response()->json(['ids' => $ids]);
+    }
+
+    /** Clear prior AI verdict and run drainage scan again (after AI config fixes). */
+    public function customerReportRescanDrainage(Report $report, CustomerReportDrainageScan $scanner): JsonResponse
+    {
+        if (! $report->photo_path) {
+            return response()->json(['ok' => false, 'message' => 'No photo on this report.'], 422);
+        }
+
+        $report->update(['drainage_ai_verdict' => null]);
+
+        try {
+            $verdict = $scanner->scanAndPersist($report);
+        } catch (\Throwable $e) {
+            Log::error('Customer report drainage re-scan failed', [
+                'report_id' => $report->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['ok' => false, 'message' => 'Re-scan failed.'], 500);
         }
 
         return response()->json(['ok' => true, 'verdict' => $verdict]);
