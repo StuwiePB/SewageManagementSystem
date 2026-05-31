@@ -32,7 +32,6 @@ class ReportController extends Controller
                     }
                 },
             ],
-            'severity' => ['nullable', 'string', 'in:urgent,nonurgent'],
             'description' => ['nullable', 'string', 'max:2000'],
             'address' => ['nullable', 'string', 'max:500'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
@@ -70,7 +69,6 @@ class ReportController extends Controller
             'reporter_name' => $request->filled('reporter_name') ? $request->reporter_name : null,
             'phone' => $request->filled('phone') ? $this->normalizePhone($request->phone) : null,
             'problem_type' => $request->problem_type,
-            'severity' => $request->filled('severity') ? $request->severity : null,
             'description' => $request->description,
             'address' => $request->address,
             'latitude' => $request->latitude,

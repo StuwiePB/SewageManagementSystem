@@ -429,7 +429,7 @@ BRUDMS DATABASE DOMAIN (authoritative — combine with DATABASE CONTEXT introspe
 WHEN USERS SAY “issue”, “incident”, “report”, or “case”, use these REAL tables — not a single fictional shape:
 
 1) `reports` — customer-submitted drainage reports.
-   Typical columns: id, reference_code, problem_type, status, severity, address, latitude, longitude, reporter_name, phone, description, created_at, updated_at.
+   Typical columns: id, reference_code, problem_type, status, address, latitude, longitude, reporter_name, phone, description, created_at, updated_at.
    Reporter-facing workflow status → `reports.status` (starts as pending; admins may advance it — inspect DISTINCT values via SQL when unsure).
 
 2) `incidents` — AI-assisted review of uploaded photos ONLY (different from ops tickets).
@@ -437,7 +437,7 @@ WHEN USERS SAY “issue”, “incident”, “report”, or “case”, use the
    Does NOT use: incident_id as a column title, workflow status like customer “resolved/completed”. Do not query imaginary columns (`title`, `reported_by`, `resolved_at` on this table unless introspection proves they exist).
 
 3) `operations_reports` — operations desk intake / tracking.
-   Typical columns include: id, report_number, issue_type, severity, status, location_address, district, mukim, latitude, longitude, created_at (+ links e.g. customer_report_id).
+   Typical columns include: id, report_number, issue_type, status, location_address, district, mukim, latitude, longitude, created_at (+ links e.g. customer_report_id).
 
 4) `work_orders` — field work assignments.
    Typical columns include: id, work_order_number, type, priority, status, location_address, district, mukim, latitude, longitude, completed_at, created_at.
@@ -1265,7 +1265,7 @@ TXT;
                                 COALESCE(reference_code, CONCAT('#', id)) AS reference,
                                 COALESCE(status, 'unknown') AS status,
                                 COALESCE(problem_type, 'issue') AS problem_type,
-                                COALESCE(severity, '') AS severity,
+                                '' AS priority,
                                 COALESCE(reporter_name, '') AS reporter,
                                 COALESCE(phone, '') AS phone,
                                 COALESCE(address, '') AS address,
@@ -1284,7 +1284,7 @@ TXT;
                                 CONCAT('INC-', id) AS reference,
                                 COALESCE(review_status, 'unknown') AS status,
                                 COALESCE(ai_label, 'incident') AS problem_type,
-                                COALESCE(ai_severity, '') AS severity,
+                                COALESCE(ai_severity, '') AS priority,
                                 '' AS reporter,
                                 '' AS phone,
                                 COALESCE(admin_message, '') AS address,
@@ -1322,7 +1322,7 @@ TXT;
                                 COALESCE(report_number, CONCAT('#', id)) AS reference,
                                 COALESCE(status, 'unknown') AS status,
                                 COALESCE(issue_type, 'issue') AS problem_type,
-                                COALESCE(severity, '') AS severity,
+                                '' AS priority,
                                 COALESCE(reporter_name, '') AS reporter,
                                 COALESCE(reporter_contact, '') AS phone,
                                 COALESCE(location_address, '') AS address,
@@ -1347,7 +1347,7 @@ TXT;
                                 COALESCE(work_order_number, CONCAT('#', id)) AS reference,
                                 COALESCE(status, 'unknown') AS status,
                                 COALESCE(type, 'issue') AS problem_type,
-                                COALESCE(priority, '') AS severity,
+                                COALESCE(priority, '') AS priority,
                                 '' AS reporter,
                                 '' AS phone,
                                 COALESCE(location_address, '') AS address,
@@ -1389,7 +1389,7 @@ TXT;
             $reference = is_object($row) ? (string) ($row->reference ?? 'n/a') : (string) ($row['reference'] ?? 'n/a');
             $status = is_object($row) ? (string) ($row->status ?? 'n/a') : (string) ($row['status'] ?? 'n/a');
             $problemType = is_object($row) ? (string) ($row->problem_type ?? 'n/a') : (string) ($row['problem_type'] ?? 'n/a');
-            $severity = is_object($row) ? (string) ($row->severity ?? 'n/a') : (string) ($row['severity'] ?? 'n/a');
+            $priority = is_object($row) ? (string) ($row->priority ?? 'n/a') : (string) ($row['priority'] ?? 'n/a');
             $reporter = is_object($row) ? (string) ($row->reporter ?? 'n/a') : (string) ($row['reporter'] ?? 'n/a');
             $phone = is_object($row) ? (string) ($row->phone ?? 'n/a') : (string) ($row['phone'] ?? 'n/a');
             $address = is_object($row) ? (string) ($row->address ?? 'n/a') : (string) ($row['address'] ?? 'n/a');
@@ -1402,7 +1402,7 @@ TXT;
             $lines[] = '• reference: '.$reference;
             $lines[] = '• status: '.$status;
             $lines[] = '• problem type: '.$problemType;
-            $lines[] = '• severity: '.($severity !== '' ? $severity : 'n/a');
+            $lines[] = '• priority: '.($priority !== '' ? $priority : 'n/a');
             $lines[] = '• reporter: '.($reporter !== '' ? $reporter : 'n/a');
             $lines[] = '• phone: '.($phone !== '' ? $phone : 'n/a');
             $lines[] = '• address: '.($address !== '' ? $address : 'n/a');
@@ -1454,7 +1454,7 @@ TXT;
                         COALESCE(reference_code, CONCAT('#', id)) AS reference,
                         COALESCE(status, 'unknown') AS status,
                         COALESCE(problem_type, 'issue') AS problem_type,
-                        COALESCE(severity, '') AS severity,
+                        '' AS priority,
                         COALESCE(reporter_name, '') AS reporter,
                         COALESCE(phone, '') AS phone,
                         COALESCE(address, '') AS address,
@@ -1471,7 +1471,7 @@ TXT;
                         COALESCE(report_number, CONCAT('#', id)) AS reference,
                         COALESCE(status, 'unknown') AS status,
                         COALESCE(issue_type, 'issue') AS problem_type,
-                        COALESCE(severity, '') AS severity,
+                        '' AS priority,
                         COALESCE(reporter_name, '') AS reporter,
                         COALESCE(reporter_contact, '') AS phone,
                         COALESCE(location_address, '') AS address,
@@ -1488,7 +1488,7 @@ TXT;
                         COALESCE(work_order_number, CONCAT('#', id)) AS reference,
                         COALESCE(status, 'unknown') AS status,
                         COALESCE(type, 'issue') AS problem_type,
-                        COALESCE(priority, '') AS severity,
+                        COALESCE(priority, '') AS priority,
                         '' AS reporter,
                         '' AS phone,
                         COALESCE(location_address, '') AS address,
@@ -1540,7 +1540,7 @@ TXT;
             $reference = is_object($row) ? (string) ($row->reference ?? 'n/a') : (string) ($row['reference'] ?? 'n/a');
             $status = is_object($row) ? (string) ($row->status ?? 'n/a') : (string) ($row['status'] ?? 'n/a');
             $problemType = is_object($row) ? (string) ($row->problem_type ?? 'n/a') : (string) ($row['problem_type'] ?? 'n/a');
-            $severity = is_object($row) ? (string) ($row->severity ?? '') : (string) ($row['severity'] ?? '');
+            $priority = is_object($row) ? (string) ($row->priority ?? '') : (string) ($row['priority'] ?? '');
             $reporter = is_object($row) ? (string) ($row->reporter ?? '') : (string) ($row['reporter'] ?? '');
             $phone = is_object($row) ? (string) ($row->phone ?? '') : (string) ($row['phone'] ?? '');
             $address = is_object($row) ? (string) ($row->address ?? '') : (string) ($row['address'] ?? '');
@@ -1554,7 +1554,7 @@ TXT;
             $lines[] = '• reference: '.($reference !== '' ? $reference : 'n/a');
             $lines[] = '• status: '.($status !== '' ? $status : 'n/a');
             $lines[] = '• problem type: '.($problemType !== '' ? $problemType : 'n/a');
-            $lines[] = '• severity: '.($severity !== '' ? $severity : 'n/a');
+            $lines[] = '• priority: '.($priority !== '' ? $priority : 'n/a');
             $lines[] = '• reporter: '.($reporter !== '' ? $reporter : 'n/a');
             $lines[] = '• phone: '.($phone !== '' ? $phone : 'n/a');
             $lines[] = '• address: '.($address !== '' ? $address : 'n/a');

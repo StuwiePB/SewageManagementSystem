@@ -45,12 +45,11 @@ final class SnsNotifier
         $this->dispatch(
             event: 'report.sent_to_operations',
             subject: $this->subject(sprintf('Report %s sent to operations', $report->reference_code)),
-            severity: $report->severity === 'urgent' ? 'critical' : 'high',
+            severity: $report->isHighPriorityProblemType() ? 'critical' : 'high',
             data: [
                 'report_id' => $report->id,
                 'reference_code' => $report->reference_code,
                 'problem_type' => $report->problem_type,
-                'severity' => $report->severity,
                 'address' => $report->address,
                 'operations_report_id' => $operationsReport->id,
                 'operations_report_number' => $operationsReport->report_number,
@@ -60,7 +59,7 @@ final class SnsNotifier
 
     public function customerReportSubmitted(Report $report): void
     {
-        if ($report->severity !== 'urgent') {
+        if (! $report->isHighPriorityProblemType()) {
             return;
         }
 

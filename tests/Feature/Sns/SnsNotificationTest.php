@@ -59,7 +59,6 @@ test('urgent customer report dispatches sns on submit', function () {
     $report = Report::create([
         'reference_code' => 'FR SAL/0519/26(0001)',
         'problem_type' => 'Overflow',
-        'severity' => 'urgent',
         'status' => Report::STATUS_PENDING,
     ]);
 

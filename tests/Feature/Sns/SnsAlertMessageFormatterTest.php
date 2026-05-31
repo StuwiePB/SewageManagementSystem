@@ -67,8 +67,7 @@ test('sns notifier subject uses app name', function () {
 
     $report = Report::create([
         'reference_code' => 'FR SAL/0520/26(9999)',
-        'problem_type' => 'Leak',
-        'severity' => 'urgent',
+        'problem_type' => 'Overflow',
         'status' => Report::STATUS_PENDING,
     ]);
 

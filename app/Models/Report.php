@@ -36,6 +36,16 @@ class Report extends Model
     public const STATUS_PENDING = 'pending';
 
     /**
+     * Problem types that warrant immediate SNS / high-priority handling (severity column removed).
+     */
+    public function isHighPriorityProblemType(): bool
+    {
+        $type = strtolower(str_replace([' ', '-'], '_', trim((string) $this->problem_type)));
+
+        return in_array($type, ['overflow', 'blockage'], true);
+    }
+
+    /**
      * Admin-facing keys and labels when removing a customer report from the queue.
      *
      * @return array<string, string>

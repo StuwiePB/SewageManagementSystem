@@ -110,7 +110,8 @@ class WorkOrderController extends Controller
         if ($prefillReport) {
             $workOrderDefaults['report_id'] = (string) $prefillReport->id;
             $workOrderDefaults['type'] = ucfirst(str_replace('_', ' ', (string) $prefillReport->issue_type));
-            $workOrderDefaults['priority'] = $prefillReport->severity === 'urgent' ? 'high' : 'medium';
+            $issueType = strtolower(str_replace([' ', '-'], '_', (string) $prefillReport->issue_type));
+            $workOrderDefaults['priority'] = in_array($issueType, ['overflow', 'blockage'], true) ? 'high' : 'medium';
             $workOrderDefaults['location_address'] = (string) $prefillReport->location_address;
             $workOrderDefaults['district'] = (string) ($prefillReport->district ?? '');
             $workOrderDefaults['mukim'] = (string) ($prefillReport->mukim ?? '');

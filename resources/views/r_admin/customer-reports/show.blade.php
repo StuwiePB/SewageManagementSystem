@@ -48,10 +48,6 @@
             <p class="info-value">{{ $report->problem_type ?? '—' }}</p>
         </div>
         <div class="detail-row">
-            <p class="info-label">Severity</p>
-            <p class="info-value">{{ $report->severity ?? '—' }}</p>
-        </div>
-        <div class="detail-row">
             <p class="info-label">Reporter</p>
             <p class="info-value">{{ $report->user?->name ?? $report->reporter_name ?? 'Guest' }}</p>
         </div>

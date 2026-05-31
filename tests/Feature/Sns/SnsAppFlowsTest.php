@@ -33,7 +33,6 @@ test('step 4: urgent guest report submits and dispatches sns', function () {
         'problem_type' => 'Overflow',
         'reporter_name' => 'SNS Test Guest',
         'phone' => $phone,
-        'severity' => 'urgent',
         'description' => 'Step 4 SNS test',
         'address' => 'Bandar Seri Begawan',
         'latitude' => '4.89',
@@ -50,7 +49,6 @@ test('step 4: admin sends customer report to operations and dispatches sns', fun
     $report = Report::create([
         'reference_code' => Report::generateReferenceCode(),
         'problem_type' => 'Leak',
-        'severity' => 'nonurgent',
         'status' => Report::STATUS_PENDING,
     ]);
 
