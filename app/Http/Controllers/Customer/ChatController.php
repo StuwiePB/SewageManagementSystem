@@ -20,6 +20,7 @@ class ChatController extends Controller
             'image' => ['nullable', 'string'], // base64 data URL
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'page' => ['nullable', 'string', 'max:191'],
         ]);
 
         $apiKey = config('services.openai.api_key');
@@ -181,11 +182,12 @@ class ChatController extends Controller
         $maxTokens = $unrestrictedMode ? 2048 : 1024;
 
         $dbContext = $schemaEnabled ? $dbBridge->buildSchemaContext() : '';
+        $pageContext = $this->buildPageContext((string) $request->input('page', ''));
 
         $bruDmsData = $this->bruDmsDatabaseDomainContext();
         $systemPrompt = $unrestrictedMode
-            ? $this->generalAssistantSystemPrompt().$bruDmsData.$dbContext."\n\n".$this->buildAppContext()
-            : $this->baseSystemPrompt().$bruDmsData.$dbContext;
+            ? $this->generalAssistantSystemPrompt().$bruDmsData.$dbContext.$pageContext."\n\n".$this->buildAppContext()
+            : $this->baseSystemPrompt().$bruDmsData.$dbContext.$pageContext;
 
         if ($toolsEnabled) {
             $systemPrompt .= <<<'TXT'
@@ -342,6 +344,7 @@ SECTION 8 - STRICT RULES (never break these)
 - Never return raw unformatted timestamps.
 - Always confirm before querying.
 - Always end with an offer to help further.
+- When answering with multiple steps or items (how-to guides, lists of issues, options), put EACH item on its own line using a real line break. Never merge list items into one run-on sentence.
 
 SECTION 9 - OUTPUT STYLE (CLEAN MINIMAL LIST)
 - You are a formatting assistant when list formatting is requested.
@@ -462,6 +465,43 @@ TOOLS (mandatory):
 
 Read-only SELECT only; never INSERT/UPDATE/DELETE/DDL in chat.
 TXT;
+    }
+
+    /**
+     * Human-readable label for the customer-facing page the user is currently on,
+     * derived from the named route sent by the chat widget (window.BrudmsZiqahConfig.currentPage).
+     */
+    private function buildPageContext(string $routeName): string
+    {
+        $routeName = trim($routeName);
+        if ($routeName === '') {
+            return '';
+        }
+
+        $labels = [
+            'customer.dashboard' => 'Dashboard (home)',
+            'customer.brudmsgpt' => 'Ziqah AI chat (full page)',
+            'customer.general' => 'General settings',
+            'customer.faq' => 'FAQ',
+            'customer.customersupport' => 'Customer support',
+            'customer.contactcustomersupport' => 'Contact customer support',
+            'customer.profilesettings' => 'Profile settings',
+            'customer.myhistory' => 'My report history',
+            'customer.custatistics' => 'My statistics',
+            'customer.rproblem' => 'New report - problem type step',
+            'customer.rpicture' => 'New report - photo step',
+            'customer.rlocation' => 'New report - location step',
+            'customer.rdetails' => 'New report - details step',
+            'customer.rpreview' => 'New report - preview step',
+            'customer.livemap' => 'Live map',
+            'customer.report.type' => 'New report - choose issue type',
+            'customer.report.photo' => 'New report - upload photo',
+            'customer.report.preview' => 'New report - review and submit',
+        ];
+
+        $label = $labels[$routeName] ?? str_replace(['customer.', '.', '-'], ['', ' ', ' '], $routeName);
+
+        return "\n\nUSER PAGE CONTEXT: the user is currently on the \"{$label}\" page (route `{$routeName}`). Use this to tailor your reply (e.g. don't re-explain how to get somewhere the user is already on; if they seem stuck on this page, offer help specific to it) but don't mention the raw route name to the user.";
     }
 
     private function generalAssistantSystemPrompt(): string

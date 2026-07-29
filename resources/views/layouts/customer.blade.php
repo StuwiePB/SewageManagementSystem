@@ -91,83 +91,149 @@
     @if($bare && auth()->check() && ! request()->routeIs('customer.brudmsgpt'))
     @php($ziqahUser = auth()->user())
     <style>
-        #ziqah-fab { position: fixed; z-index: 10050; width: 44px; height: 44px; border-radius: 50%; border: 0.7px solid rgba(255,255,255,0.18); background: rgba(97,107,110,0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; overflow: hidden; right: 12px; bottom: 96px; transition: left 0.28s cubic-bezier(0.22,1,0.36,1), top 0.2s ease, background 0.2s ease; }
-        #ziqah-fab:hover { background: rgba(97,107,110,0.24); }
-        #ziqah-fab.is-dragging { cursor: grabbing; transition: none; background: rgba(97,107,110,0.22); }
-        #ziqah-fab .ziqah-fab-mark { color: rgba(255,255,255,0.92); font-size: 17px; font-weight: 600; font-family: Arial, Helvetica, sans-serif; line-height: 1; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; pointer-events: none; user-select: none; }
-        #ziqah-overlay { position: fixed; inset: 0; z-index: 10045; visibility: hidden; pointer-events: none; }
-        #ziqah-overlay.is-open { visibility: visible; pointer-events: auto; }
-        #ziqah-overlay-bg { position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background 0.32s ease; }
-        #ziqah-overlay.is-open #ziqah-overlay-bg { background: rgba(0,0,0,0.45); }
-        #ziqah-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10055; height: var(--ziqah-sheet-h, 96vh); max-height: 96vh; min-height: 280px; display: flex; flex-direction: column; border-radius: 22px 22px 0 0; border: 0.7px solid rgba(255,255,255,0.18); border-bottom: none; background: linear-gradient(155deg, rgba(32,120,130,0.42) 0%, rgba(10,16,28,0.82) 45%, rgba(6,10,18,0.88) 100%); backdrop-filter: blur(18px) saturate(1.15); -webkit-backdrop-filter: blur(18px) saturate(1.15); box-shadow: 0 -8px 40px rgba(0,0,0,0.35); transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.22,1,0.36,1); pointer-events: none; overflow: hidden; box-sizing: border-box; padding: 0 20px 16px; }
-        #ziqah-sheet.is-open { transform: translateY(0); pointer-events: auto; }
-        #ziqah-sheet.is-open:not(.is-resizing) { transition: transform 0.38s cubic-bezier(0.22,1,0.36,1), height 0.34s cubic-bezier(0.22,1,0.36,1); }
-        #ziqah-sheet.is-resizing { transition: none !important; }
-        #ziqah-sheet-top { position: relative; flex-shrink: 0; padding: 12px 0 10px; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
-        #ziqah-sheet-top.is-dragging { cursor: grabbing; }
-        #ziqah-sheet-grabber { width: 40px; height: 5px; border-radius: 9999px; background: rgba(255,255,255,0.28); pointer-events: none; }
-        #ziqah-sheet-close { position: absolute; right: 0; top: 6px; width: 36px; height: 36px; border: none; background: transparent; color: rgba(255,255,255,0.85); font-size: 22px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
-        #ziqah-sheet-hero { flex-shrink: 0; text-align: center; padding: 8px 8px 16px; }
-        #ziqah-sheet-hero h2 { margin: 0; font-family: Poppins, sans-serif; font-size: clamp(22px, 5.5vw, 28px); font-weight: 700; color: #fff; line-height: 1.25; letter-spacing: -0.02em; }
-        #ziqah-sheet-hero h2 .ziqah-grad { background: linear-gradient(90deg, #04BCFF 0%, #7b5cff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        #ziqah-sheet-hero p { margin: 10px 0 0; font-family: Poppins, sans-serif; font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.55); }
-        #ziqah-chat-messages { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 4px 2px 12px; scrollbar-width: none; }
-        #ziqah-chat-messages::-webkit-scrollbar { display: none; }
-        #ziqah-chat-messages .msg-user { align-self: flex-end; background: #04BCFF; color: #040929; border-radius: 16px 16px 4px 16px; padding: 10px 14px; max-width: 85%; font-size: 11px; font-family: Poppins, sans-serif; }
-        #ziqah-chat-messages .msg-bot { align-self: flex-start; background: rgba(255,255,255,0.08); color: #fff; border-radius: 16px 16px 16px 4px; padding: 10px 14px; max-width: 85%; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 300; }
-        #ziqah-chat-messages .msg-typing { align-self: flex-start; color: rgba(255,255,255,0.4); font-size: 11px; font-family: Poppins, sans-serif; }
-        #ziqah-chat-messages .msg-img { max-width: 200px; border-radius: 12px; display: block; }
-        #ziqah-chat-messages .msg-action-btn { display: inline-flex; width: 100%; margin-top: 10px; height: 34px; border-radius: 10px; background: #04BCFF; color: #0a1628; text-decoration: none; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 700; align-items: center; justify-content: center; box-sizing: border-box; }
-        #ziqah-sheet-footer { flex-shrink: 0; padding-top: 8px; }
-        #ziqah-sheet-input-wrap { display: flex; align-items: center; gap: 10px; height: 48px; border-radius: 14px; border: 0.7px solid rgba(255,255,255,0.22); background: rgba(0,0,0,0.32); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 0 14px 0 4px; box-sizing: border-box; }
-        #ziqah-chat-attach { width: 40px; height: 40px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
-        #ziqah-chat-input { flex: 1; height: 44px; border: none; outline: none; background: transparent; color: #fff; font-size: 14px; font-family: Poppins, sans-serif; min-width: 0; }
-        #ziqah-chat-input::placeholder { color: rgba(255,255,255,0.38); }
-        #ziqah-chat-send { width: 36px; height: 36px; border: none; border-radius: 9999px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; color: rgba(255,255,255,0.75); }
-        #ziqah-sheet-disclaimer { margin: 10px 0 0; text-align: center; font-family: Poppins, sans-serif; font-size: 10px; color: rgba(255,255,255,0.38); line-height: 1.35; }
-        #ziqah-chat-preview { display: none; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+        .cr {
+            --cr-accent: #04BCFF;
+            --cr-accent-2: #7b5cff;
+            --cr-bg: linear-gradient(155deg, rgba(32,120,130,0.42) 0%, rgba(10,16,28,0.92) 45%, rgba(6,10,18,0.96) 100%);
+            --cr-panel-border: rgba(255,255,255,0.16);
+            --cr-text: #ffffff;
+            --cr-text-muted: rgba(255,255,255,0.55);
+            --cr-radius: 18px;
+            --cr-font: Poppins, sans-serif;
+            position: fixed;
+            right: 16px;
+            bottom: 20px;
+            z-index: 10050;
+        }
+        .cr-launcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 48px;
+            padding: 0 18px;
+            border-radius: 9999px;
+            border: 0.7px solid var(--cr-panel-border);
+            background: rgba(97,107,110,0.22);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--cr-text);
+            font-family: var(--cr-font);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .cr-launcher:hover { background: rgba(97,107,110,0.32); }
+        .cr-launcher:active { transform: scale(0.96); }
+        .cr.is-open .cr-launcher { display: none; }
+        .cr-launcher-dot { width: 8px; height: 8px; border-radius: 50%; background: #37e08c; box-shadow: 0 0 0 0 rgba(55,224,140,0.6); animation: cr-pulse 2s infinite; flex-shrink: 0; }
+        .cr-panel {
+            display: none;
+            flex-direction: column;
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: min(340px, calc(100vw - 40px));
+            height: min(460px, calc(100vh - 120px));
+            border-radius: var(--cr-radius);
+            border: 0.7px solid var(--cr-panel-border);
+            background: var(--cr-bg);
+            backdrop-filter: blur(18px) saturate(1.15);
+            -webkit-backdrop-filter: blur(18px) saturate(1.15);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+            overflow: hidden;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .cr.is-open .cr-panel { display: flex; }
+        .cr.is-open .cr-panel.is-visible { opacity: 1; transform: translateY(0) scale(1); }
+        @media (prefers-reduced-motion: reduce) {
+            .cr-panel { transition: opacity 0.01ms; transform: none; }
+            .cr-launcher-dot { animation: none; }
+        }
+        .cr-header { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 14px 8px 14px 16px; border-bottom: 0.7px solid var(--cr-panel-border); }
+        .cr-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #37e08c; box-shadow: 0 0 0 0 rgba(55,224,140,0.6); animation: cr-pulse 2s infinite; flex-shrink: 0; }
+        .cr-title { flex: 1; font-family: var(--cr-font); font-size: 14px; font-weight: 700; color: var(--cr-text); }
+        .cr-close { width: 32px; height: 32px; border: none; background: transparent; color: rgba(255,255,255,0.85); font-size: 20px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px; }
+        .cr-close:hover { background: rgba(255,255,255,0.08); }
+        .cr-log { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; scrollbar-width: none; }
+        .cr-log::-webkit-scrollbar { display: none; }
+        .cr-log .msg-user { align-self: flex-end; background: var(--cr-accent); color: #040929; border-radius: 14px 14px 4px 14px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); }
+        .cr-log .msg-bot { align-self: flex-start; background: rgba(255,255,255,0.08); color: var(--cr-text); border-radius: 14px 14px 14px 4px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); font-weight: 300; }
+        .cr-log .msg-bot .cr-msg-p { margin: 0 0 8px; }
+        .cr-log .msg-bot .cr-msg-p:last-child { margin-bottom: 0; }
+        .cr-log .msg-bot .cr-msg-list { margin: 0 0 8px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+        .cr-log .msg-bot .cr-msg-list:last-child { margin-bottom: 0; }
+        .cr-log .msg-bot .cr-msg-list li { padding-left: 2px; }
+        .cr-log .msg-error { align-self: flex-start; background: rgba(255,80,80,0.16); border: 0.7px solid rgba(255,110,110,0.4); color: #ffd7d7; border-radius: 14px 14px 14px 4px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); }
+        .cr-log .msg-img { max-width: 180px; border-radius: 10px; display: block; }
+        .cr-log .msg-action-btn { display: inline-flex; width: 100%; margin-top: 8px; height: 32px; border-radius: 8px; background: var(--cr-accent); color: #0a1628; text-decoration: none; font-size: 11px; font-family: var(--cr-font); font-weight: 700; align-items: center; justify-content: center; box-sizing: border-box; }
+        .cr-typing { align-self: flex-start; display: flex; align-items: center; gap: 4px; padding: 9px 12px; }
+        .cr-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--cr-text-muted); animation: cr-typing-bounce 1.2s infinite ease-in-out; }
+        .cr-typing span:nth-child(2) { animation-delay: 0.15s; }
+        .cr-typing span:nth-child(3) { animation-delay: 0.3s; }
+        @media (prefers-reduced-motion: reduce) { .cr-typing span { animation: none; opacity: 0.6; } }
+        @keyframes cr-typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+        @keyframes cr-pulse { 0% { box-shadow: 0 0 0 0 rgba(55,224,140,0.5); } 70% { box-shadow: 0 0 0 6px rgba(55,224,140,0); } 100% { box-shadow: 0 0 0 0 rgba(55,224,140,0); } }
+        .cr-preview { display: none; align-items: flex-start; gap: 8px; padding: 0 12px 8px; }
+        .cr-footer { flex-shrink: 0; padding: 8px 12px 10px; border-top: 0.7px solid var(--cr-panel-border); }
+        .cr-input-wrap { display: flex; align-items: flex-end; gap: 8px; border-radius: 14px; border: 0.7px solid var(--cr-panel-border); background: rgba(0,0,0,0.32); padding: 6px 10px 6px 4px; box-sizing: border-box; }
+        .cr-attach { width: 36px; height: 36px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
+        .cr-input { flex: 1; resize: none; border: none; outline: none; background: transparent; color: var(--cr-text); font-size: 13px; font-family: var(--cr-font); min-width: 0; max-height: 96px; line-height: 1.4; padding: 8px 0; }
+        .cr-input::placeholder { color: var(--cr-text-muted); }
+        .cr-send { width: 32px; height: 32px; border: none; border-radius: 9999px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; color: rgba(255,255,255,0.75); }
+        .cr-send:disabled, .cr-attach:disabled { opacity: 0.4; cursor: not-allowed; }
+        .cr-disclaimer { margin: 8px 0 0; text-align: center; font-family: var(--cr-font); font-size: 10px; color: var(--cr-text-muted); line-height: 1.35; }
+        @media (max-width: 420px) {
+            .cr { right: 12px; bottom: 16px; }
+            .cr-panel { width: calc(100vw - 40px); height: min(460px, calc(100vh - 140px)); }
+        }
     </style>
-    <div id="ziqah-overlay" aria-hidden="true">
-        <div id="ziqah-overlay-bg"></div>
-    </div>
-    <div id="ziqah-sheet" role="dialog" aria-modal="true" aria-labelledby="ziqah-sheet-title" aria-hidden="true">
-        <div id="ziqah-sheet-top">
-            <div id="ziqah-sheet-grabber" title="Drag up or down to resize"></div>
-            <button type="button" id="ziqah-sheet-close" aria-label="Close">&times;</button>
-        </div>
-        <div id="ziqah-sheet-hero">
-            <h2 id="ziqah-sheet-title">Get <span class="ziqah-grad">help</span> with BruDMS</h2>
-            <p>Fast answers. Powered by AI.</p>
-        </div>
-        <div id="ziqah-chat-messages"><div class="msg-bot">Ziqah handles the flow. What's clogged, leaking, or overflowing? Show me.</div></div>
-        <div id="ziqah-sheet-footer">
-            <input id="ziqah-chat-file" type="file" accept="image/*" style="display:none;" />
-            <div id="ziqah-chat-preview">
+    <div class="cr" id="ziqah-cr">
+        <button type="button" class="cr-launcher" id="ziqah-fab" aria-label="Open Ziqah help" title="Ziqah (AI)">
+            <span class="cr-launcher-dot" aria-hidden="true"></span>
+            AI
+        </button>
+        <div class="cr-panel" id="ziqah-panel" role="dialog" aria-modal="true" aria-labelledby="ziqah-panel-title" aria-hidden="true">
+            <div class="cr-header">
+                <span class="cr-status-dot" aria-hidden="true"></span>
+                <span class="cr-title" id="ziqah-panel-title">Ziqah</span>
+                <button type="button" class="cr-close" id="ziqah-sheet-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="cr-log" id="ziqah-chat-messages"><div class="msg-bot">Ziqah handles the flow. What's clogged, leaking, or overflowing? Show me.</div></div>
+            <div class="cr-preview" id="ziqah-chat-preview">
                 <img id="ziqah-chat-preview-img" alt="" style="max-width:56px;max-height:56px;border-radius:8px;object-fit:cover;" />
                 <button type="button" id="ziqah-chat-preview-remove" style="width:20px;height:20px;border-radius:9999px;border:none;background:rgba(255,255,255,0.2);color:#fff;cursor:pointer;">&times;</button>
             </div>
-            <div id="ziqah-sheet-input-wrap">
-                <button type="button" id="ziqah-chat-attach" aria-label="Attach image">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
-                <input id="ziqah-chat-input" type="text" placeholder="How else can I help?" autocomplete="off" />
-                <button type="button" id="ziqah-chat-send" aria-label="Send message">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                </button>
+            <div class="cr-footer">
+                <input id="ziqah-chat-file" type="file" accept="image/*" style="display:none;" />
+                <div class="cr-input-wrap">
+                    <button type="button" class="cr-attach" id="ziqah-chat-attach" aria-label="Attach image">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <textarea id="ziqah-chat-input" class="cr-input" rows="1" placeholder="How else can I help?"></textarea>
+                    <button type="button" class="cr-send" id="ziqah-chat-send" aria-label="Send message">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                    </button>
+                </div>
+                <p class="cr-disclaimer">AI can make mistakes. Double-check for accuracy.</p>
             </div>
-            <p id="ziqah-sheet-disclaimer">AI can make mistakes. Double-check for accuracy.</p>
         </div>
     </div>
-    <button type="button" id="ziqah-fab" aria-label="Open Ziqah help" title="Ziqah (AI)"><span class="ziqah-fab-mark" aria-hidden="true">?</span></button>
     <script>
         window.BrudmsZiqahConfig = {
             userId: {{ (int) $ziqahUser->id }},
             chatUrl: @json(route('customer.chat')),
             reportUrl: @json(route('customer.rproblem', ['name' => $ziqahUser->profileSlug()])),
             csrf: @json(csrf_token()),
+            currentPage: @json(request()->route()?->getName()),
         };
     </script>
-    <script src="{{ asset('js/ziqah-widget.js') }}?v=29" defer></script>
+    <script src="{{ asset('js/ziqah-widget.js') }}?v=32" defer></script>
     @endif
 
     @stack('scripts')

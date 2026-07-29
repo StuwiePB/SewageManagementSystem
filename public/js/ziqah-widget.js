@@ -6,13 +6,12 @@
     var chatUrl = cfg.chatUrl || '';
     var reportUrl = cfg.reportUrl || '';
     var csrfToken = cfg.csrf || '';
+    var currentPage = cfg.currentPage || null;
 
+    var root = document.getElementById('ziqah-cr');
     var fab = document.getElementById('ziqah-fab');
-    var overlay = document.getElementById('ziqah-overlay');
-    var overlayBg = document.getElementById('ziqah-overlay-bg');
-    var sheet = document.getElementById('ziqah-sheet');
-    var sheetTop = document.getElementById('ziqah-sheet-top');
-    var sheetClose = document.getElementById('ziqah-sheet-close');
+    var panel = document.getElementById('ziqah-panel');
+    var panelClose = document.getElementById('ziqah-sheet-close');
     var chatBox = document.getElementById('ziqah-chat-messages');
     var chatInput = document.getElementById('ziqah-chat-input');
     var chatSend = document.getElementById('ziqah-chat-send');
@@ -22,7 +21,7 @@
     var previewImg = document.getElementById('ziqah-chat-preview-img');
     var previewRemove = document.getElementById('ziqah-chat-preview-remove');
 
-    if (!fab || !sheet || !chatBox) {
+    if (!root || !fab || !panel || !chatBox) {
         return;
     }
 
@@ -34,194 +33,85 @@
     var pendingImage = null;
     var cachedUserLat = null;
     var cachedUserLng = null;
+    var inFlight = false;
+    var panelOpen = false;
+    var history = [];
 
-    var sheetOpen = false;
-    var defaultSheetVh = 96;
-    var minSheetVh = 42;
-    var maxSheetVh = 96;
+    var inputMaxHeight = 96;
 
-    function setSheetHeight(vh) {
-        var h = Math.max(minSheetVh, Math.min(maxSheetVh, vh));
-        sheet.style.setProperty('--ziqah-sheet-h', h + 'vh');
+    function autoGrowInput() {
+        if (!chatInput) {
+            return;
+        }
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, inputMaxHeight) + 'px';
     }
 
-    function openSheet() {
-        sheetOpen = true;
-        overlay.classList.add('is-open');
-        overlay.setAttribute('aria-hidden', 'false');
-        sheet.classList.add('is-open');
-        sheet.setAttribute('aria-hidden', 'false');
-        setSheetHeight(defaultSheetVh);
+    function setBusy(busy) {
+        inFlight = busy;
+        if (chatSend) {
+            chatSend.disabled = busy;
+        }
+        if (chatAttach) {
+            chatAttach.disabled = busy;
+        }
+    }
+
+    function openPanel() {
+        panelOpen = true;
+        root.classList.add('is-open');
+        panel.setAttribute('aria-hidden', 'false');
+        requestAnimationFrame(function () {
+            panel.classList.add('is-visible');
+        });
         if (chatInput) {
             setTimeout(function () {
                 chatInput.focus();
-            }, 380);
+            }, 180);
         }
     }
 
-    function closeSheet() {
-        sheetOpen = false;
-        overlay.classList.remove('is-open');
-        overlay.setAttribute('aria-hidden', 'true');
-        sheet.classList.remove('is-open');
-        sheet.setAttribute('aria-hidden', 'true');
+    function closePanel() {
+        panelOpen = false;
+        panel.classList.remove('is-visible');
+        panel.setAttribute('aria-hidden', 'true');
         saveChatState();
+        setTimeout(function () {
+            if (!panelOpen) {
+                root.classList.remove('is-open');
+            }
+        }, 200);
     }
 
-    function toggleSheet() {
-        if (sheetOpen) {
-            closeSheet();
+    function togglePanel() {
+        if (panelOpen) {
+            closePanel();
         } else {
-            openSheet();
+            openPanel();
         }
     }
 
-    if (sheetClose) {
-        sheetClose.addEventListener('click', closeSheet);
+    fab.addEventListener('click', togglePanel);
+
+    if (panelClose) {
+        panelClose.addEventListener('click', closePanel);
     }
-    if (overlayBg) {
-        overlayBg.addEventListener('click', closeSheet);
-    }
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && sheetOpen) {
-            closeSheet();
-        }
-    });
-
-    /* FAB: drag + tap-to-open */
-    (function initFab() {
-        var dragging = false;
-        var moved = false;
-        var startX = 0;
-        var startY = 0;
-        var startLeft = 0;
-        var startTop = 0;
-        var dragThreshold = 8;
-
-        function clampFab(left, top) {
-            var rect = fab.getBoundingClientRect();
-            var w = rect.width;
-            var h = rect.height;
-            var maxL = window.innerWidth - w - 8;
-            var maxT = window.innerHeight - h - 8;
-            return {
-                left: Math.max(8, Math.min(maxL, left)),
-                top: Math.max(8, Math.min(maxT, top)),
-            };
-        }
-
-        function placeFab(left, top) {
-            fab.style.right = 'auto';
-            fab.style.bottom = 'auto';
-            fab.style.left = left + 'px';
-            fab.style.top = top + 'px';
-        }
-
-        function onPointerDown(e) {
-            if (e.button !== undefined && e.button !== 0) {
-                return;
-            }
-            dragging = true;
-            moved = false;
-            fab.classList.add('is-dragging');
-            var rect = fab.getBoundingClientRect();
-            startLeft = rect.left;
-            startTop = rect.top;
-            startX = e.clientX;
-            startY = e.clientY;
-            if (fab.setPointerCapture && e.pointerId !== undefined) {
-                try {
-                    fab.setPointerCapture(e.pointerId);
-                } catch (err) {}
-            }
-            e.preventDefault();
-        }
-
-        function onPointerMove(e) {
-            if (!dragging) {
-                return;
-            }
-            var dx = e.clientX - startX;
-            var dy = e.clientY - startY;
-            if (!moved && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
-                moved = true;
-            }
-            if (moved) {
-                var pos = clampFab(startLeft + dx, startTop + dy);
-                placeFab(pos.left, pos.top);
-            }
-        }
-
-        function onPointerUp(e) {
-            if (!dragging) {
-                return;
-            }
-            dragging = false;
-            fab.classList.remove('is-dragging');
-            if (fab.releasePointerCapture && e.pointerId !== undefined) {
-                try {
-                    fab.releasePointerCapture(e.pointerId);
-                } catch (err) {}
-            }
-            if (!moved) {
-                toggleSheet();
-            }
-        }
-
-        fab.addEventListener('pointerdown', onPointerDown);
-        fab.addEventListener('pointermove', onPointerMove);
-        fab.addEventListener('pointerup', onPointerUp);
-        fab.addEventListener('pointercancel', onPointerUp);
-    })();
-
-    /* Sheet resize via top grabber */
-    (function initSheetResize() {
-        if (!sheetTop) {
+    document.addEventListener('click', function (e) {
+        if (!panelOpen) {
             return;
         }
-        var resizing = false;
-        var startY = 0;
-        var startH = 0;
-
-        function onResizeDown(e) {
-            if (e.button !== undefined && e.button !== 0) {
-                return;
-            }
-            resizing = true;
-            sheet.classList.add('is-resizing');
-            sheetTop.classList.add('is-dragging');
-            startY = e.clientY;
-            var current = parseFloat(
-                (sheet.style.getPropertyValue('--ziqah-sheet-h') || defaultSheetVh + 'vh').replace('vh', '')
-            );
-            startH = isNaN(current) ? defaultSheetVh : current;
-            e.preventDefault();
+        if (root.contains(e.target)) {
+            return;
         }
+        closePanel();
+    });
 
-        function onResizeMove(e) {
-            if (!resizing) {
-                return;
-            }
-            var dy = startY - e.clientY;
-            var deltaVh = (dy / window.innerHeight) * 100;
-            setSheetHeight(startH + deltaVh);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && panelOpen) {
+            closePanel();
         }
-
-        function onResizeUp() {
-            if (!resizing) {
-                return;
-            }
-            resizing = false;
-            sheet.classList.remove('is-resizing');
-            sheetTop.classList.remove('is-dragging');
-        }
-
-        sheetTop.addEventListener('pointerdown', onResizeDown);
-        window.addEventListener('pointermove', onResizeMove);
-        window.addEventListener('pointerup', onResizeUp);
-        window.addEventListener('pointercancel', onResizeUp);
-    })();
+    });
 
     function saveChatState() {
         try {
@@ -229,7 +119,7 @@
                 return;
             }
             var clone = chatBox.cloneNode(true);
-            clone.querySelectorAll('.msg-typing').forEach(function (el) {
+            clone.querySelectorAll('.cr-typing').forEach(function (el) {
                 el.remove();
             });
             localStorage.setItem(
@@ -237,6 +127,7 @@
                 JSON.stringify({
                     html: clone.innerHTML || '',
                     pendingImage: pendingImage || null,
+                    history: history,
                 })
             );
         } catch (e) {}
@@ -283,6 +174,64 @@
         callback(payload);
     }
 
+    function normalizeListMarkers(text) {
+        // Some replies run list items together on one line; force each marker onto its own line.
+        text = text.replace(/([^\n])[ \t]+(?=\d{1,2}[).]\s)/g, '$1\n');
+        text = text.replace(/([^\n])[ \t]+(?=[•]\s)/g, '$1\n');
+        return text;
+    }
+
+    function renderMessageContent(container, rawText) {
+        var text = normalizeListMarkers(String(rawText || ''));
+        var lines = text.split(/\r?\n/);
+        var listEl = null;
+        var listType = null;
+
+        function closeList() {
+            listEl = null;
+            listType = null;
+        }
+
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (line === '') {
+                closeList();
+                continue;
+            }
+
+            var numbered = line.match(/^(\d{1,2})[).]\s+(.*)$/);
+            var bulleted = !numbered ? line.match(/^[•\-*]\s+(.*)$/) : null;
+
+            if (numbered) {
+                if (listType !== 'ol') {
+                    listEl = document.createElement('ol');
+                    listEl.className = 'cr-msg-list';
+                    container.appendChild(listEl);
+                    listType = 'ol';
+                }
+                var liOl = document.createElement('li');
+                liOl.textContent = numbered[2];
+                listEl.appendChild(liOl);
+            } else if (bulleted) {
+                if (listType !== 'ul') {
+                    listEl = document.createElement('ul');
+                    listEl.className = 'cr-msg-list';
+                    container.appendChild(listEl);
+                    listType = 'ul';
+                }
+                var liUl = document.createElement('li');
+                liUl.textContent = bulleted[1];
+                listEl.appendChild(liUl);
+            } else {
+                closeList();
+                var p = document.createElement('p');
+                p.className = 'cr-msg-p';
+                p.textContent = line;
+                container.appendChild(p);
+            }
+        }
+    }
+
     function appendBotReply(rawReply, reportImageUrl, quickActions, forceShowReportButton) {
         var text = String(rawReply || '');
         var showReportButton = text.indexOf('SHOW_REPORT_BUTTON') !== -1;
@@ -296,7 +245,7 @@
 
         var botMsg = document.createElement('div');
         botMsg.className = 'msg-bot';
-        botMsg.textContent = text;
+        renderMessageContent(botMsg, text);
         chatBox.appendChild(botMsg);
 
         if (showReportButton && reportUrl) {
@@ -316,12 +265,32 @@
             botMsg.appendChild(reportImg);
         }
 
+        history.push({ role: 'assistant', content: text });
         chatBox.scrollTop = chatBox.scrollHeight;
         saveChatState();
     }
 
+    function appendErrorBubble(message) {
+        var errMsg = document.createElement('div');
+        errMsg.className = 'msg-error';
+        errMsg.textContent = message || 'Something went wrong. Please try again.';
+        chatBox.appendChild(errMsg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        saveChatState();
+    }
+
+    function showTyping(label) {
+        var typing = document.createElement('div');
+        typing.className = 'cr-typing';
+        typing.setAttribute('aria-label', label || 'typing');
+        typing.innerHTML = '<span></span><span></span><span></span>';
+        chatBox.appendChild(typing);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return typing;
+    }
+
     function sendMessage() {
-        if (!chatInput || !chatUrl) {
+        if (inFlight || !chatInput || !chatUrl) {
             return;
         }
         var text = chatInput.value.trim();
@@ -358,7 +327,10 @@
             chatBox.appendChild(userMsgOnly);
         }
 
+        history.push({ role: 'user', content: text || '(image)' });
+
         chatInput.value = '';
+        autoGrowInput();
         var imageToSend = pendingImage;
         pendingImage = null;
         if (previewEl) {
@@ -367,13 +339,10 @@
         chatBox.scrollTop = chatBox.scrollHeight;
         saveChatState();
 
-        var typing = document.createElement('div');
-        typing.className = 'msg-typing';
-        typing.textContent = hasImage ? 'analyzing image...' : 'typing...';
-        chatBox.appendChild(typing);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        var typing = showTyping(hasImage ? 'analyzing image...' : 'typing...');
+        setBusy(true);
 
-        var payload = { message: text || null, image: imageToSend || null };
+        var payload = { message: text || null, image: imageToSend || null, page: currentPage };
         attachLocationForChat(payload, text, function (finalPayload) {
             fetch(chatUrl, {
                 method: 'POST',
@@ -393,23 +362,24 @@
                     if (typing.parentNode) {
                         chatBox.removeChild(typing);
                     }
-                    appendBotReply(
-                        res.ok && res.data.reply ? res.data.reply : res.data.error || mockReplies[0],
-                        res.ok ? res.data.report_image_url || null : null,
-                        res.ok ? res.data.quick_actions || [] : [],
-                        res.ok ? res.data.show_report_button === true : false
-                    );
+                    setBusy(false);
+                    if (res.ok && (res.data.reply || res.data.reply === '')) {
+                        appendBotReply(
+                            res.data.reply,
+                            res.data.report_image_url || null,
+                            res.data.quick_actions || [],
+                            res.data.show_report_button === true
+                        );
+                    } else {
+                        appendErrorBubble(res.data && res.data.error ? res.data.error : mockReplies[0]);
+                    }
                 })
                 .catch(function () {
                     if (typing.parentNode) {
                         chatBox.removeChild(typing);
                     }
-                    var errMsg = document.createElement('div');
-                    errMsg.className = 'msg-bot';
-                    errMsg.textContent = 'Something went wrong. Please try again.';
-                    chatBox.appendChild(errMsg);
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                    saveChatState();
+                    setBusy(false);
+                    appendErrorBubble('Something went wrong. Please try again.');
                 });
         });
     }
@@ -418,8 +388,10 @@
         chatSend.addEventListener('click', sendMessage);
     }
     if (chatInput) {
+        chatInput.addEventListener('input', autoGrowInput);
         chatInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 sendMessage();
             }
         });
@@ -481,6 +453,9 @@
                 if (previewEl) {
                     previewEl.style.display = 'flex';
                 }
+            }
+            if (data && Array.isArray(data.history)) {
+                history = data.history;
             }
             chatBox.scrollTop = chatBox.scrollHeight;
         } catch (e) {}
