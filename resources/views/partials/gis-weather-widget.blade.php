@@ -6,7 +6,7 @@
     .gis-weather-widget {
         position: absolute;
         top: 12px;
-        right: 12px;
+        left: 12px;
         z-index: 950;
         width: min(200px, calc(100% - 24px));
         padding: 0.55rem 0.65rem;
@@ -80,7 +80,7 @@
 <script>
 window.BruneiGisWeather = {
     url: @json($gisWeatherUrl),
-    pollMs: 300000,
+    pollMs: 120000,
     initial: @json($mapWeatherInitial),
 
     init: function (map, options) {
@@ -142,7 +142,7 @@ window.BruneiGisWeather = {
             condEl.innerHTML = parts.join(' · ');
 
             document.dispatchEvent(new CustomEvent('brudms:weather-update', {
-                detail: { weather: w, layers: null }
+                detail: { weather: w }
             }));
         }
 
@@ -160,12 +160,6 @@ window.BruneiGisWeather = {
                     if (data.weather) {
                         render(data.weather);
                     }
-                    if (data.layers && window.BruneiGisLayers && window.BruneiGisLayers.refreshPayload) {
-                        window.BruneiGisLayers.refreshPayload(data.layers);
-                    }
-                    document.dispatchEvent(new CustomEvent('brudms:weather-update', {
-                        detail: { weather: data.weather, layers: data.layers }
-                    }));
                 })
                 .catch(function () { /* keep last values */ });
         }

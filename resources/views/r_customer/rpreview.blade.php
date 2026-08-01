@@ -266,10 +266,6 @@
             <img src="{{ asset('images/Vectors/all_location.svg') }}" alt="" />
             <span id="preview-location-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
         </div>
-        <div class="preview-info-row" id="preview-severity-row" style="min-width: 0;">
-            <img src="{{ asset('images/Vectors/rpreview_severity.svg') }}" alt="" />
-            <span id="preview-severity-text" style="font-weight: 600;"></span>
-        </div>
         <div class="preview-info-row preview-details" id="preview-details-row">
             <div class="preview-details-header">
                 <img src="{{ asset('images/Vectors/rpreview_details.svg') }}" alt="" />
@@ -284,7 +280,6 @@
         @csrf
         <input type="hidden" name="problem_type" id="submit-problem_type" value="">
         <input type="hidden" name="phone" id="submit-phone" value="">
-        <input type="hidden" name="severity" id="submit-severity" value="">
         <input type="hidden" name="description" id="submit-description" value="">
         <input type="hidden" name="address" id="submit-address" value="">
         <input type="hidden" name="latitude" id="submit-latitude" value="">
@@ -345,7 +340,6 @@
                         'rproblem_address',
                         'rproblem_lat',
                         'rproblem_lng',
-                        'rproblem_severity',
                         'rproblem_description'
                     ].forEach(function(key) {
                         sessionStorage.removeItem(key);
@@ -492,7 +486,6 @@
                     hideSubmitError();
                     window.showReportSubmitting();
                     document.getElementById('submit-problem_type').value = sessionStorage.getItem('rproblem_choice') || '';
-                    document.getElementById('submit-severity').value = sessionStorage.getItem('rproblem_severity') || '';
                     document.getElementById('submit-description').value = sessionStorage.getItem('rproblem_description') || '';
                     document.getElementById('submit-address').value = sessionStorage.getItem('rproblem_address') || '';
                     document.getElementById('submit-latitude').value = sessionStorage.getItem('rproblem_lat') || '';
@@ -626,9 +619,6 @@
                 var addr = sessionStorage.getItem('rproblem_address');
                 var elAddr = document.getElementById('preview-location-text');
                 if (elAddr) elAddr.textContent = addr || '';
-                var sev = sessionStorage.getItem('rproblem_severity');
-                var elSev = document.getElementById('preview-severity-text');
-                if (elSev) elSev.textContent = (sev === 'urgent') ? 'Urgent' : (sev === 'nonurgent') ? 'Non-Urgent' : '';
                 var desc = sessionStorage.getItem('rproblem_description');
                 var elDesc = document.getElementById('preview-details-text');
                 if (elDesc) elDesc.value = desc || '';

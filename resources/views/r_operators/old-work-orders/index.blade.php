@@ -76,6 +76,7 @@
                     <th>Completed</th>
                     <th>Status</th>
                     <th>Old Report</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -100,10 +101,11 @@
                                 —
                             @endif
                         </td>
+                        <td><a href="{{ route('operations.old-work-orders.show', $archive) }}" class="link-primary">View</a></td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="cell-muted">No old work orders match your filters.</td>
+                        <td colspan="10" class="cell-muted">No old work orders match your filters.</td>
                     </tr>
                 @endforelse
             </tbody>

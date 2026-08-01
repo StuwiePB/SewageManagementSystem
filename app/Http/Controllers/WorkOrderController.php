@@ -67,6 +67,13 @@ class WorkOrderController extends Controller
         return view('r_operators.old-work-orders.index', compact('archiveWorkOrders'));
     }
 
+    public function oldWorkOrderShow(DmsArchiveWorkOrder $archiveWorkOrder)
+    {
+        $archiveWorkOrder->load(['paperReport', 'digitizedBy', 'photos']);
+
+        return view('r_operators.old-work-orders.show', compact('archiveWorkOrder'));
+    }
+
     public function create(Request $request)
     {
         $reports = OperationsReport::where('status', 'pending')->orderBy('created_at', 'desc')->get();
@@ -103,7 +110,8 @@ class WorkOrderController extends Controller
         if ($prefillReport) {
             $workOrderDefaults['report_id'] = (string) $prefillReport->id;
             $workOrderDefaults['type'] = ucfirst(str_replace('_', ' ', (string) $prefillReport->issue_type));
-            $workOrderDefaults['priority'] = $prefillReport->severity === 'urgent' ? 'high' : 'medium';
+            $issueType = strtolower(str_replace([' ', '-'], '_', (string) $prefillReport->issue_type));
+            $workOrderDefaults['priority'] = in_array($issueType, ['overflow', 'blockage'], true) ? 'high' : 'medium';
             $workOrderDefaults['location_address'] = (string) $prefillReport->location_address;
             $workOrderDefaults['district'] = (string) ($prefillReport->district ?? '');
             $workOrderDefaults['mukim'] = (string) ($prefillReport->mukim ?? '');

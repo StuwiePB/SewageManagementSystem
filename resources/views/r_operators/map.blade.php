@@ -12,31 +12,19 @@
         color: #cbd5e1; font-size: 0.875rem;
     }
     .gis-layer-toggle.active { color: #8ab0ff; border-color: var(--brudms-primary); }
-    .gis-risk-legend { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-    .gis-risk-legend-item {
-        display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
-        padding: 0.25rem 0.55rem; border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.15); color: #f8fafc;
-    }
-    .gis-risk-legend-swatch { width: 0.65rem; height: 0.65rem; border-radius: 50%; }
 </style>
 
 <header class="topbar">
     <div>
         <h1>GIS Map</h1>
-        <p>Brunei terrain + drainage risk zones (yellow = higher, green = lower). Live rain data in top-right.</p>
+        <p>Brunei terrain + hex drainage risk grid, scored hourly from live rainfall forecasts. Click a hexagon for its factor breakdown.</p>
     </div>
 </header>
 
 <section class="card card-map" aria-label="Map">
-    <div class="gis-risk-legend" aria-label="Drainage risk legend">
-        @foreach(($bruneiGisLayers['legend'] ?? []) as $item)
-            <span class="gis-risk-legend-item"><span class="gis-risk-legend-swatch" style="background:{{ $item['color'] }};"></span>{{ $item['label'] }}</span>
-        @endforeach
-    </div>
     <div class="gis-layer-toggles">
         <label class="gis-layer-toggle" id="toggle-terrain"><span>Terrain map</span></label>
-        <label class="gis-layer-toggle active" id="toggle-risk-zones"><span>Drainage risk zones</span></label>
+        <label class="gis-layer-toggle active" id="toggle-risk-grid"><span>Risk grid</span></label>
     </div>
     <div class="map-legend">
         <span class="map-legend-item"><span class="map-legend-dot report">R</span> Report</span>
@@ -44,6 +32,7 @@
     </div>
     <div id="operations-map-wrapper" style="position: relative; overflow: visible;">
         <div id="operations-map" class="map-container"></div>
+        <div id="risk-grid-panel-ops" class="risk-grid-panel"></div>
     </div>
 </section>
 
@@ -80,7 +69,7 @@
 </section>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-@include('partials.gis-brunei-layers')
+@include('partials.gis-risk-grid')
 @include('partials.gis-weather-widget')
 @include('partials.gis-safe-route')
 <script>
@@ -103,7 +92,7 @@
     });
     var baseGroup = L.layerGroup([osmLayer]).addTo(map);
 
-    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: baseGroup, instanceKey: 'ops' });
+    var riskGrid = window.RiskGrid.init(map, { satelliteLayer: baseGroup, instanceKey: 'ops', panelHostId: 'risk-grid-panel-ops' });
     if (window.BruneiGisWeather) {
         window.BruneiGisWeather.init(map, { hostId: 'operations-map-wrapper' });
     }
@@ -111,12 +100,13 @@
     document.getElementById('toggle-terrain').addEventListener('click', function () {
         var on = !this.classList.contains('active');
         this.classList.toggle('active', on);
-        bruneiLayers.setBaseTerrain(on);
+        riskGrid.setBaseTerrain(on);
     });
-    document.getElementById('toggle-risk-zones').addEventListener('click', function () {
+    document.getElementById('toggle-risk-grid').addEventListener('click', function () {
         var on = !this.classList.contains('active');
         this.classList.toggle('active', on);
-        bruneiLayers.toggleRisk(on);
+        riskGrid.toggleGrid(on);
+        document.getElementById('risk-grid-panel-ops').style.display = on ? '' : 'none';
     });
 
     reports.forEach(function (r) {

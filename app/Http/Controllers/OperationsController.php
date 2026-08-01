@@ -96,9 +96,6 @@ class OperationsController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        if ($request->filled('severity')) {
-            $query->where('severity', $request->severity);
-        }
         if ($request->filled('issue_type')) {
             $query->where('issue_type', $request->issue_type);
         }
@@ -123,7 +120,7 @@ class OperationsController extends Controller
 
     public function oldReports(Request $request)
     {
-        $query = DmsPaperReport::query();
+        $query = DmsPaperReport::query()->with('archiveWorkOrders');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -175,8 +172,7 @@ class OperationsController extends Controller
         ])->values()->all();
 
         $weather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
-        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($weather);
 
-        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'bruneiGisLayers', 'weather'));
+        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'weather'));
     }
 }

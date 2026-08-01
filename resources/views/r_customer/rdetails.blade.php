@@ -34,16 +34,7 @@
         </div>
     </div>
 
-    <div id="severity-box" style="position: fixed; left: 50%; top: calc(11vh + 28px + 58px + 24px); transform: translateX(-50%); width: 85%; max-width: 320px; height: 40px; border-radius: 14px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;">
-        <span style="color: rgba(255, 255, 255, 0.9); font-size: 12px; font-family: Poppins, sans-serif; font-weight: 600;">Severity</span>
-        <span id="severity-options" style="color: rgba(255, 255, 255, 0.5); font-size: 12px; font-family: Poppins, sans-serif; font-weight: 500;">
-            <span id="opt-urgent" class="severity-opt" data-value="urgent" style="cursor: pointer;">Urgent</span>
-            <span style="margin: 0 4px;">/</span>
-            <span id="opt-nonurgent" class="severity-opt" data-value="nonurgent" style="cursor: pointer;">Non-Urgent</span>
-        </span>
-    </div>
-
-    <div class="rflow-details-block" style="position: fixed; left: 50%; top: calc(11vh + 28px + 58px + 24px + 40px + 8px); transform: translateX(-50%); width: 85%; max-width: 320px; height: 320px; border-radius: 14px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); z-index: 2; padding: 8px 16px 12px; box-sizing: border-box; display: flex; flex-direction: column;">
+    <div class="rflow-details-block" style="position: fixed; left: 50%; top: calc(11vh + 28px + 58px + 24px); transform: translateX(-50%); width: 85%; max-width: 320px; height: 320px; border-radius: 14px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); z-index: 2; padding: 8px 16px 12px; box-sizing: border-box; display: flex; flex-direction: column;">
         <span style="color: rgba(255, 255, 255, 0.9); font-size: 12px; font-family: Poppins, sans-serif; font-weight: 600;">Description</span>
         <div style="flex: 1; min-height: 0; margin: 0 -13px -9px -13px; display: flex;">
             <textarea name="description" id="description-textbox" placeholder="Describe the problem..." style="flex: 1; min-height: 0; width: 100%; border-radius: 11px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.25); padding: 10px 12px; color: rgba(255, 255, 255, 0.9); font-size: 12px; font-family: Poppins, sans-serif; resize: none; outline: none; box-sizing: border-box;"></textarea>
@@ -74,23 +65,7 @@
             } catch (e) {}
             window.location.href = '{{ $reportStep("rpreview") }}';
         });
-        var selectedSeverity = null;
-        document.querySelectorAll('.severity-opt').forEach(function(el) {
-            el.addEventListener('click', function() {
-                document.querySelectorAll('.severity-opt').forEach(function(o) {
-                    o.style.color = 'rgba(255, 255, 255, 0.5)';
-                    o.style.textDecoration = 'none';
-                });
-                this.style.color = 'var(--brudms-primary)';
-                this.style.textDecoration = 'underline';
-                selectedSeverity = this.getAttribute('data-value');
-                try { sessionStorage.setItem('rproblem_severity', selectedSeverity); } catch (e) {}
-            });
-        });
         try {
-            var saved = sessionStorage.getItem('rproblem_severity');
-            if (saved === 'urgent') document.getElementById('opt-urgent').click();
-            else if (saved === 'nonurgent') document.getElementById('opt-nonurgent').click();
             var savedDesc = sessionStorage.getItem('rproblem_description');
             if (savedDesc) document.getElementById('description-textbox').value = savedDesc;
         } catch (e) {}

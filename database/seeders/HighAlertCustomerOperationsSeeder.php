@@ -43,7 +43,6 @@ class HighAlertCustomerOperationsSeeder extends Seeder
                     'phone' => '+6738000000',
                     'reporter_name' => $customer->name,
                     'problem_type' => $row['problem_type'],
-                    'severity' => 'urgent',
                     'description' => 'High alert customer test report for rapid response validation.',
                     'address' => $row['address'],
                     'latitude' => $row['lat'],
@@ -57,7 +56,6 @@ class HighAlertCustomerOperationsSeeder extends Seeder
                 [
                     'report_number' => 'RPT-'.$row['code'],
                     'issue_type' => $row['problem_type'],
-                    'severity' => 'urgent',
                     'description' => $report->description,
                     'reporter_name' => $report->reporter_name,
                     'reporter_contact' => $report->phone,

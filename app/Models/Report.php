@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Report extends Model
@@ -21,7 +22,6 @@ class Report extends Model
         'phone',
         'reporter_name',
         'problem_type',
-        'severity',
         'description',
         'address',
         'latitude',
@@ -34,6 +34,16 @@ class Report extends Model
     ];
 
     public const STATUS_PENDING = 'pending';
+
+    /**
+     * Problem types that warrant immediate SNS / high-priority handling (severity column removed).
+     */
+    public function isHighPriorityProblemType(): bool
+    {
+        $type = strtolower(str_replace([' ', '-'], '_', trim((string) $this->problem_type)));
+
+        return in_array($type, ['overflow', 'blockage'], true);
+    }
 
     /**
      * Admin-facing keys and labels when removing a customer report from the queue.
@@ -87,24 +97,38 @@ class Report extends Model
     }
 
     /**
-     * Logged-in customer’s history: sent to operations, or rejected (removed) with a reason.
+     * Statuses counted on the community statistics page (not under_review — that is owner-only on the dashboard).
+     *
+     * @return list<string>
+     */
+    public static function customerStatisticsStatuses(): array
+    {
+        return ['pending', 'in_progress', 'resolved'];
+    }
+
+    /**
+     * Logged-in customer’s history: accepted into operations only (no rejections or cancellations).
      */
     public static function queryForCustomerHistory(int $userId): Builder
     {
         return static::query()
             ->with(['operationsReport'])
-            ->withTrashed()
             ->where('user_id', $userId)
-            ->where(function (Builder $q) {
-                $q->where(function (Builder $a) {
-                    $a->whereNull('reports.deleted_at')
-                        ->whereHas('operationsReport');
-                })->orWhere(function (Builder $a) {
-                    $a->whereNotNull('reports.deleted_at')
-                        ->whereNotNull('reports.deletion_reason');
-                });
-            })
+            ->whereNull('reports.deleted_at')
+            ->where('reports.status', '!=', 'cancelled')
+            ->whereHas('operationsReport')
             ->latest();
+    }
+
+    /**
+     * Customer statistics page: all reporters’ ops-linked reports; excludes cancelled and admin-rejected.
+     */
+    public static function queryForCustomerStatistics(): Builder
+    {
+        return static::query()
+            ->whereNull('reports.deleted_at')
+            ->whereIn('reports.status', static::customerStatisticsStatuses())
+            ->whereHas('operationsReport');
     }
 
     /**
@@ -150,18 +174,75 @@ class Report extends Model
             ->orderByOwnerUnderReviewFirst($user);
     }
 
+    public static function isFrSalReference(?string $code): bool
+    {
+        return is_string($code) && str_starts_with($code, 'FR SAL/');
+    }
+
+    public static function isLegacyReference(?string $code): bool
+    {
+        if (! is_string($code) || $code === '') {
+            return true;
+        }
+
+        if (static::isFrSalReference($code)) {
+            return false;
+        }
+
+        return str_starts_with($code, 'RPT-')
+            || str_starts_with($code, 'WO-')
+            || str_starts_with($code, 'WO-ARC-');
+    }
+
+    public static function referenceCodeExists(string $code): bool
+    {
+        if (static::withTrashed()->where('reference_code', $code)->exists()) {
+            return true;
+        }
+
+        if (OperationsReport::query()->where('report_number', $code)->exists()) {
+            return true;
+        }
+
+        if (WorkOrder::query()->withoutGlobalScopes()->where('work_order_number', $code)->exists()) {
+            return true;
+        }
+
+        if (class_exists(DmsArchiveWorkOrder::class)
+            && Schema::hasTable('dms_archive_work_orders')
+            && DmsArchiveWorkOrder::query()->where('work_order_number', $code)->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
     public static function generateReferenceCode(): string
     {
         $md = now()->format('md');
         $yy = now()->format('y');
 
-        // Keep trying until unique to avoid collisions.
         do {
             $rand = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
             $reference = "FR SAL/{$md}/{$yy}({$rand})";
-        } while (static::withTrashed()->where('reference_code', $reference)->exists());
+        } while (static::referenceCodeExists($reference));
 
         return $reference;
+    }
+
+    /**
+     * Customer-facing reference used across ops reports and work orders for this report.
+     */
+    public function ensureReferenceCode(): string
+    {
+        if (filled($this->reference_code)) {
+            return (string) $this->reference_code;
+        }
+
+        $code = static::generateReferenceCode();
+        $this->forceFill(['reference_code' => $code])->save();
+
+        return $code;
     }
 
     public function user(): BelongsTo

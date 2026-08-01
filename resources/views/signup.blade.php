@@ -9,8 +9,6 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-        @include('partials.brudms-theme')
-        @vite(['resources/css/brudms-theme.css', 'resources/js/app.js'])
         <style>
             @keyframes glass-box-enter {
                 from {
@@ -357,6 +355,15 @@
                 font-weight: 700;
                 text-align: center;
                 box-sizing: border-box;
+            }
+            .code-beta-hint {
+                margin: 0.55rem 0 0;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.72rem;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.55);
+                text-align: center;
+                letter-spacing: 0.04em;
             }
             .code-digit:focus {
                 border-color: rgba(255, 255, 255, 0.35);
@@ -732,6 +739,10 @@
                         <a href="{{ route('locale', 'en') }}" class="{{ app()->getLocale() === 'en' ? 'active' : '' }}">EN</a>
                     </div>
                 </div>
+                @php
+                    $betaSignupPasscode = '251206';
+                    $betaForgotPasscode = '112904';
+                @endphp
                 <!-- Right side content goes here -->
                 <div id="right-panel-signup" class="right-panel-signup{{ request()->is('login') || request()->routeIs('password.request') ? ' hidden' : '' }}">
                     <div class="create-account-header" style="position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 0.4rem;">
@@ -743,10 +754,10 @@
                         </p>
                     </div>
                     <div class="signup-form-wrap" style="position: absolute; top: 31%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
-                        <form id="signup-form" class="signup-form" action="{{ route('register.store') }}" method="post">
+                        <form id="signup-form" class="signup-form" action="{{ route('register.store') }}" method="post" autocomplete="off">
                             @csrf
-                            <input type="text" class="glass-input" name="name" placeholder="{{ __('username') }}" autocomplete="name" id="username" value="{{ old('name') }}">
-                            <input type="tel" class="glass-input" name="phone" placeholder="+673 XXXXXXXX" autocomplete="tel" id="phone" value="{{ old('phone', '+673 ') }}">
+                            <input type="text" class="glass-input" name="name" placeholder="{{ __('username') }}" autocomplete="nickname" id="signup-name" value="{{ old('name') }}" autocapitalize="words" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
+                            <input type="tel" class="glass-input" name="phone" placeholder="+673 XXXXXXXX" autocomplete="tel" id="phone" value="{{ old('phone', '+673 ') }}" inputmode="tel" data-lpignore="true" data-1p-ignore="true">
                             <div class="email-invalid-msg" id="phone-invalid-msg" data-msg="Invalid phone number." aria-live="polite"><span></span></div>
                             @if ($errors->has('phone'))
                                 <div class="email-invalid-msg visible" id="phone-server-error-msg" aria-live="polite"><span>{{ $errors->first('phone') }}</span></div>
@@ -784,15 +795,16 @@
                         </p>
                     </div>
                     <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 32%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
-                        <form id="signup-code-form" class="signup-form" action="#" method="post" onsubmit="return false;">
+                        <form id="signup-code-form" class="signup-form" action="#" method="post" onsubmit="return false;" autocomplete="off">
                             <div class="code-input-row" id="signup-code-input-row" aria-label="6 digit code">
-                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code">
-                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-2" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-3" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-4" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-5" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-6" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-2" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-3" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-4" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-5" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="signup-code-digit code-digit" id="signup-code-digit-6" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
                             </div>
+                            <p class="code-beta-hint">BETA: {{ $betaSignupPasscode }}</p>
                             <div class="email-invalid-msg" id="signup-code-invalid-msg" data-msg="Invalid code." aria-live="polite"><span></span></div>
                         </form>
                     </div>
@@ -807,9 +819,9 @@
                         </p>
                     </div>
                     <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 31%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
-                        <form id="login-form" class="signup-form" action="{{ route('login.store') }}" method="post">
+                        <form id="login-form" class="signup-form" action="{{ route('login.store') }}" method="post" autocomplete="on">
                             @csrf
-                            <input type="text" class="glass-input" name="email" placeholder="Email or phone number" autocomplete="username" id="login-email" value="{{ old('email') }}">
+                            <input type="text" class="glass-input" name="email" placeholder="Email or phone number" autocomplete="email" id="login-email" value="{{ old('email') }}" autocapitalize="off" spellcheck="false">
                             <div class="email-invalid-msg" id="login-email-invalid-msg" data-msg="Enter a valid email or phone number." aria-live="polite"><span></span></div>
                             @if ($errors->has('email'))
                                 @php
@@ -845,9 +857,9 @@
                         </p>
                     </div>
                     <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 31%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
-                        <form id="forgot-form" class="signup-form" action="{{ route('password.email') }}" method="post">
+                        <form id="forgot-form" class="signup-form" action="{{ route('password.email') }}" method="post" autocomplete="on">
                             @csrf
-                            <input type="text" class="glass-input" name="email" placeholder="Email or phone number" autocomplete="username" id="forgot-email" value="{{ request()->routeIs('password.request') ? old('email') : '' }}">
+                            <input type="text" class="glass-input" name="email" placeholder="Email or phone number" autocomplete="email" id="forgot-email" value="{{ request()->routeIs('password.request') ? old('email') : '' }}" autocapitalize="off" spellcheck="false">
                             <div class="email-invalid-msg" id="forgot-email-invalid-msg" data-msg="Enter a valid email or phone number." aria-live="polite"><span></span></div>
                         </form>
                         <p class="login-prompt login-form-prompt"><a href="#login" class="login-link" id="show-login-from-forgot">{{ __('log_in') }}</a></p>
@@ -864,15 +876,16 @@
                         </p>
                     </div>
                     <div class="signup-form-wrap login-form-wrap" style="position: absolute; top: 31%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 26rem; padding: 0 1rem; box-sizing: border-box;">
-                        <form id="code-form" class="signup-form" action="#" method="post" onsubmit="return false;">
+                        <form id="code-form" class="signup-form" action="#" method="post" onsubmit="return false;" autocomplete="off">
                             <div class="code-input-row" id="code-input-row" aria-label="6 digit code">
-                                <input type="text" class="code-digit" id="code-digit-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code">
-                                <input type="text" class="code-digit" id="code-digit-2" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="code-digit" id="code-digit-3" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="code-digit" id="code-digit-4" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="code-digit" id="code-digit-5" inputmode="numeric" pattern="[0-9]*" maxlength="1">
-                                <input type="text" class="code-digit" id="code-digit-6" inputmode="numeric" pattern="[0-9]*" maxlength="1">
+                                <input type="text" class="code-digit" id="code-digit-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="code-digit" id="code-digit-2" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="code-digit" id="code-digit-3" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="code-digit" id="code-digit-4" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="code-digit" id="code-digit-5" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                                <input type="text" class="code-digit" id="code-digit-6" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
                             </div>
+                            <p class="code-beta-hint">BETA: {{ $betaForgotPasscode }}</p>
                             <div class="email-invalid-msg" id="code-invalid-msg" data-msg="Invalid code." aria-live="polite"><span></span></div>
                         </form>
                         <a href="#verified" id="show-verified-from-code" style="display:none" aria-hidden="true"></a>
@@ -1190,7 +1203,7 @@
                 var phoneInvalidText = phoneInvalidEl ? phoneInvalidEl.getAttribute('data-msg') : '';
                 var strengthEl = document.getElementById('password-strength');
                 var strengthSpan = strengthEl ? strengthEl.querySelector('span') : null;
-                var inputs = ['username', 'phone', 'password', 'password_confirmation'];
+                var inputs = ['signup-name', 'phone', 'password', 'password_confirmation'];
                 var phoneRegex = /^\+673\s\d{3}\s\d{4}$/;
 
                 function getStrength(password) {
@@ -1484,7 +1497,7 @@
                 var codeInvalidSpan = codeInvalidEl ? codeInvalidEl.querySelector('span') : null;
                 var codeInvalidText = codeInvalidEl ? codeInvalidEl.getAttribute('data-msg') : '';
                 var signupForm = document.getElementById('signup-form');
-                var DUMMY_SIGNUP_CODE = '251206';
+                var DUMMY_SIGNUP_CODE = @json($betaSignupPasscode);
 
                 function sanitizeDigit(value) {
                     return (value || '').replace(/\D/g, '').slice(0, 1);
@@ -1567,7 +1580,7 @@
                 var codeInvalidSpan = codeInvalidEl ? codeInvalidEl.querySelector('span') : null;
                 var codeInvalidText = codeInvalidEl ? codeInvalidEl.getAttribute('data-msg') : '';
                 var showVerifiedFromCode = document.getElementById('show-verified-from-code');
-                var DUMMY_CODE = '112904';
+                var DUMMY_CODE = @json($betaForgotPasscode);
 
                 function sanitizeDigit(value) {
                     return (value || '').replace(/\D/g, '').slice(0, 1);

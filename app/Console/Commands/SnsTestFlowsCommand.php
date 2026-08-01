@@ -56,7 +56,6 @@ class SnsTestFlowsCommand extends Command
             $report = Report::create([
                 'reference_code' => Report::generateReferenceCode(),
                 'problem_type' => 'SNS test overflow',
-                'severity' => 'urgent',
                 'description' => "SNS Step 4 test {$tag}",
                 'status' => Report::STATUS_PENDING,
             ]);
@@ -68,7 +67,6 @@ class SnsTestFlowsCommand extends Command
             $report = Report::create([
                 'reference_code' => Report::generateReferenceCode(),
                 'problem_type' => 'SNS test send to ops',
-                'severity' => 'nonurgent',
                 'description' => "SNS Step 4 test {$tag}",
                 'status' => Report::STATUS_PENDING,
             ]);

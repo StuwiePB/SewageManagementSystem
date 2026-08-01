@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\Admin\AdminDmsArchiveController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -15,6 +15,7 @@ use App\Http\Controllers\Operations\StatisticsController as OperationsStatistics
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\MapWeatherController;
+use App\Http\Controllers\RiskGridController;
 use App\Http\Controllers\SafeRouteController;
 use App\Http\Controllers\Webhooks\SnsWebhookController;
 use App\Http\Controllers\WorkOrderController;
@@ -127,12 +128,19 @@ Route::get('/api/gis/weather', [MapWeatherController::class, 'show'])
     ->middleware(['auth', 'verified'])
     ->name('gis.weather');
 
+Route::prefix('api/risk-grid')->name('risk-grid.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/', [RiskGridController::class, 'index'])->name('index');
+    Route::get('/alerts', [RiskGridController::class, 'alerts'])->name('alerts');
+    Route::get('/{h3}', [RiskGridController::class, 'show'])->name('show');
+});
+
 Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified', 'role:operator'])->group(function () {
     Route::get('/dashboard', [OperationsController::class, 'dashboard'])->name('dashboard');
     Route::get('/reports', [OperationsController::class, 'reports'])->name('reports');
     Route::get('/old-reports', [OperationsController::class, 'oldReports'])->name('old-reports.index');
     Route::livewire('/old-reports/upload', PaperReportForm::class)->name('old-reports.create');
     Route::get('/old-work-orders', [WorkOrderController::class, 'oldWorkOrdersIndex'])->name('old-work-orders.index');
+    Route::get('/old-work-orders/{archiveWorkOrder}', [WorkOrderController::class, 'oldWorkOrderShow'])->whereNumber('archiveWorkOrder')->name('old-work-orders.show');
     Route::livewire('/old-work-orders/add', ArchiveWorkOrderForm::class)->name('old-work-orders.create');
     Route::get('/map', [OperationsController::class, 'map'])->name('map');
 
@@ -162,7 +170,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->group(functio
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/customer-reports', [AdminController::class, 'customerReports'])->name('admin.customer-reports.index');
     Route::get('/admin/customer-reports/unscanned-ids', [AdminController::class, 'customerReportsUnscannedIds'])->name('admin.customer-reports.unscanned-ids');
+    Route::get('/admin/customer-reports/rescan-ids', [AdminController::class, 'customerReportsRescanIds'])->name('admin.customer-reports.rescan-ids');
     Route::post('/admin/customer-reports/{report}/scan-drainage', [AdminController::class, 'customerReportScanDrainage'])->name('admin.customer-reports.scan-drainage');
+    Route::post('/admin/customer-reports/{report}/rescan-drainage', [AdminController::class, 'customerReportRescanDrainage'])->name('admin.customer-reports.rescan-drainage');
     Route::get('/admin/customer-reports/{report}', [AdminController::class, 'customerReportShow'])->name('admin.customer-reports.show');
     Route::post('/admin/customer-reports/{report}/send-to-operations', [AdminController::class, 'customerReportSendToOperations'])->name('admin.customer-reports.send-to-operations');
     Route::delete('/admin/customer-reports/{report}', [AdminController::class, 'customerReportDestroy'])->name('admin.customer-reports.destroy');
@@ -286,6 +296,10 @@ Route::get('/customer/livemap', fn () => redirect()->route('customer.livemap', [
     ->middleware(['auth', 'verified', 'role:customer']);
 Route::get('/customer/myhistory', fn () => redirect()->route('customer.myhistory', ['name' => auth()->user()->profileSlug()]))
     ->middleware(['auth', 'verified', 'role:customer']);
+Route::get('/customer/custatistics', fn () => redirect()->route('customer.custatistics', ['name' => auth()->user()->profileSlug()]))
+    ->middleware(['auth', 'verified', 'role:customer']);
+Route::get('/customer/email-bind-otp', fn () => redirect()->route('customer.email.bind.otp', ['name' => auth()->user()->profileSlug()]))
+    ->middleware(['auth', 'verified', 'role:customer']);
 Route::get('/force-logout', function () {
     auth()->logout();
     request()->session()->invalidate();
@@ -337,7 +351,14 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
         ]);
     })->name('customer.preference');
     Route::get('/{name}/profilesettings', fn () => view('r_customer.profilesettings'))->name('customer.profilesettings');
-    Route::get('/{name}/email-bind-otp', fn () => view('r_customer.email-bind-otp'))->name('customer.email.bind.otp');
+    Route::get('/{name}/email-bind-otp', function () {
+        $user = auth()->user();
+
+        return view('r_customer.email-bind-otp', [
+            'user' => $user,
+            'betaEmailBindPasscode' => '071002',
+        ]);
+    })->name('customer.email.bind.otp');
     Route::get('/{name}/myhistory', function () {
         $user = auth()->user();
 
@@ -403,7 +424,6 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
             ->get();
 
         $mapWeather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
-        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($mapWeather);
 
         $mapWorkOrders = WorkOrder::query()
             ->whereNotNull('latitude')
@@ -421,7 +441,6 @@ Route::middleware(['auth', 'verified', 'role:customer', 'customer.name'])->group
             ->all();
 
         return view('r_customer.livemap', [
-            'bruneiGisLayers' => $bruneiGisLayers,
             'mapWeather' => $mapWeather,
             'mapWorkOrders' => $mapWorkOrders,
             'reports' => $reports->map(fn ($r) => [
@@ -476,6 +495,12 @@ Route::post('/customer/profile', [ProfileController::class, 'update'])
 Route::post('/customer/profile/bind-email', [ProfileController::class, 'bindEmail'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.profile.bind-email');
 
+Route::post('/customer/email-bind-prompt/dismiss', function () {
+    session(['email_bind_prompt_dismissed' => true]);
+
+    return response()->json(['ok' => true]);
+})->middleware(['auth', 'verified', 'role:customer'])->name('customer.email-bind-prompt.dismiss');
+
 Route::post('/customer/preference', [PreferenceController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:customer'])->name('customer.preference.update');
 
@@ -490,3 +515,4 @@ Route::get('/webhooks/sns', function () {
 Route::post('/webhooks/sns', SnsWebhookController::class)->name('webhooks.sns');
 
 require __DIR__.'/settings.php';
+

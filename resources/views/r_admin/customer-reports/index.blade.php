@@ -7,6 +7,14 @@
 <style>
     @keyframes cust-rep-dots { 0%, 33% { opacity: 0.3; } 66%, 100% { opacity: 1; } }
     .cust-rep-dots { animation: cust-rep-dots 1.2s ease-in-out infinite; }
+    .cust-rep-scan-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-self: flex-start;
+        min-width: 220px;
+    }
+    .cust-rep-scan-actions .btn-submit { width: 100%; white-space: nowrap; }
     .cust-rep-list { display: flex; flex-direction: column; gap: 12px; }
     .cust-rep-card {
         font-family: 'Poppins', sans-serif;
@@ -189,9 +197,14 @@
         <h1>Customer reports</h1>
         <p>Every complaint filed through the customer portal (same card style as customer history, without the mobile shell).</p>
     </div>
-    <button type="button" class="btn-submit" id="drain-scan-start" style="align-self: flex-start;" {{ ($unscannedWithPhotoCount ?? 0) === 0 ? 'disabled' : '' }}>
-        Scan unscanned photos ({{ $unscannedWithPhotoCount ?? 0 }})
-    </button>
+    <div class="cust-rep-scan-actions">
+        <button type="button" class="btn-submit" id="drain-scan-start" {{ ($unscannedWithPhotoCount ?? 0) === 0 ? 'disabled' : '' }}>
+            Scan unscanned photos ({{ $unscannedWithPhotoCount ?? 0 }})
+        </button>
+        <button type="button" class="btn-submit btn-secondary" id="drain-rescan-start" {{ ($reportsWithPhotoCount ?? 0) === 0 ? 'disabled' : '' }}>
+            ReScan Photo ({{ $reportsWithPhotoCount ?? 0 }})
+        </button>
+    </div>
 </div>
 
 <section class="card card-mb" aria-label="Filters">
@@ -399,35 +412,42 @@
     }
 })();
 (function () {
-    var btn = document.getElementById('drain-scan-start');
     var overlay = document.getElementById('drain-scan-overlay');
     var titleEl = document.getElementById('drain-scan-title');
     var detailEl = document.getElementById('drain-scan-detail');
     var csrf = @json(csrf_token());
-    var unscannedUrl = @json(route('admin.customer-reports.unscanned-ids', ['sent' => request('sent', 'unsent')]));
     var scanBase = @json(rtrim(url('/'), '/') . '/admin/customer-reports/');
+    var scanButtons = [
+        document.getElementById('drain-scan-start'),
+        document.getElementById('drain-rescan-start')
+    ].filter(Boolean);
 
-    if (!btn || !overlay) return;
+    if (!overlay || scanButtons.length === 0) return;
 
-    btn.addEventListener('click', function () {
+    function setButtonsDisabled(disabled) {
+        scanButtons.forEach(function (b) { b.disabled = disabled; });
+    }
+
+    function runBulkDrainScan(config) {
+        var btn = config.button;
         if (btn.disabled) return;
-        btn.disabled = true;
+        setButtonsDisabled(true);
         overlay.classList.add('is-open');
         overlay.setAttribute('aria-hidden', 'false');
-        titleEl.textContent = 'Scanning…';
+        titleEl.textContent = config.loadingTitle || 'Scanning…';
         detailEl.textContent = 'Fetching list…';
 
-        fetch(unscannedUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        fetch(config.idsUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 var ids = data.ids || [];
                 if (ids.length === 0) {
-                    titleEl.textContent = 'Nothing to scan';
-                    detailEl.textContent = 'All photos with images already have an AI label.';
+                    titleEl.textContent = config.emptyTitle || 'Nothing to scan';
+                    detailEl.textContent = config.emptyDetail || 'No matching reports.';
                     setTimeout(function () {
                         overlay.classList.remove('is-open');
                         overlay.setAttribute('aria-hidden', 'true');
-                        btn.disabled = false;
+                        setButtonsDisabled(false);
                     }, 1200);
                     return;
                 }
@@ -442,10 +462,10 @@
                         return;
                     }
                     var id = ids[done];
-                    titleEl.textContent = 'Scanning ' + (done + 1) + ' / ' + total;
+                    titleEl.textContent = (config.progressTitle || 'Scanning') + ' ' + (done + 1) + ' / ' + total;
                     detailEl.textContent = 'Report #' + id;
 
-                    fetch(scanBase + id + '/scan-drainage', {
+                    fetch(scanBase + id + '/' + config.scanAction, {
                         method: 'POST',
                         headers: {
                             'Accept': 'application/json',
@@ -455,8 +475,7 @@
                         },
                         body: '{}'
                     })
-                        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-                        .then(function (res) {
+                        .then(function () {
                             done++;
                             scanNext();
                         })
@@ -470,13 +489,42 @@
             .catch(function () {
                 titleEl.textContent = 'Error';
                 detailEl.textContent = 'Could not start scan.';
-                btn.disabled = false;
+                setButtonsDisabled(false);
                 setTimeout(function () {
                     overlay.classList.remove('is-open');
                     overlay.setAttribute('aria-hidden', 'true');
                 }, 2000);
             });
-    });
+    }
+
+    var scanStart = document.getElementById('drain-scan-start');
+    if (scanStart) {
+        scanStart.addEventListener('click', function () {
+            runBulkDrainScan({
+                button: scanStart,
+                idsUrl: @json(route('admin.customer-reports.unscanned-ids', ['sent' => request('sent', 'unsent')])),
+                scanAction: 'scan-drainage',
+                emptyDetail: 'All photos with images already have an AI label.'
+            });
+        });
+    }
+
+    var rescanStart = document.getElementById('drain-rescan-start');
+    if (rescanStart) {
+        rescanStart.addEventListener('click', function () {
+            if (!window.confirm('Re-run AI drainage scan on all reports with photos? Existing labels will be replaced.')) {
+                return;
+            }
+            runBulkDrainScan({
+                button: rescanStart,
+                idsUrl: @json(route('admin.customer-reports.rescan-ids', ['sent' => request('sent', 'unsent')])),
+                scanAction: 'rescan-drainage',
+                loadingTitle: 'Re-scanning…',
+                progressTitle: 'Re-scanning',
+                emptyDetail: 'No reports with photos match the current filter.'
+            });
+        });
+    }
 })();
 </script>
 @endpush

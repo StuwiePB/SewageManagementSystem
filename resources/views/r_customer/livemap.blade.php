@@ -116,9 +116,7 @@
             .livemap-filter-dot.status-progress { color: #FFAE00; }
             .livemap-filter-dot.status-resolved { color: #00FF26; }
             #livemap-safe-route-host .gis-safe-route-panel.is-livemap {
-                bottom: max(200px, calc(24vh + env(safe-area-inset-bottom, 0px)));
-                left: 12px;
-                width: min(300px, calc(100vw - 24px));
+                z-index: 1000;
             }
             .user-location-marker {
                 position: relative;
@@ -256,7 +254,6 @@
 
     @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    @include('partials.gis-brunei-layers')
     @include('partials.gis-weather-widget')
     @include('partials.gis-safe-route')
     <script>
@@ -303,10 +300,6 @@
             keepBuffer: 10
         }).addTo(map);
 
-        var satelliteGroup = L.layerGroup();
-        if (window.BruneiGisLayers) {
-            window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'livemap', showRiskLayers: false });
-        }
         var mapWorkOrders = @json($mapWorkOrders ?? []);
         if (window.BruneiGisWeather) {
             window.BruneiGisWeather.init(map, { hostId: 'livemap-weather-host', livemap: true });

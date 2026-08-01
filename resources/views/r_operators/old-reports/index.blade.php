@@ -70,7 +70,11 @@
                         <td>{{ $paper->investigated_at?->format('d M Y, H:i') ?? '—' }}</td>
                         <td><span class="badge badge-status">{{ strtoupper($paper->source) }}</span></td>
                         <td>
-                            <a href="{{ route('operations.old-work-orders.create', ['report' => $paper->id]) }}" class="link-primary">Add Old Work Order</a>
+                            @if($paper->archiveWorkOrders->isNotEmpty())
+                                <a href="{{ route('operations.old-work-orders.show', $paper->archiveWorkOrders->first()) }}" class="link-primary">View Work Order</a>
+                            @else
+                                <a href="{{ route('operations.old-work-orders.create', ['report' => $paper->id]) }}" class="link-primary">Add Old Work Order</a>
+                            @endif
                         </td>
                     </tr>
                 @empty

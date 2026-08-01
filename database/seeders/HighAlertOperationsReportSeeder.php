@@ -30,7 +30,6 @@ class HighAlertOperationsReportSeeder extends Seeder
                 ['report_number' => $row['report_number']],
                 [
                     'issue_type' => $row['issue_type'],
-                    'severity' => 'urgent',
                     'description' => 'High alert case for rapid response and immediate field verification.',
                     'reporter_name' => 'High Alert Test Seeder',
                     'reporter_contact' => '+6738000000',

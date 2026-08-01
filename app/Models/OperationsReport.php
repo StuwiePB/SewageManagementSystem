@@ -17,7 +17,6 @@ class OperationsReport extends Model
         'customer_report_id',
         'report_number',
         'issue_type',
-        'severity',
         'description',
         'reporter_name',
         'reporter_contact',
@@ -53,12 +52,38 @@ class OperationsReport extends Model
         return config("brunei.mukims.{$this->district}.{$this->mukim}") ?? $this->mukim;
     }
 
+    /**
+     * New operational report number (always FR SAL format).
+     */
     public static function generateReportNumber(): string
     {
-        do {
-            $number = 'RPT-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6));
-        } while (self::where('report_number', $number)->exists());
+        return Report::generateReferenceCode();
+    }
 
-        return $number;
+    /**
+     * Same identifier as the customer report (FR SAL/…) for linked intake.
+     */
+    public static function reportNumberForCustomerReport(Report $report): string
+    {
+        return $report->ensureReferenceCode();
+    }
+
+    public function alignsReportNumberWithCustomerReference(): void
+    {
+        $customer = $this->customerReport;
+        if ($customer === null) {
+            return;
+        }
+
+        $reference = $customer->ensureReferenceCode();
+        if ($this->report_number === $reference) {
+            return;
+        }
+
+        if (self::query()->where('report_number', $reference)->whereKeyNot($this->id)->exists()) {
+            return;
+        }
+
+        $this->forceFill(['report_number' => $reference])->save();
     }
 }

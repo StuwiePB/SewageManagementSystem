@@ -85,6 +85,20 @@ class User extends Authenticatable
     }
 
     /**
+     * True when the account has no real email for notifications (signup is phone-only).
+     */
+    public function needsEmailBinding(): bool
+    {
+        $email = strtolower(trim((string) ($this->email ?? '')));
+
+        if ($email === '' || $email === 'null') {
+            return true;
+        }
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) === false;
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

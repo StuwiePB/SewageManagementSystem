@@ -169,6 +169,12 @@
         .cr-log .msg-bot .cr-msg-list { margin: 0 0 8px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
         .cr-log .msg-bot .cr-msg-list:last-child { margin-bottom: 0; }
         .cr-log .msg-bot .cr-msg-list li { padding-left: 2px; }
+        .cr-log .msg-bot .cr-msg-table-wrap { margin: 0 0 8px; max-width: 100%; overflow-x: auto; border-radius: 8px; border: 0.7px solid var(--cr-panel-border); }
+        .cr-log .msg-bot .cr-msg-table-wrap:last-child { margin-bottom: 0; }
+        .cr-log .msg-bot .cr-msg-table { border-collapse: collapse; width: 100%; font-size: 11px; font-family: var(--cr-font); }
+        .cr-log .msg-bot .cr-msg-table th, .cr-log .msg-bot .cr-msg-table td { padding: 6px 8px; text-align: left; white-space: nowrap; border-bottom: 0.7px solid var(--cr-panel-border); }
+        .cr-log .msg-bot .cr-msg-table th { font-weight: 700; background: rgba(255,255,255,0.06); color: var(--cr-text); }
+        .cr-log .msg-bot .cr-msg-table tr:last-child td { border-bottom: none; }
         .cr-log .msg-error { align-self: flex-start; background: rgba(255,80,80,0.16); border: 0.7px solid rgba(255,110,110,0.4); color: #ffd7d7; border-radius: 14px 14px 14px 4px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); }
         .cr-log .msg-img { max-width: 180px; border-radius: 10px; display: block; }
         .cr-log .msg-action-btn { display: inline-flex; width: 100%; margin-top: 8px; height: 32px; border-radius: 8px; background: var(--cr-accent); color: #0a1628; text-decoration: none; font-size: 11px; font-family: var(--cr-font); font-weight: 700; align-items: center; justify-content: center; box-sizing: border-box; }

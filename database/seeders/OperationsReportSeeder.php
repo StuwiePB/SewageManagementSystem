@@ -16,7 +16,6 @@ class OperationsReportSeeder extends Seeder
             [
                 'report_number' => 'RPT-TEST-0001',
                 'issue_type' => 'blockage',
-                'severity' => 'urgent',
                 'description' => 'Severe blockage observed near roadside drain causing overflow during rain.',
                 'reporter_name' => 'Test Reporter A',
                 'reporter_contact' => '+6738012345',
@@ -30,7 +29,6 @@ class OperationsReportSeeder extends Seeder
             [
                 'report_number' => 'RPT-TEST-0002',
                 'issue_type' => 'overflow',
-                'severity' => 'urgent',
                 'description' => 'Manhole overflow reported by nearby residents.',
                 'reporter_name' => 'Test Reporter B',
                 'reporter_contact' => '+6738123456',
@@ -44,7 +42,6 @@ class OperationsReportSeeder extends Seeder
             [
                 'report_number' => 'RPT-TEST-0003',
                 'issue_type' => 'maintenance',
-                'severity' => 'nonurgent',
                 'description' => 'Routine cleanup needed; sediment buildup in drain channel.',
                 'reporter_name' => 'Test Reporter C',
                 'reporter_contact' => '+6738234567',
@@ -58,7 +55,6 @@ class OperationsReportSeeder extends Seeder
             [
                 'report_number' => 'RPT-TEST-0004',
                 'issue_type' => 'odor',
-                'severity' => 'nonurgent',
                 'description' => 'Persistent odor around roadside drain area in residential zone.',
                 'reporter_name' => 'Test Reporter D',
                 'reporter_contact' => '+6738345678',
@@ -72,7 +68,6 @@ class OperationsReportSeeder extends Seeder
             [
                 'report_number' => 'RPT-TEST-0005',
                 'issue_type' => 'other',
-                'severity' => 'urgent',
                 'description' => 'Collapsed drain cover poses immediate hazard to road users.',
                 'reporter_name' => 'Test Reporter E',
                 'reporter_contact' => '+6738456789',
