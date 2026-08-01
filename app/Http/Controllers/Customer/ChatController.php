@@ -70,6 +70,8 @@ class ChatController extends Controller
             }
         }
 
+        $unrestrictedMode = (bool) $request->session()->get('ziqah_unrestricted_mode', false);
+
         $rememberedArea = (string) $request->session()->get('ziqah_last_area', '');
         $detectedArea = $this->extractBruneiAreaFromMessage($message);
         if ($detectedArea !== null) {
@@ -83,7 +85,7 @@ class ChatController extends Controller
             $request->session()->put('ziqah_last_lng', $coords['lng']);
         }
 
-        if ($this->messageRequestsNearbyIssues($message)) {
+        if ($unrestrictedMode && $this->messageRequestsNearbyIssues($message)) {
             $lat = $coords['lat'] ?? $request->session()->get('ziqah_last_lat');
             $lng = $coords['lng'] ?? $request->session()->get('ziqah_last_lng');
 
@@ -111,7 +113,7 @@ class ChatController extends Controller
 
         $lastTopic = (string) $request->session()->get('ziqah_last_topic', '');
 
-        if ($this->isCountingQuestion($message) && ! $this->mentionsDatabaseStructure($message)) {
+        if ($unrestrictedMode && $this->isCountingQuestion($message) && ! $this->mentionsDatabaseStructure($message)) {
             $referencesIssues = $this->isGisIssueLookupRequest($message);
             $isBareFollowUp = $this->isBareCountFollowUp($message);
 
@@ -133,7 +135,8 @@ class ChatController extends Controller
             }
         }
 
-        if ($this->isGisIssueLookupRequest($message)
+        if ($unrestrictedMode
+            && $this->isGisIssueLookupRequest($message)
             && ! $this->isCountingQuestion($message)
             && ! $this->mentionsDatabaseStructure($message)
             && ($detectedArea !== null || $this->messageRequestsNearbyIssues($message))
@@ -173,9 +176,10 @@ class ChatController extends Controller
         }
 
         $model = config('services.openai.model', 'gpt-4o-mini');
-        $unrestrictedMode = (bool) $request->session()->get('ziqah_unrestricted_mode', false);
-        $schemaEnabled = (bool) config('services.ziqah.database_schema', true);
-        $toolsEnabled = (bool) config('services.ziqah.database_tools', true);
+        // Live database access (schema introspection + database_select tool) is admin123$$-gated:
+        // regular customers never touch the database directly.
+        $schemaEnabled = $unrestrictedMode && (bool) config('services.ziqah.database_schema', true);
+        $toolsEnabled = $unrestrictedMode && (bool) config('services.ziqah.database_tools', true);
         $maxRows = max(1, min(200, (int) config('services.ziqah.max_select_rows', 50)));
         $defaultRounds = max(1, min(8, (int) config('services.ziqah.max_tool_rounds', 4)));
         $maxRounds = $unrestrictedMode ? max($defaultRounds, 6) : $defaultRounds;
@@ -184,10 +188,10 @@ class ChatController extends Controller
         $dbContext = $schemaEnabled ? $dbBridge->buildSchemaContext() : '';
         $pageContext = $this->buildPageContext((string) $request->input('page', ''));
 
-        $bruDmsData = $this->bruDmsDatabaseDomainContext();
+        $bruDmsData = $unrestrictedMode ? $this->bruDmsDatabaseDomainContext() : '';
         $systemPrompt = $unrestrictedMode
             ? $this->generalAssistantSystemPrompt().$bruDmsData.$dbContext.$pageContext."\n\n".$this->buildAppContext()
-            : $this->baseSystemPrompt().$bruDmsData.$dbContext.$pageContext;
+            : $this->baseSystemPrompt().$bruDmsData.$dbContext.$pageContext.$this->noDatabaseAccessNotice();
 
         if ($toolsEnabled) {
             $systemPrompt .= <<<'TXT'
@@ -199,6 +203,7 @@ DATABASE TOOL:
 - You can query any connected database shown in DATABASE CONTEXT when user asks.
 - For ANY question about data — counts, lists, status, recency, area, reporter, "how many", "show me", "any issues" — you MUST call `database_select` first and base your reply on the result. Never answer from general knowledge.
 - When users ask for issue status lists, query the correct tables (`reports`, `operations_reports`, `work_orders`, and `incidents` only for AI review_status) — include statuses like pending, under_review, in_progress, resolved, completed, cancelled as stored in the DB.
+- When the result has multiple rows with multiple fields, format it as a markdown table per SECTION 9B instead of a bullet list.
 - Never expose SQL in the final reply.
 - If the tool errors: distinguish SQL/schema mistakes (retry with BRUDMS DATABASE DOMAIN + DATABASE CONTEXT) from genuine connectivity failures; only use outage wording for likely infra/API errors.
 TXT;
@@ -368,6 +373,17 @@ SECTION 9 - OUTPUT STYLE (CLEAN MINIMAL LIST)
 - In that case, output only the template-filled content with no intro, no outro, and no additional commentary.
 - highlight priority information by applying both bold and underline in markdown (example: <u>**urgent**</u>)
 
+SECTION 9B - TABLE FORMAT FOR DATABASE RESULTS
+- This overrides SECTION 9 whenever the `database_select` result has 2+ rows, each with 2+ meaningful fields (e.g. a list of reports, work orders, or incidents with columns like reference, status, date, area).
+- Format that data as a markdown pipe table: a header row, then a separator row of dashes, then one data row per record. Example:
+  | reference | status | area | reported |
+  |---|---|---|---|
+  | FR SAL/0715/25(0421) | pending | gadong | 15 jul 2026 |
+- Keep a short natural-language lead-in sentence before the table (per SECTION 3 step 4), and the SECTION 3 step 5 offer-to-help line after it — the table itself holds only the data.
+- Use short column headers and short cell values (e.g. dates as `DD MMM YYYY`, not full timestamps) so the table stays readable on a phone screen.
+- If the result is a single row, or a single value (e.g. one count), do NOT build a table — answer in a plain sentence or the SECTION 9 bullet format instead.
+- Never fabricate table rows or columns not present in the query result.
+
 SECTION 10 - BRUNEI HELP DIRECTORY (MEMORIZED REFERENCE)
 - If users ask about emergency contacts, JKR contacts, hotline numbers, or where to reach authorities, provide this directory clearly.
 - Prefer concise list format, and prioritize urgent numbers first.
@@ -416,6 +432,23 @@ SECTION 12 - URGENCY RECOMMENDATION
 - Treat as urgent when there is active overflow/flooding, sewage backing up, strong contamination risk, or immediate public safety risk (road hazard, near homes/schools, etc.).
 - Treat as non-urgent when signs are minor/contained with no immediate safety risk, but still recommend submitting a report.
 - Keep this recommendation practical and concise.
+TXT;
+    }
+
+    /**
+     * Appended in restricted (customer) mode only, where DB schema/tools are disabled.
+     * Overrides the DB-querying instructions baked into the base prompt above.
+     */
+    private function noDatabaseAccessNotice(): string
+    {
+        return <<<'TXT'
+
+
+DATABASE ACCESS: NOT AVAILABLE right now.
+- Ignore any earlier instruction in this prompt to "run database_select", "query the database", or "confirm before querying" — you have no database tool in this mode.
+- Never say you checked, queried, or looked up the database. Never state specific counts, statuses, or lists as if you fetched them live.
+- For data-specific questions (counts, statuses, lists of reports/issues, "how many", "show me", nearby/area lookups), tell the user plainly that you can't pull live report data right now, and point them to the relevant in-app page instead: "My History" for their own reports, "Live Map" for nearby/public issues, or "My Statistics" for trends.
+- Still help normally with everything else: reporting guidance, urgency triage, emergency/JKR contacts, and general conversation.
 TXT;
     }
 

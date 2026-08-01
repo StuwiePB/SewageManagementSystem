@@ -253,7 +253,6 @@
 
     @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    @include('partials.gis-brunei-layers')
     @include('partials.gis-safe-route')
     <script>
         var defaultCenter = [4.9031, 114.9398];
@@ -298,11 +297,6 @@
             updateWhenIdle: true,
             keepBuffer: 10
         }).addTo(map);
-
-        var satelliteGroup = L.layerGroup();
-        if (window.BruneiGisLayers) {
-            window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'livemap' });
-        }
 
         fetch('{{ asset("geojson/brunei-districts.json") }}')
             .then(function(response) { return response.json(); })

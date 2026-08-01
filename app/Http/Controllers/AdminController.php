@@ -399,9 +399,8 @@ class AdminController extends Controller
         ])->values()->all();
 
         $weather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
-        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($weather);
 
-        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView', 'bruneiGisLayers', 'weather'));
+        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView', 'weather'));
     }
 
     /**

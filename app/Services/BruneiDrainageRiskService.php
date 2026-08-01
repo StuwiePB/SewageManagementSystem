@@ -124,63 +124,17 @@ class BruneiDrainageRiskService
 
         foreach ($this->areas() as $area) {
             $issues = implode('; ', (array) ($area['issues'] ?? []));
+            $rainTag = ! empty($area['rain_sensitive']) ? ', rain-sensitive — escalates faster/further during heavy rain' : '';
             $lines[] = sprintf(
-                '- %s [%s]: %s',
+                '- %s [%s%s]: %s',
                 $area['name'] ?? 'Area',
                 $this->riskLabel((string) ($area['risk_level'] ?? 'moderate')),
+                $rainTag,
                 $issues !== '' ? $issues : 'general drainage stress'
             );
         }
 
         return implode("\n", $lines);
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $weather
-     * @return array<string, mixed>
-     */
-    public function mapLayerPayload(?array $weather = null): array
-    {
-        $colors = (array) config('brunei_drainage_risk.map_colors', []);
-        $heavyRainPct = (int) ($weather['heavy_rain_pct'] ?? 0);
-        $boostZones = $heavyRainPct >= 25 || ($weather['impacts_routing'] ?? false);
-
-        $zones = array_map(function (array $area) use ($colors, $boostZones) {
-            $level = (string) ($area['risk_level'] ?? 'moderate');
-            if ($boostZones && in_array($level, ['low', 'moderate'], true)) {
-                $level = $level === 'low' ? 'moderate' : 'high';
-            }
-            $palette = is_array($colors[$level] ?? null) ? $colors[$level] : ['fill' => '#eab308', 'stroke' => '#a16207', 'label' => 'Risk'];
-            $isHighSegment = in_array((string) ($area['risk_level'] ?? ''), ['very_high', 'high'], true);
-
-            return [
-                'id' => $area['id'] ?? null,
-                'name' => $area['name'] ?? 'Area',
-                'risk_level' => $level,
-                'base_risk_level' => $area['risk_level'] ?? 'moderate',
-                'is_high_risk_segment' => $isHighSegment,
-                'lat' => (float) ($area['lat'] ?? 0),
-                'lng' => (float) ($area['lng'] ?? 0),
-                'radius_m' => (float) ($area['radius_km'] ?? 1.5) * 1000,
-                'fill' => $palette['fill'],
-                'stroke' => $palette['stroke'],
-                'label' => $palette['label'],
-                'issues' => $area['issues'] ?? [],
-                'notes' => $area['notes'] ?? null,
-            ];
-        }, $this->areas());
-
-        $highRiskZones = array_values(array_filter($zones, static fn (array $z): bool => ! empty($z['is_high_risk_segment'])));
-
-        return [
-            'zones' => $zones,
-            'high_risk_zones' => $highRiskZones,
-            'legend' => [
-                ['key' => 'elevated', 'label' => 'Higher risk (drainage + rain)', 'color' => '#eab308'],
-                ['key' => 'lower', 'label' => 'Lower risk', 'color' => $colors['low']['fill'] ?? '#22c55e'],
-            ],
-            'weather_boost' => $boostZones,
-        ];
     }
 
     public function riskLabel(string $level): string

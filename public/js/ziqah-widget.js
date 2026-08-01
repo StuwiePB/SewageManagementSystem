@@ -181,6 +181,18 @@
         return text;
     }
 
+    // A markdown pipe-table row: `| a | b |` or `a | b` (outer pipes optional).
+    function parseTableRow(line) {
+        if (line.indexOf('|') === -1) return null;
+        var trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+        return trimmed.split('|').map(function (cell) { return cell.trim(); });
+    }
+
+    // A separator row like `--- | :---: | ---:` (only dashes, colons, spaces, pipes).
+    function isTableSeparatorRow(line) {
+        return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(line.trim());
+    }
+
     function renderMessageContent(container, rawText) {
         var text = normalizeListMarkers(String(rawText || ''));
         var lines = text.split(/\r?\n/);
@@ -197,6 +209,54 @@
             if (line === '') {
                 closeList();
                 continue;
+            }
+
+            // Table: header row + separator row (`|---|---|`) + one or more data rows.
+            if (i + 1 < lines.length && isTableSeparatorRow(lines[i + 1].trim())) {
+                var headerCells = parseTableRow(line);
+                if (headerCells && headerCells.length > 1) {
+                    closeList();
+                    var tableRows = [];
+                    var j = i + 2;
+                    while (j < lines.length && lines[j].trim() !== '' && lines[j].indexOf('|') !== -1) {
+                        var cells = parseTableRow(lines[j].trim());
+                        if (!cells) break;
+                        tableRows.push(cells);
+                        j++;
+                    }
+
+                    var table = document.createElement('table');
+                    table.className = 'cr-msg-table';
+                    var thead = document.createElement('thead');
+                    var headTr = document.createElement('tr');
+                    headerCells.forEach(function (cell) {
+                        var th = document.createElement('th');
+                        th.textContent = cell;
+                        headTr.appendChild(th);
+                    });
+                    thead.appendChild(headTr);
+                    table.appendChild(thead);
+
+                    var tbody = document.createElement('tbody');
+                    tableRows.forEach(function (cells) {
+                        var tr = document.createElement('tr');
+                        for (var c = 0; c < headerCells.length; c++) {
+                            var td = document.createElement('td');
+                            td.textContent = cells[c] !== undefined ? cells[c] : '';
+                            tr.appendChild(td);
+                        }
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+
+                    var wrap = document.createElement('div');
+                    wrap.className = 'cr-msg-table-wrap';
+                    wrap.appendChild(table);
+                    container.appendChild(wrap);
+
+                    i = j - 1;
+                    continue;
+                }
             }
 
             var numbered = line.match(/^(\d{1,2})[).]\s+(.*)$/);

@@ -104,15 +104,6 @@
         color: var(--text-secondary); font-size: 0.875rem; user-select: none;
     }
     .gis-layer-toggle.active { color: var(--accent-blue); border-color: var(--accent-blue); }
-    .gis-risk-legend { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-    .gis-risk-legend-item {
-        display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
-        padding: 0.25rem 0.55rem; border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.15); color: var(--text-primary);
-    }
-    .gis-risk-legend-swatch { width: 0.65rem; height: 0.65rem; border-radius: 50%; }
-    .gis-risk-popup h4 { margin: 0 0 0.35rem; font-size: 0.95rem; }
-    .gis-risk-popup ul { margin: 0.35rem 0 0; padding-left: 1.1rem; font-size: 0.82rem; }
 </style>
 @endpush
 
@@ -130,15 +121,10 @@
 
 <div class="card" id="admin-ops-map-section" style="padding: 1.5rem; overflow: visible;">
     <h3 class="section-head" style="margin: 0 0 1rem;">Operations map</h3>
-    <p class="section-desc" style="margin: 0 0 0.75rem;">Terrain view + drainage risk zones (yellow = higher, green = lower). Live Brunei rain affects zones and routing.</p>
-    <div class="gis-risk-legend" aria-label="Drainage risk legend">
-        @foreach(($bruneiGisLayers['legend'] ?? []) as $item)
-            <span class="gis-risk-legend-item"><span class="gis-risk-legend-swatch" style="background:{{ $item['color'] }};"></span>{{ $item['label'] }}</span>
-        @endforeach
-    </div>
+    <p class="section-desc" style="margin: 0 0 0.75rem;">Terrain view + hex drainage risk grid, scored hourly from live rainfall forecasts (yellow/orange/red = elevated). Click a hexagon for its factor breakdown.</p>
     <div class="gis-layer-toggles">
         <label class="gis-layer-toggle" id="toggle-terrain"><span>Terrain map</span></label>
-        <label class="gis-layer-toggle active" id="toggle-risk-zones"><span>Drainage risk zones</span></label>
+        <label class="gis-layer-toggle active" id="toggle-risk-grid"><span>Risk grid</span></label>
     </div>
     <div class="layer-toggles">
         <label class="layer-toggle report active" id="toggle-reports">
@@ -152,6 +138,7 @@
     </div>
     <div id="gis-map-wrapper" style="position: relative; overflow: visible;">
         <div id="gis-map"></div>
+        <div id="risk-grid-panel-admin-ops" class="risk-grid-panel"></div>
     </div>
 </div>
 
@@ -179,7 +166,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-@include('partials.gis-brunei-layers')
+@include('partials.gis-risk-grid')
 @include('partials.gis-weather-widget')
 @include('partials.gis-safe-route')
 <script>
@@ -325,19 +312,20 @@
     });
     addDistrictLayer(map);
 
-    var bruneiLayers = window.BruneiGisLayers.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'admin-ops' });
+    var riskGrid = window.RiskGrid.init(map, { satelliteLayer: satelliteGroup, instanceKey: 'admin-ops', panelHostId: 'risk-grid-panel-admin-ops' });
     if (window.BruneiGisWeather) {
         window.BruneiGisWeather.init(map, { hostId: 'gis-map-wrapper' });
     }
     document.getElementById('toggle-terrain').addEventListener('click', function () {
         var on = !this.classList.contains('active');
         this.classList.toggle('active', on);
-        bruneiLayers.setBaseTerrain(on);
+        riskGrid.setBaseTerrain(on);
     });
-    document.getElementById('toggle-risk-zones').addEventListener('click', function () {
+    document.getElementById('toggle-risk-grid').addEventListener('click', function () {
         var on = !this.classList.contains('active');
         this.classList.toggle('active', on);
-        bruneiLayers.toggleRisk(on);
+        riskGrid.toggleGrid(on);
+        document.getElementById('risk-grid-panel-admin-ops').style.display = on ? '' : 'none';
     });
 
     var reportLayer = L.layerGroup();
@@ -410,7 +398,8 @@
     });
 
     var customerSatellite = L.layerGroup();
-    window.BruneiGisLayers.init(customerMap, { satelliteLayer: customerSatellite, instanceKey: 'admin-customer' });
+    // Deliberately no RiskGrid.init() here — the hex risk grid is an internal JKR
+    // decision-support overlay, not something this customer-preview pane should surface.
     if (window.BruneiGisWeather) {
         window.BruneiGisWeather.init(customerMap, { hostId: 'gis-map-customer-wrapper' });
     }

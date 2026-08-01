@@ -172,8 +172,7 @@ class OperationsController extends Controller
         ])->values()->all();
 
         $weather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
-        $bruneiGisLayers = app(\App\Services\BruneiDrainageRiskService::class)->mapLayerPayload($weather);
 
-        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'bruneiGisLayers', 'weather'));
+        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'weather'));
     }
 }

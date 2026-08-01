@@ -15,6 +15,7 @@ use App\Http\Controllers\Operations\StatisticsController as OperationsStatistics
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PasswordPanelController;
 use App\Http\Controllers\MapWeatherController;
+use App\Http\Controllers\RiskGridController;
 use App\Http\Controllers\SafeRouteController;
 use App\Http\Controllers\Webhooks\SnsWebhookController;
 use App\Http\Controllers\WorkOrderController;
@@ -125,6 +126,12 @@ Route::post('/safe-route/analyze', [SafeRouteController::class, 'analyze'])
 Route::get('/api/gis/weather', [MapWeatherController::class, 'show'])
     ->middleware(['auth', 'verified'])
     ->name('gis.weather');
+
+Route::prefix('api/risk-grid')->name('risk-grid.')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/', [RiskGridController::class, 'index'])->name('index');
+    Route::get('/alerts', [RiskGridController::class, 'alerts'])->name('alerts');
+    Route::get('/{h3}', [RiskGridController::class, 'show'])->name('show');
+});
 
 Route::prefix('operations')->name('operations.')->middleware(['auth', 'verified', 'role:operator'])->group(function () {
     Route::get('/dashboard', [OperationsController::class, 'dashboard'])->name('dashboard');

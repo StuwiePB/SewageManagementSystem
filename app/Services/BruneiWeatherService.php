@@ -44,6 +44,72 @@ class BruneiWeatherService
         });
     }
 
+    /**
+     * Pre-fetch and cache any of these points not already cached, concurrently, so a page that
+     * needs many locations (e.g. one per mukim) doesn't pay a sequential round-trip per point.
+     *
+     * @param  list<array{lat: float, lng: float}>  $points
+     */
+    public function warmMany(array $points): void
+    {
+        $toFetch = [];
+        foreach ($points as $point) {
+            $lat = (float) ($point['lat'] ?? 0);
+            $lng = (float) ($point['lng'] ?? 0);
+            $cacheKey = sprintf('brunei_weather:%.3f:%.3f', $lat, $lng);
+            if (! Cache::has($cacheKey)) {
+                $toFetch[$cacheKey] = ['lat' => $lat, 'lng' => $lng];
+            }
+        }
+
+        if ($toFetch === []) {
+            return;
+        }
+
+        try {
+            $responses = Http::pool(fn ($pool) => collect($toFetch)->map(
+                fn (array $point, string $key) => $pool->as($key)->timeout(8)->get('https://api.open-meteo.com/v1/forecast', [
+                    'latitude' => $point['lat'],
+                    'longitude' => $point['lng'],
+                    'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m',
+                    'daily' => 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max',
+                    'timezone' => 'Asia/Brunei',
+                    'forecast_days' => 3,
+                ])
+            )->all());
+        } catch (\Throwable) {
+            return;
+        }
+
+        foreach ($toFetch as $cacheKey => $point) {
+            $response = $responses[$cacheKey] ?? null;
+            if (! $response || ! $response->successful()) {
+                continue;
+            }
+
+            $data = $response->json();
+            if (is_array($data)) {
+                Cache::put($cacheKey, $data, now()->addMinutes(20));
+            }
+        }
+    }
+
+    /**
+     * Force-refresh the cached snapshot for a location, bypassing the existing cache entry.
+     * Used by the daily `weather:refresh-brunei` scheduled command.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function refresh(?float $lat = null, ?float $lng = null): ?array
+    {
+        $lat ??= (float) config('brunei_drainage_risk.weather.default_lat', 4.9031);
+        $lng ??= (float) config('brunei_drainage_risk.weather.default_lng', 114.9398);
+
+        Cache::forget(sprintf('brunei_weather:%.3f:%.3f', $lat, $lng));
+
+        return $this->fetchCurrent($lat, $lng);
+    }
+
     public function buildSummaryForAi(?float $lat = null, ?float $lng = null): string
     {
         $data = $this->fetchCurrent($lat, $lng);

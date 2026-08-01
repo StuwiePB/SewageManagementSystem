@@ -101,6 +101,56 @@
                 word-wrap: break-word;
                 animation: msgPop 0.2s ease-out;
             }
+            .msg-bot .cr-msg-p {
+                margin: 0 0 8px;
+            }
+            .msg-bot .cr-msg-p:last-child {
+                margin-bottom: 0;
+            }
+            .msg-bot .cr-msg-list {
+                margin: 0 0 8px;
+                padding-left: 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .msg-bot .cr-msg-list:last-child {
+                margin-bottom: 0;
+            }
+            .msg-bot .cr-msg-list li {
+                padding-left: 2px;
+            }
+            .msg-bot .cr-msg-table-wrap {
+                margin: 0 0 8px;
+                max-width: 100%;
+                overflow-x: auto;
+                border-radius: 8px;
+                border: 0.7px solid rgba(255, 255, 255, 0.21);
+            }
+            .msg-bot .cr-msg-table-wrap:last-child {
+                margin-bottom: 0;
+            }
+            .msg-bot .cr-msg-table {
+                border-collapse: collapse;
+                width: 100%;
+                font-size: 11px;
+                font-family: Poppins, sans-serif;
+            }
+            .msg-bot .cr-msg-table th,
+            .msg-bot .cr-msg-table td {
+                padding: 6px 8px;
+                text-align: left;
+                white-space: nowrap;
+                border-bottom: 0.7px solid rgba(255, 255, 255, 0.21);
+            }
+            .msg-bot .cr-msg-table th {
+                font-weight: 700;
+                background: rgba(255, 255, 255, 0.06);
+                color: white;
+            }
+            .msg-bot .cr-msg-table tr:last-child td {
+                border-bottom: none;
+            }
             .msg-typing {
                 align-self: flex-start;
                 padding: 10px 14px;
@@ -352,6 +402,124 @@
             callback(payload);
         }
 
+        function normalizeListMarkers(text) {
+            // Some replies run list items together on one line; force each marker onto its own line.
+            text = text.replace(/([^\n])[ \t]+(?=\d{1,2}[).]\s)/g, '$1\n');
+            text = text.replace(/([^\n])[ \t]+(?=[•]\s)/g, '$1\n');
+            return text;
+        }
+
+        // A markdown pipe-table row: `| a | b |` or `a | b` (outer pipes optional).
+        function parseTableRow(line) {
+            if (line.indexOf('|') === -1) return null;
+            var trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+            return trimmed.split('|').map(function (cell) { return cell.trim(); });
+        }
+
+        // A separator row like `--- | :---: | ---:` (only dashes, colons, spaces, pipes).
+        function isTableSeparatorRow(line) {
+            return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(line.trim());
+        }
+
+        function renderMessageContent(container, rawText) {
+            var text = normalizeListMarkers(String(rawText || ''));
+            var lines = text.split(/\r?\n/);
+            var listEl = null;
+            var listType = null;
+
+            function closeList() {
+                listEl = null;
+                listType = null;
+            }
+
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (line === '') {
+                    closeList();
+                    continue;
+                }
+
+                // Table: header row + separator row (`|---|---|`) + one or more data rows.
+                if (i + 1 < lines.length && isTableSeparatorRow(lines[i + 1].trim())) {
+                    var headerCells = parseTableRow(line);
+                    if (headerCells && headerCells.length > 1) {
+                        closeList();
+                        var tableRows = [];
+                        var j = i + 2;
+                        while (j < lines.length && lines[j].trim() !== '' && lines[j].indexOf('|') !== -1) {
+                            var cells = parseTableRow(lines[j].trim());
+                            if (!cells) break;
+                            tableRows.push(cells);
+                            j++;
+                        }
+
+                        var table = document.createElement('table');
+                        table.className = 'cr-msg-table';
+                        var thead = document.createElement('thead');
+                        var headTr = document.createElement('tr');
+                        headerCells.forEach(function (cell) {
+                            var th = document.createElement('th');
+                            th.textContent = cell;
+                            headTr.appendChild(th);
+                        });
+                        thead.appendChild(headTr);
+                        table.appendChild(thead);
+
+                        var tbody = document.createElement('tbody');
+                        tableRows.forEach(function (cells) {
+                            var tr = document.createElement('tr');
+                            for (var c = 0; c < headerCells.length; c++) {
+                                var td = document.createElement('td');
+                                td.textContent = cells[c] !== undefined ? cells[c] : '';
+                                tr.appendChild(td);
+                            }
+                            tbody.appendChild(tr);
+                        });
+                        table.appendChild(tbody);
+
+                        var wrap = document.createElement('div');
+                        wrap.className = 'cr-msg-table-wrap';
+                        wrap.appendChild(table);
+                        container.appendChild(wrap);
+
+                        i = j - 1;
+                        continue;
+                    }
+                }
+
+                var numbered = line.match(/^(\d{1,2})[).]\s+(.*)$/);
+                var bulleted = !numbered ? line.match(/^[•\-*]\s+(.*)$/) : null;
+
+                if (numbered) {
+                    if (listType !== 'ol') {
+                        listEl = document.createElement('ol');
+                        listEl.className = 'cr-msg-list';
+                        container.appendChild(listEl);
+                        listType = 'ol';
+                    }
+                    var liOl = document.createElement('li');
+                    liOl.textContent = numbered[2];
+                    listEl.appendChild(liOl);
+                } else if (bulleted) {
+                    if (listType !== 'ul') {
+                        listEl = document.createElement('ul');
+                        listEl.className = 'cr-msg-list';
+                        container.appendChild(listEl);
+                        listType = 'ul';
+                    }
+                    var liUl = document.createElement('li');
+                    liUl.textContent = bulleted[1];
+                    listEl.appendChild(liUl);
+                } else {
+                    closeList();
+                    var p = document.createElement('p');
+                    p.className = 'cr-msg-p';
+                    p.textContent = line;
+                    container.appendChild(p);
+                }
+            }
+        }
+
         function appendBotReply(rawReply, reportImageUrl, quickActions, forceShowReportButton) {
             var text = String(rawReply || '');
             var showReportButton = text.indexOf('SHOW_REPORT_BUTTON') !== -1;
@@ -363,7 +531,7 @@
 
             var botMsg = document.createElement('div');
             botMsg.className = 'msg-bot';
-            botMsg.textContent = text;
+            renderMessageContent(botMsg, text);
             chatBox.appendChild(botMsg);
 
             if (showReportButton) {
