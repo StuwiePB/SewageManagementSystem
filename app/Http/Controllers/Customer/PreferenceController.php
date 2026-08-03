@@ -23,6 +23,7 @@ class PreferenceController extends Controller
         }
         if ($request->has('language')) {
             $updates['preference_language'] = $request->language;
+            session(['locale' => $request->language]);
         }
         if ($request->has('anonymous')) {
             $updates['preference_anonymous'] = $request->anonymous;

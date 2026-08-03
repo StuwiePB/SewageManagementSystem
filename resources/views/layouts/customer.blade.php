@@ -1,6 +1,6 @@
 @props(['title' => 'BruDMS', 'bare' => false])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     @include('partials.head')
     <style>
@@ -9,7 +9,11 @@
     </style>
     @stack('styles')
 </head>
-<body class="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col {{ $bare ? '' : 'pb-20 lg:pb-0' }}">
+<body class="brudms-customer-ui min-h-screen flex flex-col {{ $bare ? '' : 'pb-20 lg:pb-0' }}" style="background-color: var(--bg-primary, #1a1d2b); color: var(--text-primary, #f1f5f9);">
+    @if($bare)
+        @include('partials.customer-crdboard-bg')
+        @include('partials.customer-aurora-bg')
+    @endif
     @unless($bare)
     {{-- Top bar: left = BruDMS, right = Welcome back + profile photo (frosted) --}}
     <header class="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 py-3 border-b border-zinc-700/50 bg-zinc-900/70" style="backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);">
@@ -93,17 +97,44 @@
     <style>
         .cr {
             --cr-accent: #04BCFF;
-            --cr-accent-2: #7b5cff;
             --cr-bg: linear-gradient(155deg, rgba(32,120,130,0.42) 0%, rgba(10,16,28,0.92) 45%, rgba(6,10,18,0.96) 100%);
             --cr-panel-border: rgba(255,255,255,0.16);
             --cr-text: #ffffff;
             --cr-text-muted: rgba(255,255,255,0.55);
+            --cr-launcher-bg: rgba(97,107,110,0.22);
+            --cr-launcher-bg-hover: rgba(97,107,110,0.32);
+            --cr-bot-bubble-bg: rgba(255,255,255,0.12);
+            --cr-input-bg: rgba(0,0,0,0.32);
+            --cr-table-th-bg: rgba(255,255,255,0.06);
+            --cr-hover-bg: rgba(255,255,255,0.08);
+            --cr-icon-muted: #9CA3AF;
+            --cr-send-color: rgba(255,255,255,0.75);
+            --cr-error-bg: rgba(255,80,80,0.16);
+            --cr-error-border: rgba(255,110,110,0.4);
+            --cr-error-text: #ffd7d7;
             --cr-radius: 18px;
             --cr-font: Poppins, sans-serif;
             position: fixed;
             right: 16px;
             bottom: 20px;
             z-index: 10050;
+        }
+        html[data-theme='light'] .cr {
+            --cr-bg: linear-gradient(155deg, rgba(255,255,255,0.62) 0%, rgba(222,241,251,0.88) 45%, rgba(200,231,248,0.94) 100%);
+            --cr-panel-border: rgba(26,61,82,0.35);
+            --cr-text: #1a3d52;
+            --cr-text-muted: rgba(26,61,82,0.6);
+            --cr-launcher-bg: rgba(255,255,255,0.55);
+            --cr-launcher-bg-hover: rgba(255,255,255,0.72);
+            --cr-bot-bubble-bg: rgba(26,61,82,0.07);
+            --cr-input-bg: rgba(255,255,255,0.55);
+            --cr-table-th-bg: rgba(26,61,82,0.06);
+            --cr-hover-bg: rgba(26,61,82,0.08);
+            --cr-icon-muted: rgba(26,61,82,0.55);
+            --cr-send-color: rgba(26,61,82,0.75);
+            --cr-error-bg: rgba(232,93,93,0.14);
+            --cr-error-border: rgba(200,60,60,0.4);
+            --cr-error-text: #8a2323;
         }
         .cr-launcher {
             display: inline-flex;
@@ -113,7 +144,7 @@
             padding: 0 18px;
             border-radius: 9999px;
             border: 0.7px solid var(--cr-panel-border);
-            background: rgba(97,107,110,0.22);
+            background: var(--cr-launcher-bg);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             color: var(--cr-text);
@@ -125,7 +156,7 @@
             box-shadow: 0 6px 24px rgba(0,0,0,0.25);
             transition: background 0.2s ease, transform 0.2s ease;
         }
-        .cr-launcher:hover { background: rgba(97,107,110,0.32); }
+        .cr-launcher:hover { background: var(--cr-launcher-bg-hover); }
         .cr-launcher:active { transform: scale(0.96); }
         .cr.is-open .cr-launcher { display: none; }
         .cr-launcher-dot { width: 8px; height: 8px; border-radius: 50%; background: #37e08c; box-shadow: 0 0 0 0 rgba(55,224,140,0.6); animation: cr-pulse 2s infinite; flex-shrink: 0; }
@@ -158,12 +189,12 @@
         .cr-header { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 14px 8px 14px 16px; border-bottom: 0.7px solid var(--cr-panel-border); }
         .cr-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #37e08c; box-shadow: 0 0 0 0 rgba(55,224,140,0.6); animation: cr-pulse 2s infinite; flex-shrink: 0; }
         .cr-title { flex: 1; font-family: var(--cr-font); font-size: 14px; font-weight: 700; color: var(--cr-text); }
-        .cr-close { width: 32px; height: 32px; border: none; background: transparent; color: rgba(255,255,255,0.85); font-size: 20px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px; }
-        .cr-close:hover { background: rgba(255,255,255,0.08); }
+        .cr-close { width: 32px; height: 32px; border: none; background: transparent; color: var(--cr-text); opacity: 0.85; font-size: 20px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px; }
+        .cr-close:hover { background: var(--cr-hover-bg); }
         .cr-log { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; scrollbar-width: none; }
         .cr-log::-webkit-scrollbar { display: none; }
         .cr-log .msg-user { align-self: flex-end; background: var(--cr-accent); color: #040929; border-radius: 14px 14px 4px 14px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); }
-        .cr-log .msg-bot { align-self: flex-start; background: rgba(255,255,255,0.08); color: var(--cr-text); border-radius: 14px 14px 14px 4px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); font-weight: 300; }
+        .cr-log .msg-bot { align-self: flex-start; background: var(--cr-bot-bubble-bg); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 0.7px solid var(--cr-panel-border); color: var(--cr-text); border-radius: 14px 14px 14px 4px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); font-weight: 300; }
         .cr-log .msg-bot .cr-msg-p { margin: 0 0 8px; }
         .cr-log .msg-bot .cr-msg-p:last-child { margin-bottom: 0; }
         .cr-log .msg-bot .cr-msg-list { margin: 0 0 8px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
@@ -173,9 +204,9 @@
         .cr-log .msg-bot .cr-msg-table-wrap:last-child { margin-bottom: 0; }
         .cr-log .msg-bot .cr-msg-table { border-collapse: collapse; width: 100%; font-size: 11px; font-family: var(--cr-font); }
         .cr-log .msg-bot .cr-msg-table th, .cr-log .msg-bot .cr-msg-table td { padding: 6px 8px; text-align: left; white-space: nowrap; border-bottom: 0.7px solid var(--cr-panel-border); }
-        .cr-log .msg-bot .cr-msg-table th { font-weight: 700; background: rgba(255,255,255,0.06); color: var(--cr-text); }
+        .cr-log .msg-bot .cr-msg-table th { font-weight: 700; background: var(--cr-table-th-bg); color: var(--cr-text); }
         .cr-log .msg-bot .cr-msg-table tr:last-child td { border-bottom: none; }
-        .cr-log .msg-error { align-self: flex-start; background: rgba(255,80,80,0.16); border: 0.7px solid rgba(255,110,110,0.4); color: #ffd7d7; border-radius: 14px 14px 14px 4px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); }
+        .cr-log .msg-error { align-self: flex-start; background: var(--cr-error-bg); border: 0.7px solid var(--cr-error-border); color: var(--cr-error-text); border-radius: 14px 14px 14px 4px; padding: 9px 12px; max-width: 85%; font-size: 12px; font-family: var(--cr-font); }
         .cr-log .msg-img { max-width: 180px; border-radius: 10px; display: block; }
         .cr-log .msg-action-btn { display: inline-flex; width: 100%; margin-top: 8px; height: 32px; border-radius: 8px; background: var(--cr-accent); color: #0a1628; text-decoration: none; font-size: 11px; font-family: var(--cr-font); font-weight: 700; align-items: center; justify-content: center; box-sizing: border-box; }
         .cr-typing { align-self: flex-start; display: flex; align-items: center; gap: 4px; padding: 9px 12px; }
@@ -187,13 +218,15 @@
         @keyframes cr-pulse { 0% { box-shadow: 0 0 0 0 rgba(55,224,140,0.5); } 70% { box-shadow: 0 0 0 6px rgba(55,224,140,0); } 100% { box-shadow: 0 0 0 0 rgba(55,224,140,0); } }
         .cr-preview { display: none; align-items: flex-start; gap: 8px; padding: 0 12px 8px; }
         .cr-footer { flex-shrink: 0; padding: 8px 12px 10px; border-top: 0.7px solid var(--cr-panel-border); }
-        .cr-input-wrap { display: flex; align-items: flex-end; gap: 8px; border-radius: 14px; border: 0.7px solid var(--cr-panel-border); background: rgba(0,0,0,0.32); padding: 6px 10px 6px 4px; box-sizing: border-box; }
+        .cr-input-wrap { display: flex; align-items: flex-end; gap: 8px; border-radius: 14px; border: 0.7px solid var(--cr-panel-border); background: var(--cr-input-bg); padding: 6px 10px 6px 4px; box-sizing: border-box; }
         .cr-attach { width: 36px; height: 36px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
+        .cr-attach svg { stroke: var(--cr-icon-muted); }
         .cr-input { flex: 1; resize: none; border: none; outline: none; background: transparent; color: var(--cr-text); font-size: 13px; font-family: var(--cr-font); min-width: 0; max-height: 96px; line-height: 1.4; padding: 8px 0; }
         .cr-input::placeholder { color: var(--cr-text-muted); }
-        .cr-send { width: 32px; height: 32px; border: none; border-radius: 9999px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; color: rgba(255,255,255,0.75); }
+        .cr-send { width: 32px; height: 32px; border: none; border-radius: 9999px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; color: var(--cr-send-color); }
         .cr-send:disabled, .cr-attach:disabled { opacity: 0.4; cursor: not-allowed; }
         .cr-disclaimer { margin: 8px 0 0; text-align: center; font-family: var(--cr-font); font-size: 10px; color: var(--cr-text-muted); line-height: 1.35; }
+        .cr-preview-remove { width: 20px; height: 20px; border-radius: 9999px; border: none; background: var(--cr-hover-bg); color: var(--cr-text); cursor: pointer; }
         @media (max-width: 420px) {
             .cr { right: 12px; bottom: 16px; }
             .cr-panel { width: calc(100vw - 40px); height: min(460px, calc(100vh - 140px)); }
@@ -213,13 +246,13 @@
             <div class="cr-log" id="ziqah-chat-messages"><div class="msg-bot">Ziqah handles the flow. What's clogged, leaking, or overflowing? Show me.</div></div>
             <div class="cr-preview" id="ziqah-chat-preview">
                 <img id="ziqah-chat-preview-img" alt="" style="max-width:56px;max-height:56px;border-radius:8px;object-fit:cover;" />
-                <button type="button" id="ziqah-chat-preview-remove" style="width:20px;height:20px;border-radius:9999px;border:none;background:rgba(255,255,255,0.2);color:#fff;cursor:pointer;">&times;</button>
+                <button type="button" id="ziqah-chat-preview-remove" class="cr-preview-remove">&times;</button>
             </div>
             <div class="cr-footer">
                 <input id="ziqah-chat-file" type="file" accept="image/*" style="display:none;" />
                 <div class="cr-input-wrap">
                     <button type="button" class="cr-attach" id="ziqah-chat-attach" aria-label="Attach image">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                     <textarea id="ziqah-chat-input" class="cr-input" rows="1" placeholder="How else can I help?"></textarea>
                     <button type="button" class="cr-send" id="ziqah-chat-send" aria-label="Send message">
@@ -239,7 +272,7 @@
             currentPage: @json(request()->route()?->getName()),
         };
     </script>
-    <script src="{{ asset('js/ziqah-widget.js') }}?v=32" defer></script>
+    <script src="{{ asset('js/ziqah-widget.js') }}?v=33" defer></script>
     @endif
 
     @stack('scripts')

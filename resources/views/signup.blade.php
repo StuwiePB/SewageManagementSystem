@@ -374,8 +374,8 @@
             .glass-input:-webkit-autofill:focus,
             .glass-input:-webkit-autofill:active {
                 background: rgba(255, 255, 255, 0.08) !important;
-                -webkit-backdrop-filter: blur(8px) !important;
                 backdrop-filter: blur(8px) !important;
+                -webkit-backdrop-filter: blur(8px) !important;
                 -webkit-text-fill-color: #fff !important;
                 caret-color: #fff;
                 border: 1px solid rgba(255, 255, 255, 0.15) !important;

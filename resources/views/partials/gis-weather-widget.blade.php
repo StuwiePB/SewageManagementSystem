@@ -17,7 +17,7 @@
         font-size: 0.72rem;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
         pointer-events: auto;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     }
     .gis-weather-widget.is-livemap {
         position: fixed;

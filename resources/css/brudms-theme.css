@@ -9,22 +9,22 @@ html[data-theme='light'] {
     --brudms-primary-rgb: 255, 255, 255;
     --brudms-secondary: #e8e8e8;
     --brudms-secondary-rgb: 232, 232, 232;
-    --brudms-tertiary: #e8f6fd;
+    --brudms-tertiary: #78bfe4;
     --brudms-tertiary-rgb: 232, 246, 253;
     --bg-primary: var(--brudms-tertiary);
     --bg-secondary: var(--brudms-primary);
     --text-primary: #1a3d52;
-    --text-secondary: #5a7d92;
-    --accent-blue: #4eb8e0;
+    --text-secondary: #2f4d61;
+    --accent-blue: #0a5f8f;
     --accent-red: #e85d5d;
     --accent-green: #2db87a;
     --accent-purple: #7c6cf0;
     --border-subtle: rgba(78, 184, 224, 0.45);
     --border-light: rgba(78, 184, 224, 0.25);
-    --shadow-soft: 0 4px 20px rgba(26, 61, 82, 0.08);
+    --shadow-soft: 0 4px 20px rgba(26, 61, 82, 0.18);
     --brudms-panel-glass: rgba(255, 255, 255, 0.96);
-    --brudms-chip-bg: var(--brudms-primary);
-    --brudms-chip-border: rgba(78, 184, 224, 0.35);
+    --brudms-chip-bg: rgba(255, 255, 255, 0.28);
+    --brudms-chip-border: rgba(26, 61, 82, 0.45);
 }
 
 html[data-theme='dark'],
@@ -145,8 +145,8 @@ html[data-theme='light'] .brudms-customer-ui .cust-section-title {
 }
 
 html[data-theme='light'] .brudms-customer-ui .cust-dashboard-shell {
-    background: var(--brudms-primary) !important;
-    box-shadow: 0 -8px 32px rgba(26, 61, 82, 0.08);
+    background: var(--brudms-chip-bg) !important;
+    box-shadow: 0 -8px 32px rgba(26, 61, 82, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 html[data-theme='dark'] .brudms-customer-ui .cust-dashboard-shell {
@@ -168,7 +168,7 @@ html[data-theme='light'] body.brudms-customer-ui {
 html[data-theme='light'] .brudms-customer-ui [style*="rgba(66, 106, 120, 0.16)"],
 html[data-theme='light'] .brudms-customer-ui [style*="rgba(66, 106, 120, 0.35)"],
 html[data-theme='light'] .brudms-customer-ui [style*="background: rgba(66, 106, 120"] {
-    background: var(--brudms-primary) !important;
+    background: var(--brudms-chip-bg) !important;
     outline-color: var(--brudms-chip-border) !important;
     border-color: var(--brudms-chip-border) !important;
 }
@@ -200,8 +200,10 @@ html[data-theme='light'] .brudms-customer-ui [style*="border: 0.7px solid rgba(2
 }
 
 html[data-theme='light'] .brudms-customer-ui [style*="background: var(--brudms-primary)"] {
-    background: var(--brudms-primary) !important;
+    background: var(--brudms-chip-bg) !important;
     color: var(--text-primary) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
 }
 
 html[data-theme='light'] .brudms-customer-ui [style*="color: var(--brudms-primary)"] {

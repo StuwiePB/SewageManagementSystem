@@ -11,15 +11,15 @@ html[data-theme='light'] {
     --brudms-primary-dark: #f5f5f5;
     --brudms-primary-rgb: 255, 255, 255;
     --brudms-secondary: #e8e8e8;
-    --brudms-tertiary: #e8f6fd;
-    --bg-primary: #e8f6fd;
+    --brudms-tertiary: #78bfe4;
+    --bg-primary: #78bfe4;
     --bg-secondary: #ffffff;
     --text-primary: #1a3d52;
-    --text-secondary: #5a7d92;
-    --accent-blue: #4eb8e0;
+    --text-secondary: #2f4d61;
+    --accent-blue: #0a5f8f;
     --border-light: rgba(78, 184, 224, 0.25);
-    --brudms-chip-bg: #ffffff;
-    --brudms-chip-border: rgba(78, 184, 224, 0.35);
+    --brudms-chip-bg: rgba(255, 255, 255, 0.28);
+    --brudms-chip-border: rgba(26, 61, 82, 0.45);
     --brudms-panel-glass: rgba(255, 255, 255, 0.96);
 }
 html[data-theme='dark'],
@@ -41,7 +41,7 @@ html.dark {
 }
 html[data-theme='light'] body.brudms-customer-ui,
 html[data-theme='light'] body.brudms-portal {
-    background-color: #e8f6fd !important;
+    background-color: #78bfe4 !important;
     color: #1a3d52 !important;
 }
 html[data-theme='light'] .brudms-customer-ui .cust-page-bg,
@@ -86,7 +86,7 @@ html[data-theme='light'] .brudms-customer-ui .cust-page-bg > div {
             try { window.Flux.appearance = value; } catch (e) {}
         }
         if (document.body) {
-            var bg = value === 'light' ? '#e8f6fd' : '#1a1d2b';
+            var bg = value === 'light' ? '#78bfe4' : '#1a1d2b';
             var fg = value === 'light' ? '#1a3d52' : '#f1f5f9';
             document.body.style.setProperty('background-color', bg, 'important');
             document.body.style.setProperty('color', fg, 'important');

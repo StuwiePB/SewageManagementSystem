@@ -94,7 +94,7 @@
 
     <div style="position: fixed; top: 12vh; left: 22px; right: 22px; bottom: 20px; z-index: 5; overflow-y: auto; -webkit-overflow-scrolling: touch;">
         <span style="color: rgba(255, 255, 255, 0.72); font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">{{ __('Incidents last 7 days') }}</span>
-        <div class="cust-stat-panel" style="position: relative; width: 100%; margin-top: 6px; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+        <div class="cust-stat-panel" style="position: relative; width: 100%; margin-top: 6px; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
             <div style="width: 100%; height: 100%; min-height: 120px; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative; padding: 12px 10px 10px; box-sizing: border-box;">
                 <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                     <defs>
@@ -135,7 +135,7 @@
                 :aria-label="__('Filter status by day of week')"
             />
         </div>
-        <div class="cust-stat-panel" style="position: relative; width: 100%; margin-top: 6px; height: min(28vh, 240px); min-height: 200px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+        <div class="cust-stat-panel" style="position: relative; width: 100%; margin-top: 6px; height: min(28vh, 240px); min-height: 200px; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
             <div style="width: 100%; height: 100%; min-height: 188px; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative; padding: 12px 10px 10px; box-sizing: border-box;">
                 <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                     <defs>

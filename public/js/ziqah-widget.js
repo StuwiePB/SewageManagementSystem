@@ -292,7 +292,7 @@
         }
     }
 
-    function appendBotReply(rawReply, reportImageUrl, quickActions, forceShowReportButton) {
+    function appendBotReply(rawReply, reportImageUrl, forceShowReportButton) {
         var text = String(rawReply || '');
         var showReportButton = text.indexOf('SHOW_REPORT_BUTTON') !== -1;
         text = text.replace(/SHOW_REPORT_BUTTON/g, '').trim();
@@ -427,7 +427,6 @@
                         appendBotReply(
                             res.data.reply,
                             res.data.report_image_url || null,
-                            res.data.quick_actions || [],
                             res.data.show_report_button === true
                         );
                     } else {

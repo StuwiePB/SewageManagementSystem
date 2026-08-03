@@ -41,7 +41,7 @@ export function applyBrudmsTheme(theme) {
     }
 
     if (document.body) {
-        const bg = value === 'light' ? '#e8f6fd' : '#1a1d2b';
+        const bg = value === 'light' ? '#78bfe4' : '#1a1d2b';
         const fg = value === 'light' ? '#1a3d52' : '#f1f5f9';
         document.body.style.setProperty('background-color', bg, 'important');
         document.body.style.setProperty('color', fg, 'important');

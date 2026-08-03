@@ -169,8 +169,15 @@
         document.querySelectorAll('.language-opt').forEach(function(opt) {
             opt.addEventListener('click', function() {
                 var val = this.dataset.lang;
+                if (val === (@json($prefLanguage ?? 'ms'))) {
+                    return;
+                }
                 applyLanguage(val);
-                savePref({ language: val });
+                savePref({ language: val }).then(function () {
+                    // Translated strings are rendered server-side, so a full reload
+                    // is needed for the new language to actually show up on the page.
+                    window.location.reload();
+                });
             });
         });
         document.querySelectorAll('.anonymous-opt').forEach(function(opt) {

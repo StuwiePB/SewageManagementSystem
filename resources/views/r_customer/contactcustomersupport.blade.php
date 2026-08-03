@@ -153,7 +153,7 @@
             <button id="support-preview-remove" class="preview-remove" type="button">×</button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10vh;">
-            <div class="input-pill cust-chat-input-wrap" style="flex: 1; height: 44px; border-radius: 9999px; border: none; outline: 1.7px solid var(--brudms-chip-border); backdrop-filter: blur(1.5px); display: flex; align-items: center; overflow: hidden;">
+            <div class="input-pill cust-chat-input-wrap" style="flex: 1; height: 44px; border-radius: 9999px; border: none; outline: 1.7px solid var(--brudms-chip-border); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: center; overflow: hidden;">
                 <button id="support-attach" style="width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.1s ease;">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>

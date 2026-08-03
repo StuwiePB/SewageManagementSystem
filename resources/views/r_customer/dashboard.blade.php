@@ -59,7 +59,7 @@
                 padding: 3px 8px; border-radius: 7px;
                 background: var(--brudms-chip-bg);
                 outline: 1px solid var(--brudms-chip-border);
-                backdrop-filter: blur(1.5px);
+                backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
                 flex-shrink: 0; display: flex; align-items: center; cursor: pointer; border: none; font: inherit;
                 color: var(--text-primary); font-size: 8px; font-weight: 700; font-family: Poppins, sans-serif;
                 transition: outline-color 0.15s ease, background 0.15s ease;
@@ -259,11 +259,11 @@
     {{-- Tab buttons — Home | History --}}
     <div style="position: fixed; top: 13.5vh; left: 22px; right: 22px; z-index: 10; display: flex; justify-content: center; gap: 10px;">
         {{-- Home (active) --}}
-        <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px);">
+        <a href="{{ $guestMode ? route('guest.explore') : route('customer.dashboard', ['name' => $user->profileSlug()]) }}" class="tab-btn tab-btn-active" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);">
             <img src="{{ asset('images/Vectors/tab_home-active.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
         {{-- History — your reports only; sign in when guest --}}
-        <a href="{{ $guestMode ? route('login') : route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px); text-decoration: none;">
+        <a href="{{ $guestMode ? route('login') : route('customer.myhistory', ['name' => $user->profileSlug()]) }}" class="tab-btn {{ $guestMode ? 'tab-btn-locked' : 'delayed-nav' }}" style="flex: 1; height: 43px; display: flex; align-items: center; justify-content: center; border-radius: 12px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); text-decoration: none;">
             <img src="{{ asset('images/Vectors/tab_myhistory.svg') }}" alt="" style="width: 22px; height: 22px; object-fit: contain;" />
         </a>
     </div>
@@ -305,7 +305,7 @@
         {{-- Horizontally scrolling cards --}}
         <div class="dashboard-incident-cards-track" style="display: flex; gap: 10px; overflow-x: auto; padding: 2px 4px 10px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
             {{-- Add new card: requests location permission before navigating --}}
-            <a href="{{ $guestMode ? route('login') : route('customer.rproblem', ['name' => $user->profileSlug()]) }}" id="add-report-card" class="press-btn cust-glass" style="width: 110px; min-width: 110px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 9px; backdrop-filter: blur(1.5px); flex-shrink: 0; cursor: pointer; text-decoration: none;">
+            <a href="{{ $guestMode ? route('login') : route('customer.rproblem', ['name' => $user->profileSlug()]) }}" id="add-report-card" class="press-btn cust-glass" style="width: 110px; min-width: 110px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); flex-shrink: 0; cursor: pointer; text-decoration: none;">
                 <img src="{{ asset('images/Vectors/dashboard_addreport.svg') }}" alt="" style="width: 55px; height: 55px; object-fit: contain;" />
             </a>
 
@@ -328,7 +328,7 @@
                 $cardResolved = ! $isRejected && $stForFilter === 'resolved';
                 $cardPending = ! $isRejected && ! $cardOwnerReview && ! $cardResolved && ! $cardInProgress;
             @endphp
-            <div class="incident-card dashboard-incident-card cust-glass" data-card-owner-review="{{ $cardOwnerReview ? '1' : '0' }}" data-card-pending="{{ $cardPending ? '1' : '0' }}" data-card-in-progress="{{ $cardInProgress ? '1' : '0' }}" data-card-resolved="{{ $cardResolved ? '1' : '0' }}" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
+            <div class="incident-card dashboard-incident-card cust-glass" data-card-owner-review="{{ $cardOwnerReview ? '1' : '0' }}" data-card-pending="{{ $cardPending ? '1' : '0' }}" data-card-in-progress="{{ $cardInProgress ? '1' : '0' }}" data-card-resolved="{{ $cardResolved ? '1' : '0' }}" style="width: 110px; min-width: 110px; height: 160px; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; animation-delay: {{ 0.1 + ($i + 1) * 0.15 }}s;">
                 @if($reportPhotoOk)
                 <div style="position: relative; width: 100%; height: 75px; min-width: 0; border-top-left-radius: 9px; border-top-right-radius: 9px; overflow: hidden;">
                     <img src="{{ Storage::url($report->photo_path) }}" alt="" style="width: 100%; height: 75px; min-width: 0; object-fit: cover; filter: {{ $isOwnerUnderReview ? 'brightness(0.42) blur(1.6px)' : ($isRejected ? 'brightness(0.55) grayscale(0.35)' : 'none') }};" />
@@ -389,7 +389,7 @@
             <span class="cust-section-title" style="font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; display: block; margin-bottom: 10px; margin-left: 8px;">View Live Map</span>
             @if($guestMode)
             {{-- Map = real Leaflet tiles (background). Not inside <a> so tiles mount correctly; tap overlay goes to login. --}}
-            <div class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+            <div class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
                     <div id="live-map" style="position: absolute; inset: 0; width: 100%; height: 100%; min-height: 120px; filter: brightness(0.5); z-index: 1;"></div>
                     <a href="{{ route('login') }}" aria-label="{{ __('Sign in') }}" style="position: absolute; inset: 0; z-index: 2; border-radius: 7px; text-decoration: none; cursor: pointer;"></a>
@@ -400,7 +400,7 @@
                 </div>
             </div>
             @else
-            <div class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
+            <div class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
                     <div id="live-map" style="position: absolute; inset: 0; width: 100%; height: 100%; min-height: 120px; filter: brightness(0.5); z-index: 1;"></div>
                     <a href="{{ route('customer.livemap', ['name' => $user->profileSlug()]) }}" class="delayed-nav" aria-label="{{ __('Open live map') }}" style="position: absolute; inset: 0; z-index: 2; border-radius: 7px; text-decoration: none; cursor: pointer;"></a>
@@ -415,7 +415,7 @@
         <div style="margin-top: 20px;">
             <span class="cust-section-title" style="display: block; font-size: 14px; font-weight: 700; font-family: Poppins, sans-serif; margin-bottom: 10px; margin-left: 8px;">{{ __('Statistics') }}</span>
             @if($guestMode)
-            <a href="{{ route('login') }}" class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
+            <a href="{{ route('login') }}" class="press-btn cust-glass" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
                 <div style="position: relative; width: 100%; height: 100%; min-height: 120px; border-radius: 7px; overflow: hidden; isolation: isolate;">
                     <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
                         <defs>
@@ -432,7 +432,7 @@
                 </div>
             </a>
             @else
-            <a href="{{ route('customer.custatistics', ['name' => $user->profileSlug()]) }}" class="press-btn cust-glass delayed-nav" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
+            <a href="{{ route('customer.custatistics', ['name' => $user->profileSlug()]) }}" class="press-btn cust-glass delayed-nav" style="position: relative; width: 100%; height: 15vh; min-height: 132px; border-radius: 9px; backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); padding: 3px; box-sizing: border-box; display: block; text-decoration: none;">
                 <div style="width: 100%; height: 100%; min-height: 120px; border-radius: 7px; outline: 0.7px solid rgba(255, 255, 255, 0.21); overflow: hidden; position: relative;">
                     {{-- Grid pattern --}}
                     <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" preserveAspectRatio="none">
