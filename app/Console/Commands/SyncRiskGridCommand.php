@@ -15,6 +15,15 @@ class SyncRiskGridCommand extends Command
 
     protected $description = 'Refresh live rainfall-driven risk scores for every cell in the drainage risk grid';
 
+    /**
+     * Hours of already-observed rainfall to pull alongside the forecast, so the grid can show
+     * cells that ARE or HAVE BEEN raining (not just what's forecast) and the landslide factor
+     * has a full trailing 24h to accumulate. Also matches this constant's role as the array
+     * index of "now" within Open-Meteo's combined past+future series (verified empirically:
+     * `past_hours=N` puts the current hour at index N, not index 0).
+     */
+    private const PAST_HOURS = 24;
+
     public function handle(WeatherService $weather, RiskScoreService $scorer): int
     {
         $cells = RiskCell::all();
@@ -31,7 +40,7 @@ class SyncRiskGridCommand extends Command
             static fn (RiskCell $cell): array => [$cell->h3_index => ['lat' => $cell->lat, 'lng' => $cell->lng]]
         )->all();
 
-        $rainfall = $weather->hourlyRainfall($points);
+        $rainfall = $weather->hourlyRainfall($points, forecastDays: 3, pastHours: self::PAST_HOURS);
 
         $bar = $this->output->createProgressBar($cells->count());
         $bar->start();
@@ -57,14 +66,23 @@ class SyncRiskGridCommand extends Command
                 continue;
             }
 
+            $nowIndex = min(self::PAST_HOURS, count($forecast['times']) - 1);
+
             $series = $scorer->scoreSeries($cell, $forecast['times'], $forecast['precipitation'], $forecast['probability']);
-            $current = $series[0];
+            $current = $series[$nowIndex];
+
+            $rain24h = array_sum(array_slice($forecast['precipitation'], max(0, $nowIndex - 23), min(24, $nowIndex + 1)));
+            $landslide = $scorer->landslideScore($cell->slope_pct, $rain24h);
 
             $cell->forceFill([
                 'current_score' => $current['score'],
                 'current_band' => $current['band'],
+                'landslide_score' => $landslide['score'],
+                'landslide_band' => $landslide['band'],
                 'forecast_scores' => array_map(static fn (array $s): float => $s['score'], $series),
                 'forecast_times' => array_map(static fn (array $s): string => $s['time'], $series),
+                'forecast_rainfall_mm' => $forecast['precipitation'],
+                'now_index' => $nowIndex,
                 'synced_at' => now(),
             ])->save();
 

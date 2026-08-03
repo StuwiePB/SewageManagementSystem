@@ -32,6 +32,9 @@
     .risk-grid-factor-bar-wrap { flex: 1; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; }
     .risk-grid-factor-bar { height: 100%; background: var(--accent-blue, #6a96ff); }
     .risk-grid-factor-value { width: 44px; text-align: right; flex-shrink: 0; }
+    .risk-grid-disclaimer { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 0.68rem; line-height: 1.35; color: var(--text-secondary, #94a3b8); }
+    .risk-grid-rain-icon { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(56, 132, 255, 0.85); box-shadow: 0 0 0 2px rgba(255,255,255,0.5); font-size: 9px; line-height: 1; pointer-events: none; }
+    .risk-grid-slide-icon { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; background: rgba(120, 72, 24, 0.92); box-shadow: 0 0 0 2px rgba(255,255,255,0.5); font-size: 10px; line-height: 1; pointer-events: none; }
 </style>
 <script src="https://unpkg.com/h3-js@4.5.0/dist/h3-js.umd.js"></script>
 <script>
@@ -54,6 +57,9 @@ window.RiskGrid = {
 
     /** How many forecast hours ahead count as "about to rain" for the dashed early-warning outline. */
     LOOKAHEAD_HOURS: 6,
+
+    /** mm/hour at/above which a cell is marked with the "raining now/then" badge at a given hour. */
+    RAIN_VISIBLE_MM: 0.2,
 
     bandForScore: function (score) {
         if (score >= 75) return 'critical';
@@ -80,6 +86,8 @@ window.RiskGrid = {
             attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: OpenTopoMap'
         });
         var hexLayer = L.layerGroup();
+        var rainLayer = L.layerGroup();
+        var landslideLayer = L.layerGroup();
         var satelliteLayer = options.satelliteLayer || null;
         var terrainActive = false;
         var payload = null;
@@ -97,6 +105,23 @@ window.RiskGrid = {
             }
 
             return cell.score;
+        }
+
+        function rainfallAtHour(cell, hour) {
+            if (cell.forecast_rainfall_mm && cell.forecast_rainfall_mm.length > hour) {
+                return cell.forecast_rainfall_mm[hour];
+            }
+
+            return 0;
+        }
+
+        /** "now" / "+3h" / "-2h" relative to the grid's shared now_index, for the slider label. */
+        function hourLabel(hour) {
+            var nowIndex = (payload && payload.now_index) || 0;
+            var offset = hour - nowIndex;
+            if (offset === 0) return 'now';
+
+            return (offset > 0 ? '+' : '') + offset + 'h';
         }
 
         /**
@@ -138,6 +163,7 @@ window.RiskGrid = {
 
         function redrawHour(hour) {
             hexLayer.clearLayers();
+            rainLayer.clearLayers();
             if (!payload) return;
 
             (payload.cells || []).forEach(function (cell) {
@@ -168,9 +194,53 @@ window.RiskGrid = {
                     showDetail(cell.h3_index);
                 });
                 polygon.addTo(hexLayer);
+
+                // Actual observed/forecast rain at this hour — a distinct signal from the risk
+                // band fill, so a cell can visibly show "it's raining here right now" separately
+                // from "this cell is at elevated risk" (which also factors in blockages/terrain).
+                var rainMm = rainfallAtHour(cell, hour);
+                if (rainMm >= self.RAIN_VISIBLE_MM && typeof cell.lat === 'number') {
+                    L.marker([cell.lat, cell.lng], {
+                        icon: L.divIcon({
+                            className: '',
+                            html: '<div class="risk-grid-rain-icon" title="' + rainMm.toFixed(1) + 'mm/h">💧</div>',
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        }),
+                        interactive: false
+                    }).addTo(rainLayer);
+                }
             });
 
             renderCounts(hour);
+        }
+
+        /**
+         * Slope + rainfall landslide screening markers — drawn once from the grid's current
+         * (not per-forecast-hour) snapshot, since landslide_score/band aren't scored across the
+         * whole forecast series the way flood risk is. Always paired with LANDSLIDE_DISCLAIMER
+         * in the panel so this never reads as a validated geotechnical assessment.
+         */
+        function renderLandslideLayer() {
+            landslideLayer.clearLayers();
+            if (!payload) return;
+
+            (payload.cells || []).forEach(function (cell) {
+                if ((cell.landslide_band !== 'high' && cell.landslide_band !== 'critical') || typeof cell.lat !== 'number') {
+                    return;
+                }
+
+                L.marker([cell.lat, cell.lng], {
+                    icon: L.divIcon({
+                        className: '',
+                        html: '<div class="risk-grid-slide-icon" title="Landslide screening: ' + escapeHtml(cell.landslide_band) + ' (' + cell.landslide_score + ')">⛰</div>',
+                        iconSize: [18, 18],
+                        iconAnchor: [9, 9]
+                    })
+                })
+                    .on('click', function () { showDetail(cell.h3_index); })
+                    .addTo(landslideLayer);
+            });
         }
 
         function showDetail(h3Index) {
@@ -187,6 +257,7 @@ window.RiskGrid = {
                 .then(function (data) {
                     var cell = data.cell || {};
                     var factors = data.factors || {};
+                    var landslide = data.landslide || {};
 
                     var rows = Object.keys(factors).map(function (name) {
                         var f = factors[name] || {};
@@ -199,9 +270,20 @@ window.RiskGrid = {
                             + '</div>';
                     }).join('');
 
+                    var landslideHtml = '';
+                    if (landslide.band && landslide.band !== 'low') {
+                        landslideHtml = '<div class="risk-grid-detail" style="margin-top:0.6rem;">'
+                            + '<div style="margin-bottom:0.3rem;">⛰ Landslide screening: ' + landslide.score + ' · <span style="text-transform:capitalize;">' + escapeHtml(landslide.band) + '</span>'
+                            + (landslide.slope_pct != null ? ' <span style="color:var(--text-secondary,#94a3b8);">(slope ~' + landslide.slope_pct + '%)</span>' : '')
+                            + '</div>'
+                            + '<div class="risk-grid-disclaimer" style="margin-top:0;padding-top:0;border-top:none;">' + escapeHtml(landslide.disclaimer || '') + '</div>'
+                            + '</div>';
+                    }
+
                     detailEl.innerHTML = '<h4>' + escapeHtml(cell.district || 'Cell') + '</h4>'
                         + '<div style="margin-bottom:0.4rem;color:var(--text-secondary,#94a3b8);">Score ' + cell.score + ' · <span style="text-transform:capitalize;">' + escapeHtml(cell.band) + '</span></div>'
                         + rows
+                        + landslideHtml
                         + '<div style="margin-top:0.5rem;font-size:0.7rem;color:var(--text-secondary,#94a3b8);">' + escapeHtml(cell.h3_index) + '</div>';
                 })
                 .catch(function () {
@@ -215,22 +297,24 @@ window.RiskGrid = {
             var legendHtml = Object.keys(BAND_COLORS).map(function (band) {
                 return '<span class="risk-grid-legend-item"><span class="risk-grid-legend-swatch" style="background:' + BAND_COLORS[band] + ';"></span>' + band + '</span>';
             }).join('')
-                + '<span class="risk-grid-legend-item"><span class="risk-grid-legend-swatch" style="background:transparent;border:2px dashed ' + BAND_COLORS.high + ';"></span>rain expected within ' + self.LOOKAHEAD_HOURS + 'h</span>';
+                + '<span class="risk-grid-legend-item"><span class="risk-grid-legend-swatch" style="background:transparent;border:2px dashed ' + BAND_COLORS.high + ';"></span>rain expected within ' + self.LOOKAHEAD_HOURS + 'h</span>'
+                + '<span class="risk-grid-legend-item">💧 raining (this hour)</span>'
+                + '<span class="risk-grid-legend-item">⛰ landslide screening (high/critical)</span>';
 
             panelHost.innerHTML =
                 '<h4>Drainage risk grid</h4>'
                 + '<div class="risk-grid-legend">' + legendHtml + '</div>'
                 + '<div class="risk-grid-counts" data-role="risk-grid-counts"></div>'
                 + '<div class="risk-grid-slider-row">'
-                + '<div class="risk-grid-slider-label"><span>Forecast hour</span><span data-role="risk-grid-slider-time">now</span></div>'
+                + '<div class="risk-grid-slider-label"><span>Hour (past ↔ forecast)</span><span data-role="risk-grid-slider-time">now</span></div>'
                 + '<input type="range" min="0" max="0" value="0" data-role="risk-grid-slider">'
                 + '</div>'
-                + '<div class="risk-grid-detail" data-role="risk-grid-detail"><p class="risk-grid-detail-empty">Click a hexagon to see why.</p></div>';
+                + '<div class="risk-grid-detail" data-role="risk-grid-detail"><p class="risk-grid-detail-empty">Click a hexagon to see why.</p></div>'
+                + '<div class="risk-grid-disclaimer" data-role="risk-grid-landslide-disclaimer"></div>';
 
             panelHost.querySelector('[data-role="risk-grid-slider"]').addEventListener('input', function () {
                 var hour = parseInt(this.value, 10) || 0;
-                var timeLabel = (payload && payload.forecast_times && payload.forecast_times[hour]) || 'now';
-                panelHost.querySelector('[data-role="risk-grid-slider-time"]').textContent = timeLabel;
+                panelHost.querySelector('[data-role="risk-grid-slider-time"]').textContent = hourLabel(hour);
                 redrawHour(hour);
             });
         }
@@ -240,13 +324,26 @@ window.RiskGrid = {
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     payload = data;
+                    var nowIndex = payload.now_index || 0;
+
                     if (panelHost) {
                         var slider = panelHost.querySelector('[data-role="risk-grid-slider"]');
                         if (slider) {
                             slider.max = Math.max(0, (payload.forecast_times || []).length - 1);
+                            slider.value = nowIndex;
+                        }
+                        var timeEl = panelHost.querySelector('[data-role="risk-grid-slider-time"]');
+                        if (timeEl) {
+                            timeEl.textContent = hourLabel(nowIndex);
+                        }
+                        var disclaimerEl = panelHost.querySelector('[data-role="risk-grid-landslide-disclaimer"]');
+                        if (disclaimerEl && payload.landslide_disclaimer) {
+                            disclaimerEl.textContent = '⛰ ' + payload.landslide_disclaimer;
                         }
                     }
-                    redrawHour(0);
+
+                    redrawHour(nowIndex);
+                    renderLandslideLayer();
                 })
                 .catch(function () {
                     if (panelHost) {
@@ -281,11 +378,15 @@ window.RiskGrid = {
             buildPanel();
         }
         hexLayer.addTo(map);
+        rainLayer.addTo(map);
+        landslideLayer.addTo(map);
         load();
 
         var api = {
             terrainLayer: terrainLayer,
             hexLayer: hexLayer,
+            rainLayer: rainLayer,
+            landslideLayer: landslideLayer,
             isTerrainActive: function () { return terrainActive; },
             setBaseTerrain: setBaseTerrain,
             toggleGrid: function (on) {
@@ -294,6 +395,22 @@ window.RiskGrid = {
                 }
                 if (!on && map.hasLayer(hexLayer)) {
                     map.removeLayer(hexLayer);
+                }
+            },
+            toggleRain: function (on) {
+                if (on && !map.hasLayer(rainLayer)) {
+                    rainLayer.addTo(map);
+                }
+                if (!on && map.hasLayer(rainLayer)) {
+                    map.removeLayer(rainLayer);
+                }
+            },
+            toggleLandslide: function (on) {
+                if (on && !map.hasLayer(landslideLayer)) {
+                    landslideLayer.addTo(map);
+                }
+                if (!on && map.hasLayer(landslideLayer)) {
+                    map.removeLayer(landslideLayer);
                 }
             }
         };

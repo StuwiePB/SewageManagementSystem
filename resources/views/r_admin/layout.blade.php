@@ -19,9 +19,18 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); display: flex; min-height: 100vh; }
-        .sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid rgba(var(--brudms-primary-rgb), 0.15); display: flex; flex-direction: column; }
+        .sidebar {
+            position: relative; z-index: 1;
+            width: 280px;
+            background: var(--brudms-chip-bg);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border-right: 1px solid var(--brudms-chip-border);
+            box-shadow: var(--shadow-soft);
+            display: flex; flex-direction: column;
+        }
         .sidebar-header { padding: 2rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(var(--brudms-primary-rgb), 0.2); }
-        .sidebar-header i { font-size: 2.5rem; color: var(--accent-blue); margin-bottom: 0.75rem; display: block; }
+        .sidebar-shield-logo { width: 4.25rem; height: auto; margin: 0 auto 0.75rem; display: block; filter: drop-shadow(0 4px 10px rgba(var(--brudms-primary-rgb), 0.45)); }
         .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
         .sidebar-header p { font-size: 0.875rem; color: var(--text-secondary); }
         .sidebar-nav { flex: 1; padding: 1.5rem 0; }
@@ -32,11 +41,18 @@
         .nav-item.disabled { cursor: default; opacity: 0.7; }
         .sidebar-footer { padding: 1.5rem; border-top: 1px solid rgba(var(--brudms-primary-rgb), 0.15); }
         .sidebar-footer .nav-item { padding: 0.75rem 1rem; background: none; border: none; width: 100%; text-align: left; cursor: pointer; font: inherit; }
-        .main-content { flex: 1; padding: 2rem; overflow-y: auto; background: var(--bg-primary); }
+        .main-content { position: relative; z-index: 1; flex: 1; padding: 2rem; overflow-y: auto; background: transparent; }
         .header { margin-bottom: 2rem; }
         .header h1 { font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; }
         .header p { color: var(--text-secondary); font-size: 0.9375rem; }
-        .card { background: var(--bg-secondary); border: 1px solid rgba(var(--brudms-primary-rgb), 0.15); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .card {
+            background: var(--brudms-chip-bg);
+            backdrop-filter: blur(18px) saturate(1.4);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4);
+            border: 1px solid var(--brudms-chip-border);
+            box-shadow: var(--shadow-soft);
+            border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+        }
         .btn { display: inline-block; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; text-decoration: none; cursor: pointer; border: none; font-size: 0.875rem; }
         .btn-primary { background: var(--accent-blue); color: white; }
         .btn-primary:hover { opacity: 0.9; }
@@ -127,9 +143,10 @@
     @stack('styles')
 </head>
 <body>
+    @include('partials.admin-water-bg')
     <aside class="sidebar">
         <div class="sidebar-header">
-            <i class="fas fa-shield-halved"></i>
+            <img src="{{ asset('images/admin-shield.svg') }}" alt="" class="sidebar-shield-logo">
             <h2>Admin Console</h2>
             <p>Drainage Management System</p>
         </div>

@@ -30,12 +30,16 @@ class RiskGridController extends Controller
             // Pick the timeline from any already-synced cell — a not-yet-synced cell (e.g. one
             // skipped by a rate-limited risk:sync chunk) would otherwise report an empty array
             // even though the grid as a whole has a perfectly good shared timeline.
-            $forecastTimes = $cells->first(fn (RiskCell $c): bool => $c->forecast_times !== [])?->forecast_times ?? [];
+            $timelineCell = $cells->first(fn (RiskCell $c): bool => $c->forecast_times !== []);
 
             return [
                 'cells' => $cells->map->toGrid()->values()->all(),
-                'forecast_times' => $forecastTimes,
+                'forecast_times' => $timelineCell?->forecast_times ?? [],
+                // Index of "now" within forecast_times — every cell shares the same timeline
+                // from a single sync run, so any already-synced cell's value is representative.
+                'now_index' => $timelineCell?->now_index ?? 0,
                 'weights' => RiskScoreService::WEIGHTS,
+                'landslide_disclaimer' => RiskScoreService::LANDSLIDE_DISCLAIMER,
                 'generated_at' => now()->toIso8601String(),
             ];
         });
@@ -73,6 +77,12 @@ class RiskGridController extends Controller
             'factors' => $breakdown,
             'forecast_scores' => $cell->forecast_scores,
             'forecast_times' => $cell->forecast_times,
+            'landslide' => [
+                'score' => $cell->landslide_score,
+                'band' => $cell->landslide_band,
+                'slope_pct' => $cell->slope_pct,
+                'disclaimer' => RiskScoreService::LANDSLIDE_DISCLAIMER,
+            ],
         ]);
     }
 

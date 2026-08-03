@@ -103,6 +103,40 @@ class RiskScoreService
     private const BAND_MODERATE = 25.0;
 
     /**
+     * Slope grade (%) at/above which shallow-landslide susceptibility is treated as fully
+     * "steep" for scoring purposes. ~30% grade (about 17°) sits within the range commonly used
+     * as a screening threshold for shallow, rainfall-triggered slides on saturated tropical
+     * soils in Southeast Asian slope-stability guidance — steeper than this, slope itself stops
+     * being the limiting factor and soil saturation from rain becomes it.
+     */
+    private const SLOPE_SATURATION_PCT = 30.0;
+
+    /**
+     * Slope grade (%) at/below which a cell is treated as having negligible landslide
+     * susceptibility regardless of rainfall. Flat-to-gently-rolling land doesn't fail by
+     * sliding, so no amount of rain should push this factor above ~0 for cells this gentle.
+     */
+    private const SLOPE_MIN_PCT = 8.0;
+
+    /**
+     * Trailing 24h rainfall accumulation (mm) at which the landslide rain-trigger factor
+     * saturates to 1.0. ~100mm/24h is a widely cited moderate-to-high landslide-triggering
+     * rainfall threshold for humid tropical Southeast Asia. This is a general screening
+     * heuristic, not a site-surveyed threshold for Brunei specifically — see
+     * LANDSLIDE_DISCLAIMER, which is surfaced alongside every landslide score for that reason.
+     */
+    private const LANDSLIDE_RAIN_24H_SATURATION_MM = 100.0;
+
+    /**
+     * Shown next to every landslide score/band in the API and UI. This factor is a slope +
+     * rainfall screening heuristic built from public elevation/weather data, not a geotechnical
+     * assessment — unlike the flood score (built on this project's own report/history data), it
+     * has no local ground-truth to validate against, so it must never be presented as
+     * authoritative on its own.
+     */
+    public const LANDSLIDE_DISCLAIMER = 'Indicative slope + rainfall screening only — not a geotechnical survey.';
+
+    /**
      * Score one cell against one rainfall reading (one forecast hour, or current conditions).
      *
      * @return array{score: float, band: string, factors: array<string, float>}
@@ -184,6 +218,36 @@ class RiskScoreService
         $remaining = ($score / 100) - $staticContribution;
 
         return round(min(max($remaining / self::WEIGHTS['rainfall'], 0.0), 1.0), 4);
+    }
+
+    /**
+     * Slope-based landslide screening score, scored separately from the flood score above
+     * because the two hazards have opposite elevation directionality — low-lying land is what
+     * drives flood risk, but landslides need a susceptible *slope*, which flood's terrain
+     * factor deliberately doesn't capture. Combining them into one number would misrepresent
+     * both, so this is exposed as its own score/band, always paired with LANDSLIDE_DISCLAIMER.
+     *
+     * @return array{score: float, band: string, slope_factor: float, rain_factor: float}
+     */
+    public function landslideScore(?float $slopePct, float $rain24hMm): array
+    {
+        $slope = $slopePct ?? 0.0;
+        $slopeFactor = min(max(($slope - self::SLOPE_MIN_PCT) / (self::SLOPE_SATURATION_PCT - self::SLOPE_MIN_PCT), 0.0), 1.0);
+        $rainFactor = min(max($rain24hMm, 0) / self::LANDSLIDE_RAIN_24H_SATURATION_MM, 1.0);
+
+        // Needs BOTH a susceptible slope AND enough rain to saturate it — a steep dry slope is
+        // much lower *immediate* risk than a steep saturated one, but a 0.25 floor keeps a steep
+        // slope reading as "watch this" even before rain rather than implying it's perfectly
+        // safe until the exact moment rain starts.
+        $combined = $slopeFactor * (0.25 + 0.75 * $rainFactor);
+        $score = round($combined * 100, 2);
+
+        return [
+            'score' => $score,
+            'band' => $this->band($score),
+            'slope_factor' => round($slopeFactor, 4),
+            'rain_factor' => round($rainFactor, 4),
+        ];
     }
 
     public function band(float $score): string
