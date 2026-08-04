@@ -1,7 +1,15 @@
 import Chart from 'chart.js/auto';
 
-const chartText = '#B0B0B0';
-const chartGrid = 'rgba(106, 150, 255, 0.12)';
+const isDark = document.documentElement.classList.contains('dark') || document.documentElement.getAttribute('data-theme') === 'dark';
+const chartText = isDark ? '#8FA3A8' : '#6B7C82';
+const chartGrid = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(16, 38, 46, 0.08)';
+const chartColors = {
+    flow: '#2E7D8F',
+    accent: '#F0A202',
+    ok: '#3E8E6E',
+    alert: '#C2453D',
+    empty: isDark ? '#22383E' : '#DDE3E1',
+};
 
 function initCharts() {
     const payload = window.__ADMIN_CHART_DATA;
@@ -11,6 +19,7 @@ function initCharts() {
 
     Chart.defaults.color = chartText;
     Chart.defaults.borderColor = chartGrid;
+    Chart.defaults.font.family = "'Instrument Sans', system-ui, sans-serif";
 
     const activityEl = document.getElementById('activityChart');
     if (activityEl) {
@@ -22,8 +31,8 @@ function initCharts() {
                     {
                         label: 'reports',
                         data: payload.reportsData ?? [],
-                        borderColor: '#6A96FF',
-                        backgroundColor: 'rgba(106, 150, 255, 0.12)',
+                        borderColor: chartColors.flow,
+                        backgroundColor: 'rgba(46, 125, 143, 0.12)',
                         tension: 0.35,
                         fill: false,
                         pointRadius: 3,
@@ -32,8 +41,8 @@ function initCharts() {
                     {
                         label: 'maintenance',
                         data: payload.maintenanceData ?? [],
-                        borderColor: '#FFA500',
-                        backgroundColor: 'rgba(255, 165, 0, 0.12)',
+                        borderColor: chartColors.accent,
+                        backgroundColor: 'rgba(240, 162, 2, 0.12)',
                         tension: 0.35,
                         fill: false,
                         pointRadius: 3,
@@ -42,8 +51,8 @@ function initCharts() {
                     {
                         label: 'resolved',
                         data: payload.resolvedData ?? [],
-                        borderColor: '#56FF8B',
-                        backgroundColor: 'rgba(86, 255, 139, 0.12)',
+                        borderColor: chartColors.ok,
+                        backgroundColor: 'rgba(62, 142, 110, 0.12)',
                         tension: 0.35,
                         fill: false,
                         pointRadius: 3,
@@ -88,7 +97,7 @@ function initCharts() {
                     datasets: [
                         {
                             data: [1],
-                            backgroundColor: ['#3d4459'],
+                            backgroundColor: [chartColors.empty],
                             borderWidth: 0,
                         },
                     ],
@@ -110,7 +119,7 @@ function initCharts() {
                     datasets: [
                         {
                             data: counts,
-                            backgroundColor: ['#56FF8B', '#FFA500', '#FF5B5B'],
+                            backgroundColor: [chartColors.ok, chartColors.accent, chartColors.alert],
                             borderWidth: 0,
                             hoverOffset: 6,
                         },

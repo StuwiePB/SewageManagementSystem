@@ -112,8 +112,14 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function() {
-    const blue = 'var(--brudms-primary)';
-    const colors = ['var(--brudms-primary)', '#56FF8B', '#059669', '#d97706', '#FF5B5B', '#A86AFF', '#22d3ee', '#65a30d'];
+    {{-- Fixed hex, not var(--brudms-primary) — Canvas 2D's fillStyle/strokeStyle (which is what
+         Chart.js hands these strings to) cannot resolve CSS custom properties at all; that only
+         works inside real CSS. The browser silently rejects the invalid value and falls back to
+         black, so every chart on this page (both Top Mukims bars, the reports/work-orders
+         doughnuts, and the daily line chart) was rendering in the wrong colour regardless of
+         theme — this wasn't a light/dark contrast issue, var() just never worked here at all. --}}
+    const blue = '#2E7D8F';
+    const colors = ['#2E7D8F', '#56FF8B', '#059669', '#d97706', '#FF5B5B', '#A86AFF', '#22d3ee', '#65a30d'];
     const textColor = '#B0B0B0';
     const gridColor = 'rgba(106, 150, 255, 0.1)';
 
@@ -315,8 +321,14 @@
 
     function renderPointMarkers() {
         markersLayer.clearLayers();
-        var pts = currentMetric === 'reports' ? reportMapPoints : workOrderMapPoints;
-        var fill = currentMetric === 'reports' ? 'var(--brudms-primary)' : '#f97316';
+        var isReports = currentMetric === 'reports';
+        var pts = isReports ? reportMapPoints : workOrderMapPoints;
+        {{-- Fixed colours, not var(--brudms-primary) — that variable is literally white in
+             light mode and a pale cyan in dark mode, which made the "reports" marker either
+             invisible (white fill + white border) or washed out depending on theme. Same blue
+             used for the "R" marker on the GIS map, for consistency across the two maps. --}}
+        var fill = isReports ? '#2E7D8F' : '#f97316';
+        var label = isReports ? 'R' : 'WO';
         pts.forEach(function (p) {
             var lat = Number(p.lat);
             var lng = Number(p.lng);
@@ -325,14 +337,21 @@
             if (p.detail) popup += '<br>' + escapeHtml(p.detail);
             if (p.status) popup += '<br><span style="opacity:0.9">' + escapeHtml(p.status) + '</span>';
             if (p.address) popup += '<br><small>' + escapeHtml(p.address) + '</small>';
-            L.circleMarker([lat, lng], {
+            L.marker([lat, lng], {
                 pane: HOTSPOT_MARKER_PANE,
-                radius: 8,
-                fillColor: fill,
-                color: '#ffffff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.9
+                icon: L.divIcon({
+                    className: 'hotspot-point-marker',
+                    // The badge's width varies with label length ("R" vs "WO"), so it can't use
+                    // a fixed iconSize/iconAnchor — instead a 0x0 icon anchored at the point,
+                    // with the visible span self-centering via a CSS transform, keeps the badge
+                    // centered on the actual lat/lng regardless of how wide it renders.
+                    html: '<span style="position:absolute;top:0;left:0;transform:translate(-50%,-50%);'
+                        + 'background:' + fill + ';color:#fff;border:2px solid #fff;border-radius:999px;'
+                        + 'min-width:22px;height:22px;padding:0 4px;box-sizing:border-box;display:inline-flex;'
+                        + 'align-items:center;justify-content:center;font-size:10px;font-weight:700;white-space:nowrap;'
+                        + 'box-shadow:0 1px 4px rgba(0,0,0,0.35);">' + label + '</span>',
+                    iconSize: [0, 0]
+                })
             }).bindPopup(popup).addTo(markersLayer);
         });
     }

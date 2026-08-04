@@ -54,6 +54,28 @@ class RiskCell extends Model
     }
 
     /**
+     * The h3_index of whichever cell's center is closest to a given point — used to tag a new
+     * customer report with the hex cell it falls in, so risk:sync can count it toward that
+     * cell's open-blockage-report factor. "Nearest cell center" rather than true point-in-hexagon
+     * containment: cells are ~2.1km apart at this grid's resolution, so the two only disagree
+     * within a sliver near a cell boundary, and that's an acceptable approximation for a "how
+     * many open reports are near here" signal — not worth pulling in an H3 PHP binding for.
+     */
+    public static function nearestH3Index(float $lat, float $lng): ?string
+    {
+        return static::query()
+            ->selectRaw(
+                'h3_index, (6371 * acos(least(1, greatest(-1,
+                    cos(radians(?)) * cos(radians(lat)) * cos(radians(lng) - radians(?)) +
+                    sin(radians(?)) * sin(radians(lat))
+                )))) as distance_km',
+                [$lat, $lng, $lat]
+            )
+            ->orderBy('distance_km')
+            ->value('h3_index');
+    }
+
+    /**
      * Compact shape for the map API — enough to draw + colour the hexagon, open the detail panel
      * on click, and (via forecast_scores) let the map's forecast-hour slider re-render every cell
      * from this cached array without a refetch per drag.

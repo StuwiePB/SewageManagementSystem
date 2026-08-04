@@ -31,6 +31,21 @@
     --color-accent: #4eb8e0;
     --color-accent-content: #4eb8e0;
     --color-accent-foreground: #1a3d52;
+
+    /* Admin console design system ("adm-" prefixed to stay isolated from the customer/
+       shared tokens above). Fonts/radius/shadow only — actual palette colors are runtime
+       --adm-* custom properties defined in r_admin/layout.blade.php (light default +
+       html.dark override) and referenced directly via var(), not through Tailwind's color
+       utility generator, since the admin CSS is otherwise a plain <style> block matching how
+       this layout already worked before this redesign. */
+    --font-adm-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-adm-sans: 'Instrument Sans', system-ui, sans-serif;
+    --font-adm-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    --radius-adm-card: 26px;
+    --radius-adm-rail: 30px;
+    --shadow-adm-card: 0 1px 2px rgba(16,38,46,.04), 0 12px 32px -12px rgba(16,38,46,.14);
+    --shadow-adm-hero: 0 18px 44px -14px rgba(240,162,2,.55);
 }
 
 @layer theme {

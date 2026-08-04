@@ -9,7 +9,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg-primary: var(--text-primary); --bg-secondary: var(--brudms-secondary); --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --accent-blue: var(--brudms-primary); --accent-red: #FF5B5B; --accent-green: #56FF8B; --accent-purple: #A86AFF; }
+        {{-- Previously --bg-primary/--accent-blue referenced --text-primary/--brudms-* which
+             were never defined on this standalone page — that self-reference resolved to
+             white-on-white body text and a blown-out white background. Real literal values
+             below, chosen for actual contrast against the light background instead. --}}
+        :root { --bg-primary: #E4E9E7; --bg-secondary: #FFFFFF; --text-primary: #16262C; --text-secondary: #4E5F65; --accent-blue: #0A5F8F; --accent-red: #B33A34; --accent-green: #2E7D52; --accent-purple: #6F4FC4; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
         h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif; font-weight: 600; color: var(--text-primary); }
         .navbar { background: var(--bg-secondary); border-bottom: 1px solid rgba(106, 150, 255, 0.15); }
@@ -28,25 +32,25 @@
         .badge-custom { padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
         .badge-sewage { background: rgba(255, 91, 91, 0.2); color: var(--accent-red); }
         .badge-not-sewage { background: rgba(86, 255, 139, 0.2); color: var(--accent-green); }
-        .badge-uncertain { background: rgba(255, 190, 11, 0.2); color: #ffbe0b; }
+        .badge-uncertain { background: rgba(255, 190, 11, 0.2); color: #9A6A00; }
         .evidence-badge { display: inline-block; padding: 0.25rem 0.5rem; margin: 0.25rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
         .evidence-badge.true { background: rgba(86, 255, 139, 0.2); color: var(--accent-green); }
         .evidence-badge.false { background: rgba(106, 150, 255, 0.15); color: var(--text-secondary); }
-        .btn-confirm { background: var(--accent-green); border-color: var(--accent-green); color: var(--text-primary); }
-        .btn-confirm:hover { background: var(--accent-green); opacity: 0.9; border-color: var(--accent-green); color: var(--text-primary); }
+        .btn-confirm { background: var(--accent-green); border-color: var(--accent-green); color: #fff; }
+        .btn-confirm:hover { background: var(--accent-green); opacity: 0.9; border-color: var(--accent-green); color: #fff; }
         .btn-reject { background: var(--accent-red); border-color: var(--accent-red); color: white; }
         .btn-reject:hover { background: var(--accent-red); opacity: 0.9; border-color: var(--accent-red); color: white; }
         .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-secondary); }
         .empty-state i { font-size: 4rem; margin-bottom: 1rem; color: var(--accent-blue); }
         .text-muted { color: var(--text-secondary) !important; }
-        .alert-warning { background: rgba(255, 190, 11, 0.15); color: #ffbe0b; border-color: transparent; }
+        .alert-warning { background: rgba(255, 190, 11, 0.15); color: #9A6A00; border-color: transparent; }
         .review-actions { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(106, 150, 255, 0.15); }
         .review-actions .form-label { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem; }
         .review-actions textarea { width: 100%; padding: 0.75rem; background: var(--bg-primary); border: 1px solid rgba(106, 150, 255, 0.3); border-radius: 8px; color: var(--text-primary); font-size: 0.9375rem; min-height: 90px; resize: vertical; }
         .review-actions textarea::placeholder { color: var(--text-secondary); opacity: 0.7; }
         .review-actions .btn-wrap { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
-        .review-actions .btn-send { background: var(--accent-green); color: var(--text-primary); border: none; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; }
-        .review-actions .btn-send:hover { opacity: 0.9; color: var(--text-primary); }
+        .review-actions .btn-send { background: var(--accent-green); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; }
+        .review-actions .btn-send:hover { opacity: 0.9; color: #fff; }
         .review-actions .btn-delete { background: rgba(255, 91, 91, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; }
         .review-actions .btn-delete:hover { background: rgba(255, 91, 91, 0.3); color: var(--accent-red); }
     </style>

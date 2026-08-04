@@ -19,8 +19,12 @@
     .stat-type-btn { display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 1.5rem; border: 1px solid rgba(106, 150, 255, 0.2); border-radius: 12px; background: var(--bg-secondary); color: inherit; cursor: pointer; transition: all 0.2s; font-family: inherit; min-height: 220px; }
     .stat-type-btn:hover { border-color: var(--accent-blue); background: rgba(106, 150, 255, 0.08); box-shadow: 0 4px 12px rgba(106, 150, 255, 0.15); }
     .stat-type-btn .icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; color: white; }
-    .stat-type-btn .icon.blue { background: linear-gradient(135deg, var(--accent-blue), #0d9488); }
-    .stat-type-btn .icon.green { background: linear-gradient(135deg, #0d9488, #059669); }
+    {{-- Fixed colours, not var(--accent-blue) — that variable flips from a dark, high-contrast
+         blue in light mode to a near-pastel cyan (#6ecff0) in dark mode, which dropped the
+         white icon glyph to ~1.8:1 contrast (illegible) now that dark is the admin default.
+         Also matches the GIS map's "R"/"W" marker colours for the same report/work-order pair. --}}
+    .stat-type-btn .icon.blue { background: linear-gradient(135deg, #2E7D8F, #0d9488); }
+    .stat-type-btn .icon.green { background: linear-gradient(135deg, #15803D, #059669); }
     .stat-type-btn .icon.orange { background: linear-gradient(135deg, #d97706, var(--accent-red)); }
     .stat-type-btn strong { font-size: 1.125rem; color: var(--text-primary); margin-bottom: 0.5rem; display: block; }
     .stat-type-btn span.desc { font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem; }

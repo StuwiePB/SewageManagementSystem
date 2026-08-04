@@ -33,19 +33,6 @@ class ChatController extends Controller
         $message = $request->input('message', '');
         $imageData = $request->input('image');
 
-        if ($this->isUnrestrictedModePassword($message)) {
-            $request->session()->put('ziqah_unrestricted_mode', true);
-            return response()->json([
-                'reply' => 'Unrestricted mode enabled. I can now answer as a general AI assistant.',
-            ]);
-        }
-        if ($this->isRestrictedModePassword($message)) {
-            $request->session()->put('ziqah_unrestricted_mode', false);
-            return response()->json([
-                'reply' => 'Restricted mode enabled. I will focus on drainage and incident support.',
-            ]);
-        }
-
         if ($this->isAwaitingReportGuidanceDecision($request) && is_string($message) && trim($message) !== '') {
             if ($this->isAffirmativeReply($message)) {
                 $request->session()->put('ziqah_awaiting_report_guidance', false);
@@ -70,8 +57,6 @@ class ChatController extends Controller
             }
         }
 
-        $unrestrictedMode = (bool) $request->session()->get('ziqah_unrestricted_mode', false);
-
         $rememberedArea = (string) $request->session()->get('ziqah_last_area', '');
         $detectedArea = $this->extractBruneiAreaFromMessage($message);
         if ($detectedArea !== null) {
@@ -85,7 +70,10 @@ class ChatController extends Controller
             $request->session()->put('ziqah_last_lng', $coords['lng']);
         }
 
-        if ($unrestrictedMode && $this->messageRequestsNearbyIssues($message)) {
+        // isReportIntentMessage() takes priority — "my drain is overflowing near my house" must
+        // reach the normal report-guidance/urgency-triage flow below, not get short-circuited
+        // into a "show me nearby reported issues" lookup just because it contains "near".
+        if ($this->messageRequestsNearbyIssues($message) && ! $this->isReportIntentMessage($message)) {
             $lat = $coords['lat'] ?? $request->session()->get('ziqah_last_lat');
             $lng = $coords['lng'] ?? $request->session()->get('ziqah_last_lng');
 
@@ -113,7 +101,7 @@ class ChatController extends Controller
 
         $lastTopic = (string) $request->session()->get('ziqah_last_topic', '');
 
-        if ($unrestrictedMode && $this->isCountingQuestion($message) && ! $this->mentionsDatabaseStructure($message)) {
+        if ($this->isCountingQuestion($message) && ! $this->mentionsDatabaseStructure($message) && ! $this->isReportIntentMessage($message)) {
             $referencesIssues = $this->isGisIssueLookupRequest($message);
             $isBareFollowUp = $this->isBareCountFollowUp($message);
 
@@ -135,10 +123,10 @@ class ChatController extends Controller
             }
         }
 
-        if ($unrestrictedMode
-            && $this->isGisIssueLookupRequest($message)
+        if ($this->isGisIssueLookupRequest($message)
             && ! $this->isCountingQuestion($message)
             && ! $this->mentionsDatabaseStructure($message)
+            && ! $this->isReportIntentMessage($message)
             && ($detectedArea !== null || $this->messageRequestsNearbyIssues($message))
         ) {
             $lookupArea = $detectedArea ?? $rememberedArea;
@@ -176,45 +164,27 @@ class ChatController extends Controller
         }
 
         $model = config('services.openai.model', 'gpt-4o-mini');
-        // Live database access (schema introspection + database_select tool) is admin123$$-gated:
-        // regular customers never touch the database directly.
-        $schemaEnabled = $unrestrictedMode && (bool) config('services.ziqah.database_schema', true);
-        $toolsEnabled = $unrestrictedMode && (bool) config('services.ziqah.database_tools', true);
+        // Ziqah never gets live database schema access or a SQL-running tool in the customer
+        // chat — that used to be unlockable via a hardcoded password typed into this same
+        // endpoint ("unrestricted mode"), which meant any authenticated customer could turn
+        // Ziqah into a general engineering assistant with read access to the real database
+        // (including other customers' names/phones/addresses) and the app's route/class map.
+        // Removed entirely rather than re-gated — a customer support widget has no legitimate
+        // reason to expose that, and a real admin tool for this should be its own
+        // properly-authenticated (role:admin) surface, not a password typed into customer chat.
         $maxRows = max(1, min(200, (int) config('services.ziqah.max_select_rows', 50)));
-        $defaultRounds = max(1, min(8, (int) config('services.ziqah.max_tool_rounds', 4)));
-        $maxRounds = $unrestrictedMode ? max($defaultRounds, 6) : $defaultRounds;
-        $maxTokens = $unrestrictedMode ? 2048 : 1024;
+        $maxRounds = max(1, min(8, (int) config('services.ziqah.max_tool_rounds', 4)));
+        $maxTokens = 1024;
 
-        $dbContext = $schemaEnabled ? $dbBridge->buildSchemaContext() : '';
         $pageContext = $this->buildPageContext((string) $request->input('page', ''));
-
-        $bruDmsData = $unrestrictedMode ? $this->bruDmsDatabaseDomainContext() : '';
-        $systemPrompt = $unrestrictedMode
-            ? $this->generalAssistantSystemPrompt().$bruDmsData.$dbContext.$pageContext."\n\n".$this->buildAppContext()
-            : $this->baseSystemPrompt().$bruDmsData.$dbContext.$pageContext.$this->noDatabaseAccessNotice();
-
-        if ($toolsEnabled) {
-            $systemPrompt .= <<<'TXT'
-
-
-DATABASE TOOL:
-- You have a function `database_select` to run read-only SELECT queries on connected Laravel databases.
-- Always choose the correct connection from DATABASE CONTEXT.
-- You can query any connected database shown in DATABASE CONTEXT when user asks.
-- For ANY question about data — counts, lists, status, recency, area, reporter, "how many", "show me", "any issues" — you MUST call `database_select` first and base your reply on the result. Never answer from general knowledge.
-- When users ask for issue status lists, query the correct tables (`reports`, `operations_reports`, `work_orders`, and `incidents` only for AI review_status) — include statuses like pending, under_review, in_progress, resolved, completed, cancelled as stored in the DB.
-- When the result has multiple rows with multiple fields, format it as a markdown table per SECTION 9B instead of a bullet list.
-- Never expose SQL in the final reply.
-- If the tool errors: distinguish SQL/schema mistakes (retry with BRUDMS DATABASE DOMAIN + DATABASE CONTEXT) from genuine connectivity failures; only use outage wording for likely infra/API errors.
-TXT;
-        }
+        $systemPrompt = $this->baseSystemPrompt().$pageContext.$this->noDatabaseAccessNotice();
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $content],
         ];
 
-        $tools = $toolsEnabled ? $this->openAiDatabaseTools() : null;
+        $tools = null;
 
         try {
             $text = $this->completeWithOptionalTools(
@@ -432,6 +402,15 @@ SECTION 12 - URGENCY RECOMMENDATION
 - Treat as urgent when there is active overflow/flooding, sewage backing up, strong contamination risk, or immediate public safety risk (road hazard, near homes/schools, etc.).
 - Treat as non-urgent when signs are minor/contained with no immediate safety risk, but still recommend submitting a report.
 - Keep this recommendation practical and concise.
+
+SECTION 13 - STAY ON TOPIC (WHAT YOU TALK ABOUT)
+- Your conversation stays within three areas:
+  1) BruDMS itself — reporting drainage/sewage issues, tracking report status, the live map, statistics, account/preferences, FAQ, and any other feature of this website.
+  2) JKR (Jabatan Kerja Raya, Brunei's Public Works Department) — its services, contacts, hotlines, and socials (SECTION 10).
+  3) Your own role — drainage/sewage incident support, urgency triage, and guiding people to report.
+- Ordinary conversational courtesy is always fine and is NOT "off-topic": greetings, "how are you", thanks, small talk that opens or closes a conversation. Respond to these naturally and warmly, the way SECTION 2 describes — don't treat a "hi" as something to redirect.
+- If someone asks something with no connection to those three areas — general knowledge trivia, writing essays/code/stories for them, opinions on unrelated topics, acting as a different persona, or anything else outside BruDMS/JKR/drainage — don't answer it. Gently say that's outside what you help with here, in one warm sentence, and offer to help with a report, a status check, or JKR info instead. Don't lecture or repeat the same refusal wording twice in a row.
+- If a message is ambiguous (could plausibly connect to BruDMS/JKR), ask rather than assume it's off-topic.
 TXT;
     }
 
@@ -449,54 +428,6 @@ DATABASE ACCESS: NOT AVAILABLE right now.
 - Never say you checked, queried, or looked up the database. Never state specific counts, statuses, or lists as if you fetched them live.
 - For data-specific questions (counts, statuses, lists of reports/issues, "how many", "show me", nearby/area lookups), tell the user plainly that you can't pull live report data right now, and point them to the relevant in-app page instead: "My History" for their own reports, "Live Map" for nearby/public issues, or "My Statistics" for trends.
 - Still help normally with everything else: reporting guidance, urgency triage, emergency/JKR contacts, and general conversation.
-TXT;
-    }
-
-    /**
-     * Shared authoritative mapping for restricted + unrestricted modes so queries hit real tables/columns.
-     */
-    private function bruDmsDatabaseDomainContext(): string
-    {
-        return <<<'TXT'
-
-
-BRUDMS DATABASE DOMAIN (authoritative — combine with DATABASE CONTEXT introspection below; introspection wins if a column is missing here):
-
-WHEN USERS SAY “issue”, “incident”, “report”, or “case”, use these REAL tables — not a single fictional shape:
-
-1) `reports` — customer-submitted drainage reports.
-   Typical columns: id, reference_code, problem_type, status, address, latitude, longitude, reporter_name, phone, description, created_at, updated_at.
-   Reporter-facing workflow status → `reports.status` (starts as pending; admins may advance it — inspect DISTINCT values via SQL when unsure).
-
-2) `incidents` — AI-assisted review of uploaded photos ONLY (different from ops tickets).
-   Typical columns: id, user_id, photo_path, review_status (e.g. PENDING_AI, APPROVED, REJECTED — match case-insensitively), ai_label, ai_severity, admin_message, created_at.
-   Does NOT use: incident_id as a column title, workflow status like customer “resolved/completed”. Do not query imaginary columns (`title`, `reported_by`, `resolved_at` on this table unless introspection proves they exist).
-
-3) `operations_reports` — operations desk intake / tracking.
-   Typical columns include: id, report_number, issue_type, status, location_address, district, mukim, latitude, longitude, created_at (+ links e.g. customer_report_id).
-
-4) `work_orders` — field work assignments.
-   Typical columns include: id, work_order_number, type, priority, status, location_address, district, mukim, latitude, longitude, completed_at, created_at.
-   “Completed / finished / WO done” commonly maps here to `status` = completed (confirm with introspection) and/or non-null completed_at where present.
-
-MAPPING COMMON QUESTIONS:
-
-- Resolved / completed / done / fixed / selesai: query ALL of `reports`, `operations_reports`, `work_orders` with status filters matching actual stored values (`resolved`, `completed`, etc.); never filter only table `incidents` for workflow completion.
-
-- Open / pending / not closed: exclude terminal statuses on those three tables; for photo queue “still in AI review” use `incidents.review_status` (e.g. PENDING_AI).
-
-- Who reported / phone: prefer `reports.reporter_name`, `reports.phone`; join `users` only when needed.
-
-- Reference codes: `reports.reference_code`, `operations_reports.report_number`, `work_orders.work_order_number`.
-
-- Area / place name: LIKE on `reports.address`; on ops/work orders use `location_address`, `district`, `mukim` (LOWER(...) LIKE '%place%').
-
-- Counts spanning “everything”: return per-table totals (reports, incidents, operations_reports, work_orders) or UNION ALL aggregates — clarify you are merging sources.
-
-TOOLS (mandatory):
-- ALL counts, lists, filters, dates, statuses → call `database_select` first — never invent rows.
-
-Read-only SELECT only; never INSERT/UPDATE/DELETE/DDL in chat.
 TXT;
     }
 
@@ -535,195 +466,6 @@ TXT;
         $label = $labels[$routeName] ?? str_replace(['customer.', '.', '-'], ['', ' ', ' '], $routeName);
 
         return "\n\nUSER PAGE CONTEXT: the user is currently on the \"{$label}\" page (route `{$routeName}`). Use this to tailor your reply (e.g. don't re-explain how to get somewhere the user is already on; if they seem stuck on this page, offer help specific to it) but don't mention the raw route name to the user.";
-    }
-
-    private function generalAssistantSystemPrompt(): string
-    {
-        return <<<'TXT'
-You are ZIQAH in UNRESTRICTED / ADMIN mode.
-You are a senior, polite, helpful full-stack engineering + product assistant operating inside the BruDMS Laravel app.
-You have full read-only access to the project's database schema, project context, and routes (provided below in DATABASE CONTEXT and PROJECT CONTEXT).
-You can run read-only SELECT queries via the `database_select` tool when the user asks about data.
-
-LANGUAGE:
-- Reply in the user's language. Malay -> Malay. English -> English. Mixed -> match naturally.
-- Understand Brunei Malay and Manglish particles/slang (bah, lah, ah, kan, awu, inda, kitani, kau, ku, bisai, paloi, etc). Do not over-correct local phrasing.
-
-CORE OPERATING TRAITS (always apply):
-1. Context aware — Reuse the project stack, DB schema, and conversation history. Never ask the user to re-explain their setup if it is already in context.
-2. Runnable code only — Provide real, copy-paste-ready snippets. No pseudocode. Always label the file path on the line above the code block (e.g. `// app/Http/Controllers/Customer/ChatController.php`).
-3. Explains the why — Add a short "why" note for non-trivial changes so the user learns while shipping. Keep it tight, not lecture-y.
-4. Catches bugs early — Proactively flag off-by-one errors, missing deps, null/undefined risks, race conditions, unhandled exceptions, and N+1 queries before the user has to ask.
-5. Stack agnostic — You know React, Vue, Next, Svelte, Laravel, Express, FastAPI, etc. When a choice exists, recommend the best fit for THIS project (Laravel + Blade + vanilla JS) and say why.
-6. Full stack coverage — Frontend, backend, DB, deployment, infra. Don't tunnel-vision on one layer.
-7. No gaslighting — If you don't know something, say so. Never invent npm/composer packages, function signatures, or APIs. If unsure about a Laravel/PHP API, say "I'm not 100% sure — verify in docs" instead of bluffing.
-8. Iterates fast — Take feedback like "add dark mode" or "use Pinia instead" and apply it surgically without breaking existing behavior. Show only the changed parts unless the user asks for the full file.
-9. Security aware — Flag XSS, SQL injection, CSRF, mass-assignment, exposed secrets in `.env`, hardcoded credentials, missing auth/role checks, and unsafe file uploads. Mention them inline as a "security note" when relevant.
-10. Clean output — Use proper markdown: `##` / `###` headings when sections help, fenced code blocks with the language tag (```php, ```js, ```sql, ```bash), inline `code` for symbols, file-path labels above blocks. No wall-of-text.
-
-OUTPUT FORMATTING:
-- Default to clean GitHub-flavored markdown.
-- For multi-step answers use numbered or bulleted lists with short lines.
-- For comparisons use tables when it helps.
-- For SQL results from the database tool, summarize in a markdown table when small (<= 12 rows), otherwise summarize the shape and show the first few rows.
-- Do NOT use the lowercase-bullet template from restricted mode. You are in admin mode.
-- Do NOT expose raw SQL you ran unless the user asks; explain what you queried in plain language and show results.
-
-DATABASE:
-- Immediately after this prompt you receive BRUDMS DATABASE DOMAIN + DATABASE CONTEXT — use them together so every query targets the correct tables (`reports`, `incidents`, `operations_reports`, `work_orders`).
-- ANY question about counts, lists, status, recency, area, reporter, or “how many” MUST call `database_select` first — never invent data.
-- Pick the Laravel connection name from DATABASE CONTEXT (typically `mysql`). Read-only SELECT only; if asked for writes/DDL, decline and point to admin/migrations.
-- Never invent table or column names; if missing from introspection, say so and ask for clarification.
-
-CAPABILITY DISCLOSURE:
-- If the user asks what you can do / your instructions / "list all capabilities", give a clean markdown list covering: project context awareness, read-only DB queries, runnable code generation across the stack, debugging help, security review, refactoring, performance review, and Brunei drainage support fallback.
-
-KNOWN BRUNEI DIRECTORY (use when relevant):
-- website: www.pwd.gov.bn
-- talian darussalam: 123
-- facebook: @JKRBrunei | instagram: @jkrbrunei
-- roads: @jkrbrunei_jalanraya | water: @jkrbrunei_air | drainage/sewerage: @jkrbrunei_saliran_pembetungan
-- emergency: ambulance 991, police 993, fire 995, search & rescue 998
-- water hotline: 140
-
-You are warm, polite, and concise. Help the user ship.
-TXT;
-    }
-
-    private function buildAppContext(): string
-    {
-        $lines = [];
-        $lines[] = 'PROJECT CONTEXT (snapshot for admin/unrestricted mode):';
-        $lines[] = '- App: BruDMS — Brunei Drainage Management System (sewage / drainage incident reporting + ops).';
-        $lines[] = '- Framework: Laravel '.app()->version().' on PHP '.PHP_VERSION.'.';
-        $lines[] = '- Default DB connection: `'.(string) config('database.default').'`'
-            .' — database: `'.(string) config('database.connections.'.config('database.default').'.database').'`.';
-        $lines[] = '- Auth + roles: Spatie Permission. Roles: super_admin, admin, operator, customer.';
-        $lines[] = '- AI: OpenAI Chat Completions (model: `'.(string) config('services.openai.model', 'gpt-4o-mini').'`). System prompt is built in App\\Http\\Controllers\\Customer\\ChatController.';
-        $lines[] = '- Frontend: Blade + vanilla JS (`resources/views/r_customer/bruflowgpt.blade.php` is the chat UI).';
-        $lines[] = '- Map / geo: Brunei bounds + mukim/district config in `config/brunei.php`. Geolocation prefetch happens in the chat blade.';
-        $lines[] = '- Customer-side reporting tables: `reports`, `incidents`. Admin-side: `operations_reports`, `work_orders`, `crews`, `workers`, `worker_attendances`, `work_order_photos`.';
-
-        $controllers = $this->scanClassesIn(app_path('Http/Controllers'));
-        if ($controllers !== []) {
-            $lines[] = '- Controllers (top): '.implode(', ', array_slice($controllers, 0, 20)).'.';
-        }
-
-        $services = $this->scanClassesIn(app_path('Services'));
-        if ($services !== []) {
-            $lines[] = '- Services: '.implode(', ', array_slice($services, 0, 15)).'.';
-        }
-
-        $models = $this->scanClassesIn(app_path('Models'));
-        if ($models !== []) {
-            $lines[] = '- Models: '.implode(', ', array_slice($models, 0, 20)).'.';
-        }
-
-        $routes = $this->scanRoutes(30);
-        if ($routes !== []) {
-            $lines[] = '- Top routes:';
-            foreach ($routes as $r) {
-                $lines[] = '  • '.$r;
-            }
-        }
-
-        $lines[] = '';
-        $lines[] = 'Use this context to answer accurately. Never invent classes, routes, or columns not listed here or in DATABASE CONTEXT.';
-
-        return implode("\n", $lines);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function scanClassesIn(string $dir): array
-    {
-        if (! is_dir($dir)) {
-            return [];
-        }
-        $names = [];
-        try {
-            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS));
-            foreach ($iterator as $file) {
-                if (! $file instanceof \SplFileInfo || $file->getExtension() !== 'php') {
-                    continue;
-                }
-                $name = $file->getBasename('.php');
-                if ($name !== '' && $name !== 'Controller') {
-                    $names[] = $name;
-                }
-            }
-        } catch (\Throwable) {
-            return [];
-        }
-        sort($names);
-
-        return array_values(array_unique($names));
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function scanRoutes(int $limit = 30): array
-    {
-        $limit = max(5, min(100, $limit));
-        try {
-            $collection = \Illuminate\Support\Facades\Route::getRoutes();
-        } catch (\Throwable) {
-            return [];
-        }
-
-        $rows = [];
-        foreach ($collection as $route) {
-            try {
-                $methods = $route->methods();
-                $method = is_array($methods) ? implode('|', array_diff($methods, ['HEAD'])) : 'GET';
-                $uri = '/'.ltrim((string) $route->uri(), '/');
-                if (str_starts_with($uri, '/_') || str_contains($uri, 'sanctum') || str_contains($uri, 'telescope') || str_contains($uri, 'horizon')) {
-                    continue;
-                }
-                $name = (string) ($route->getName() ?? '');
-                $rows[] = trim($method.' '.$uri.($name !== '' ? ' ('.$name.')' : ''));
-            } catch (\Throwable) {
-                continue;
-            }
-            if (count($rows) >= $limit) {
-                break;
-            }
-        }
-
-        return $rows;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $messages
-     * @return list<array<string, mixed>>
-     */
-    private function openAiDatabaseTools(): array
-    {
-        return [
-            [
-                'type' => 'function',
-                'function' => [
-                    'name' => 'database_select',
-                    'description' => 'Run a read-only SELECT on a Laravel database connection configured in this app. Use the exact connection name from DATABASE CONTEXT (e.g. mysql, sqlite). Omit connection to use the default.',
-                    'parameters' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'connection' => [
-                                'type' => 'string',
-                                'description' => 'Optional Laravel connection name from config/database.php',
-                            ],
-                            'sql' => [
-                                'type' => 'string',
-                                'description' => 'One read-only SELECT statement only.',
-                            ],
-                        ],
-                        'required' => ['sql'],
-                    ],
-                ],
-            ],
-        ];
     }
 
     /**
@@ -937,16 +679,6 @@ TXT;
         }
 
         return (bool) preg_match('/^(no|nope|nah|n|inda|tidak|jangan|not\s+now|later|karang\s*dulu)\b/i', $message);
-    }
-
-    private function isUnrestrictedModePassword(string $message): bool
-    {
-        return trim($message) === 'admin123$$';
-    }
-
-    private function isRestrictedModePassword(string $message): bool
-    {
-        return trim($message) === 'customer123$$';
     }
 
     private function resolveRequestedReportImageUrl(string $message, int $userId): ?string
@@ -1454,10 +1186,11 @@ TXT;
             if ($excludedArea !== null && trim($excludedArea) !== '') {
                 return 'there is no incident in that area.';
             }
+
             return 'there is no incident in that area.';
         }
 
-        $lines = ["issues near {$area}", "────────", ""];
+        $lines = ["issues near {$area}", '────────', ''];
         foreach ($rows as $row) {
             $reference = is_object($row) ? (string) ($row->reference ?? 'n/a') : (string) ($row['reference'] ?? 'n/a');
             $status = is_object($row) ? (string) ($row->status ?? 'n/a') : (string) ($row['status'] ?? 'n/a');

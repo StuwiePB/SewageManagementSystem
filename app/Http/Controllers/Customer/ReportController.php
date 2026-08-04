@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Models\RiskCell;
 use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -73,6 +74,7 @@ class ReportController extends Controller
             'address' => $request->address,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'h3_index' => RiskCell::nearestH3Index($latitude, $longitude),
             'photo_path' => $photoPath,
             'status' => Report::STATUS_PENDING,
         ]);
@@ -110,6 +112,7 @@ class ReportController extends Controller
     private function normalizePhone(string $phone): string
     {
         $digits = preg_replace('/\D+/', '', trim($phone)) ?? '';
+
         return '+'.$digits;
     }
 

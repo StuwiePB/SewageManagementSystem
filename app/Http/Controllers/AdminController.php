@@ -11,6 +11,7 @@ use App\Models\Worker;
 use App\Models\WorkOrder;
 use App\Services\AI\GoogleVisionService;
 use App\Services\AI\SewageClassifier;
+use App\Services\BruneiWeatherService;
 use App\Services\Reports\CustomerReportDrainageScan;
 use App\Services\Reports\CustomerReportOperationsSync;
 use App\Services\Sns\SnsNotifier;
@@ -82,6 +83,34 @@ class AdminController extends Controller
         $operationsUsers = User::where('role', User::ROLE_OPERATOR)->count();
         $crewLeaders = User::where('role', User::ROLE_CREW_LEADER)->count();
 
+        // Crew load, for the dashboard's "crews" card — real active-work-order counts per crew,
+        // not a fabricated on-duty/equipment-type breakdown the system has no data source for.
+        $crews = Crew::withCount(['workOrders', 'activeWorkOrders'])->orderByDesc('active_work_orders_count')->get();
+
+        // Median time-to-close, computed from actual created_at -> completed_at deltas.
+        // Deliberately not an "SLA breach" count — this app has no defined SLA threshold
+        // anywhere, and inventing one to fill a dashboard card would be fabricated data.
+        $medianCloseHours = WorkOrder::where('status', 'completed')
+            ->whereNotNull('completed_at')
+            ->get(['created_at', 'completed_at'])
+            ->filter(fn (WorkOrder $w) => $w->completed_at->greaterThanOrEqualTo($w->created_at))
+            ->map(fn (WorkOrder $w) => $w->created_at->diffInMinutes($w->completed_at) / 60)
+            ->sort()
+            ->values();
+        $medianCloseHours = $medianCloseHours->isEmpty() ? null : (
+            $medianCloseHours->count() % 2 === 1
+                ? round($medianCloseHours[intdiv($medianCloseHours->count(), 2)], 1)
+                : round(($medianCloseHours[$medianCloseHours->count() / 2 - 1] + $medianCloseHours[$medianCloseHours->count() / 2]) / 2, 1)
+        );
+
+        // AI triage snapshot for the Sentinel card — Incident is the standalone AI-photo-triage
+        // flow (Vision + classifier + Winston), separate from the customer Report flow's manual
+        // drainage scan. Real counts even when small/zero, not the mockup's illustrative numbers.
+        $incidentsTotal = Incident::count();
+        $incidentsAnalyzed = Incident::whereNotNull('ai_label')->count();
+        $incidentsAiGenerated = Incident::where('ai_generated', true)->count();
+        $incidentsAutoTriagePct = $incidentsTotal > 0 ? (int) round($incidentsAnalyzed / $incidentsTotal * 100) : null;
+
         // Recent activities: last 7 days only (entire week)
         $activities = collect();
         $weekAgo = Carbon::now()->subWeek();
@@ -150,7 +179,13 @@ class AdminController extends Controller
             'adminUsers',
             'operationsUsers',
             'crewLeaders',
-            'recentActivities'
+            'recentActivities',
+            'crews',
+            'medianCloseHours',
+            'incidentsTotal',
+            'incidentsAnalyzed',
+            'incidentsAiGenerated',
+            'incidentsAutoTriagePct'
         ));
     }
 
@@ -244,7 +279,7 @@ class AdminController extends Controller
 
         try {
             $verdict = $scanner->scanAndPersist($report);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Customer report drainage scan failed', [
                 'report_id' => $report->id,
                 'error' => $e->getMessage(),
@@ -285,7 +320,7 @@ class AdminController extends Controller
 
         try {
             $verdict = $scanner->scanAndPersist($report);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Customer report drainage re-scan failed', [
                 'report_id' => $report->id,
                 'error' => $e->getMessage(),
@@ -398,7 +433,7 @@ class AdminController extends Controller
             'updated_at' => $r->updated_at?->format('jS M Y'),
         ])->values()->all();
 
-        $weather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
+        $weather = app(BruneiWeatherService::class)->buildMapWidgetPayload();
 
         return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView', 'weather'));
     }

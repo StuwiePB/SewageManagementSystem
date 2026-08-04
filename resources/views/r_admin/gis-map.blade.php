@@ -12,8 +12,8 @@
     .layer-toggle:hover { color: var(--text-primary); border-color: rgba(106, 150, 255, 0.4); }
     .layer-toggle.active { color: var(--accent-blue); border-color: var(--accent-blue); }
     .layer-toggle .dot { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
-    .layer-toggle.report .dot { background: var(--brudms-primary); color: #fff; }
-    .layer-toggle.workorder .dot { background: var(--accent-green); color: var(--bg-primary); }
+    .layer-toggle.report .dot { background: #2E7D8F; color: #fff; }
+    .layer-toggle.workorder .dot { background: #15803D; color: #fff; }
     .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
     .customer-gis-stats {
         margin-bottom: 1rem;
@@ -392,11 +392,17 @@
     var reportLayer = L.layerGroup();
     var workOrderLayer = L.layerGroup();
 
+    {{-- Fixed, theme-independent marker colours — these used to reference --brudms-primary /
+         --text-primary, which flip between light/dark admin themes. Since the marker's own
+         circle colour didn't flip with them, that produced near-invisible combinations (e.g.
+         white-on-white "R" in light mode, ~1.2:1 "W" in dark mode). Leaflet popups also always
+         render on a plain white background regardless of page theme, so popup text needs a
+         colour that works there specifically, not a page-theme variable. --}}
     reports.forEach(function (r) {
         L.marker([r.lat, r.lng], {
             icon: L.divIcon({
                 className: 'report-marker',
-                html: '<span style="background:var(--brudms-primary);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>'
+                html: '<span style="background:#2E7D8F;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">R</span>'
             })
         })
             .addTo(reportLayer)
@@ -406,11 +412,11 @@
         L.marker([w.lat, w.lng], {
             icon: L.divIcon({
                 className: 'wo-marker',
-                html: '<span style="background:#56FF8B;color:var(--text-primary);border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>'
+                html: '<span style="background:#15803D;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">W</span>'
             })
         })
             .addTo(workOrderLayer)
-            .bindPopup('<strong>' + (w.number || 'Work Order') + '</strong><br>' + (w.address || '') + (w.crew ? '<br><span style="color:#56FF8B;">Crew: ' + w.crew + '</span>' : ''));
+            .bindPopup('<strong>' + (w.number || 'Work Order') + '</strong><br>' + (w.address || '') + (w.crew ? '<br><span style="color:#15803D;">Crew: ' + w.crew + '</span>' : ''));
     });
 
     reportLayer.addTo(map);

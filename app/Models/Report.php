@@ -26,6 +26,7 @@ class Report extends Model
         'address',
         'latitude',
         'longitude',
+        'h3_index',
         'photo_path',
         'drainage_ai_verdict',
         'status',

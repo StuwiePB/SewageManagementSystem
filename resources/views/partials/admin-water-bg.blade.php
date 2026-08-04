@@ -1,9 +1,9 @@
 {{-- Animated "drainage flow" background for the admin console: slow horizontal current lines +
-     a couple of soft glow blobs, themed via existing --brudms-* vars so it adapts automatically
-     between light/dark without a separate per-theme block. Deliberately restrained (few
-     elements, slow motion, low opacity) — this sits behind dense data tables, so it needs to
-     read as "professional infrastructure" ambience, not a decorative animation competing for
-     attention. --}}
+     a couple of soft glow blobs + rising bubbles, sitting behind the glass cards so their
+     blur/refraction actually has something moving to catch. Restrained (few elements, slow
+     motion, low opacity) — this sits behind dense data tables, so it reads as "professional
+     infrastructure" ambience, not a decorative animation competing for attention. Colored via
+     the adm-* palette so it matches whichever of dark(default)/light the page is in. --}}
 <style>
     .admin-water-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 
@@ -23,7 +23,7 @@
 
     .admin-water-flow path {
         fill: none;
-        stroke: var(--brudms-primary);
+        stroke: var(--adm-flow);
         stroke-linecap: round;
         animation: admin-water-flow linear infinite;
     }
@@ -31,10 +31,13 @@
     .admin-water-glow {
         position: absolute;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(var(--brudms-primary-rgb), 0.35) 0%, rgba(var(--brudms-primary-rgb), 0) 70%);
+        background: radial-gradient(circle, rgba(79, 163, 181, 0.35) 0%, rgba(79, 163, 181, 0) 70%);
         filter: blur(80px);
         animation: admin-water-glow-drift 40s ease-in-out infinite;
         will-change: transform;
+    }
+    html[data-theme='light']:not(.dark) .admin-water-glow {
+        background: radial-gradient(circle, rgba(46, 125, 143, 0.28) 0%, rgba(46, 125, 143, 0) 70%);
     }
 
     .admin-water-bubble {
@@ -43,14 +46,14 @@
         width: var(--bubble-size, 6px);
         height: var(--bubble-size, 6px);
         border-radius: 50%;
-        background: rgba(var(--brudms-primary-rgb), 0.5);
+        background: rgba(240, 162, 2, 0.55);
         animation: admin-water-bubble-rise var(--bubble-duration, 14s) ease-in infinite;
         animation-delay: var(--bubble-delay, 0s);
     }
 
     @media (max-width: 900px) {
         .admin-water-glow { filter: blur(50px); }
-        .admin-water-bg .admin-water-flow { opacity: 0.6; }
+        .admin-water-flow { opacity: 0.5; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -63,7 +66,7 @@
     <div class="admin-water-glow" style="top: -12%; left: -8%; width: 34rem; height: 34rem;"></div>
     <div class="admin-water-glow" style="bottom: -16%; right: -10%; width: 30rem; height: 30rem; animation-delay: -18s;"></div>
 
-    <svg class="admin-water-flow" viewBox="0 0 1600 900" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.22;">
+    <svg class="admin-water-flow" viewBox="0 0 1600 900" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.3;">
         <path d="M-100 120C150 60 350 180 620 120S1100 40 1700 120" stroke-width="2.5" stroke-dasharray="18 26" style="animation-duration: 46s;" />
         <path d="M-100 260C180 320 400 200 680 260S1150 340 1700 260" stroke-width="2" stroke-dasharray="14 22" style="animation-duration: 58s; animation-delay: -12s;" />
         <path d="M-100 480C200 420 420 540 700 480S1180 400 1700 480" stroke-width="3" stroke-dasharray="20 30" style="animation-duration: 52s; animation-delay: -6s;" />
