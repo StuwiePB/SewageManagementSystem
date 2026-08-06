@@ -19,8 +19,12 @@
     .stat-type-btn { display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 1.5rem; border: 1px solid rgba(106, 150, 255, 0.2); border-radius: 12px; background: var(--bg-secondary); color: inherit; cursor: pointer; transition: all 0.2s; font-family: inherit; min-height: 220px; }
     .stat-type-btn:hover { border-color: var(--accent-blue); background: rgba(106, 150, 255, 0.08); box-shadow: 0 4px 12px rgba(106, 150, 255, 0.15); }
     .stat-type-btn .icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; color: white; }
-    .stat-type-btn .icon.blue { background: linear-gradient(135deg, var(--accent-blue), #0d9488); }
-    .stat-type-btn .icon.green { background: linear-gradient(135deg, #0d9488, #059669); }
+    {{-- Fixed colours, not var(--accent-blue) — that variable flips from a dark, high-contrast
+         blue in light mode to a near-pastel cyan (#6ecff0) in dark mode, which dropped the
+         white icon glyph to ~1.8:1 contrast (illegible) now that dark is the admin default.
+         Also matches the GIS map's "R"/"W" marker colours for the same report/work-order pair. --}}
+    .stat-type-btn .icon.blue { background: linear-gradient(135deg, #2E7D8F, #0d9488); }
+    .stat-type-btn .icon.green { background: linear-gradient(135deg, #15803D, #059669); }
     .stat-type-btn .icon.orange { background: linear-gradient(135deg, #d97706, var(--accent-red)); }
     .stat-type-btn strong { font-size: 1.125rem; color: var(--text-primary); margin-bottom: 0.5rem; display: block; }
     .stat-type-btn span.desc { font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem; }
@@ -60,23 +64,24 @@
     <h3 class="card-title">Time period</h3>
     <p class="card-subtitle">Select the date range for your statistics.</p>
 
+    @php($selectedPeriod = request('period', 'this_month'))
     <form action="{{ route('admin.statistics.show') }}" method="GET">
         <div class="stat-period-row">
             <label for="period">Period</label>
             <select name="period" id="period">
-                <option value="last_7_days">Last 7 days</option>
-                <option value="this_month" selected>This month</option>
-                <option value="this_quarter">This quarter</option>
-                <option value="custom">Custom date range</option>
+                <option value="last_7_days" {{ $selectedPeriod === 'last_7_days' ? 'selected' : '' }}>Last 7 days</option>
+                <option value="this_month" {{ $selectedPeriod === 'this_month' ? 'selected' : '' }}>This month</option>
+                <option value="this_quarter" {{ $selectedPeriod === 'this_quarter' ? 'selected' : '' }}>This quarter</option>
+                <option value="custom" {{ $selectedPeriod === 'custom' ? 'selected' : '' }}>Custom date range</option>
             </select>
             <div id="custom-dates" class="stat-custom-dates">
                 <div>
                     <label>Start</label>
-                    <input type="date" name="start" value="{{ request('start') }}">
+                    <input type="date" id="start-date" name="start" value="{{ request('start') }}">
                 </div>
                 <div>
                     <label>End</label>
-                    <input type="date" name="end" value="{{ request('end') }}">
+                    <input type="date" id="end-date" name="end" value="{{ request('end') }}">
                 </div>
             </div>
         </div>
@@ -136,9 +141,18 @@
 (function() {
     var period = document.getElementById('period');
     var customDates = document.getElementById('custom-dates');
+    var startDate = document.getElementById('start-date');
+    var endDate = document.getElementById('end-date');
     if (period && customDates) {
         function toggle() {
-            customDates.classList.toggle('show', period.value === 'custom');
+            var isCustom = period.value === 'custom';
+            customDates.classList.toggle('show', isCustom);
+            if (startDate && endDate) {
+                startDate.disabled = !isCustom;
+                endDate.disabled = !isCustom;
+                startDate.required = isCustom;
+                endDate.required = isCustom;
+            }
         }
         period.addEventListener('change', toggle);
         toggle();

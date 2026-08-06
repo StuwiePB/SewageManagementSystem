@@ -12,6 +12,7 @@ export default defineConfig({
 =======
             input: [
                 'resources/css/app.css',
+                'resources/css/brudms-theme.css',
                 'resources/js/app.js',
                 'resources/js/admin-dashboard.js',
             ],

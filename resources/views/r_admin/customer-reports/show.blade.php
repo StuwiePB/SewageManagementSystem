@@ -6,6 +6,16 @@
 @if(session('success'))
     <div class="alert-success" style="margin-bottom: 1.25rem;">{{ session('success') }}</div>
 @endif
+@if($errors->any())
+    <div class="alert-success" style="margin-bottom: 1.25rem; background: rgba(255, 91, 91, 0.12); color: #ffb4b4; border: 1px solid rgba(255, 91, 91, 0.35);">
+        <strong style="display: block; margin-bottom: 0.35rem;">Could not remove report</strong>
+        <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.875rem;">
+            @foreach ($errors->all() as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
 <div class="header">
     <div>
@@ -18,11 +28,7 @@
             @csrf
             <button type="submit" class="btn-submit">Send to operations</button>
         </form>
-        <form method="post" action="{{ route('admin.customer-reports.destroy', $report) }}" style="display: inline;" onsubmit="return confirm('Delete this customer report permanently?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="btn btn-danger">Delete</button>
-        </form>
+        <button type="button" class="btn btn-danger js-open-delete-report" data-delete-url="{{ route('admin.customer-reports.destroy', $report) }}">Delete</button>
     </div>
 </div>
 
@@ -40,10 +46,6 @@
         <div class="detail-row">
             <p class="info-label">Problem type</p>
             <p class="info-value">{{ $report->problem_type ?? '—' }}</p>
-        </div>
-        <div class="detail-row">
-            <p class="info-label">Severity</p>
-            <p class="info-value">{{ $report->severity ?? '—' }}</p>
         </div>
         <div class="detail-row">
             <p class="info-label">Reporter</p>
@@ -67,17 +69,6 @@
             <p class="info-label">Submitted</p>
             <p class="info-value">{{ $report->created_at?->format('Y-m-d H:i') ?? '—' }}</p>
         </div>
-        @if($report->drainage_ai_verdict)
-            <div class="detail-row">
-                <p class="info-label">AI drainage check</p>
-                <p class="info-value">{{ match ($report->drainage_ai_verdict) {
-                    'drainage' => 'Drainage-related',
-                    'not_drainage' => 'Not drainage-related',
-                    'needs_review' => 'Needs review',
-                    default => $report->drainage_ai_verdict,
-                } }}</p>
-            </div>
-        @endif
         <div class="detail-row">
             <p class="info-label">Operations</p>
             @if($report->operationsReport)
@@ -102,6 +93,22 @@
         @else
             <p class="info-value-muted">No photo uploaded.</p>
         @endif
+        @if($report->drainage_ai_verdict)
+            <div class="detail-row" style="margin-top: 1rem;">
+                <p class="info-label">AI drainage check</p>
+                <p class="info-value">{{ match ($report->drainage_ai_verdict) {
+                    'drainage' => 'Drainage-related',
+                    'not_drainage' => 'Not drainage-related',
+                    'needs_review' => 'Needs review',
+                    default => $report->drainage_ai_verdict,
+                } }}</p>
+                @if(!empty($aiReason))
+                    <p class="info-value-small" style="margin-top: 0.35rem; line-height: 1.45;">{{ $aiReason }}</p>
+                @endif
+            </div>
+        @endif
     </section>
 </div>
+
+@include('r_admin.customer-reports.partials.delete-report-modal')
 @endsection

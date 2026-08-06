@@ -6,7 +6,7 @@
                 color: rgba(255, 255, 255, 0.3);
                 font-family: Poppins, sans-serif;
             }
-            .input-pill:focus-within { outline: 1.7px solid #04BCFF; }
+            .input-pill:focus-within { outline: 1.7px solid var(--brudms-primary); }
             #support-send:active { transform: scale(0.9); }
             #support-attach:active { transform: scale(0.9); }
             .msg-bot {
@@ -24,7 +24,7 @@
             }
             .msg-user {
                 align-self: flex-end;
-                background: #04BCFF;
+                background: var(--brudms-primary);
                 color: #040929;
                 border-radius: 16px 16px 4px 16px;
                 padding: 10px 14px;
@@ -105,14 +105,6 @@
         </style>
     @endpush
 
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
-
     @php $user = auth()->user(); @endphp
 
     {{-- Header: back arrow + Contact Customer Support --}}
@@ -120,7 +112,7 @@
         <a href="{{ route('customer.customersupport', ['name' => $user->profileSlug()]) }}" class="press-btn delayed-nav" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; text-decoration: none; transition: transform 0.1s ease;" aria-label="{{ __('Back') }}">
             <img src="{{ asset('images/Vectors/all_backarrow.svg') }}" alt="" style="width: 21px; height: 21px;" />
         </a>
-        <span style="color: white; font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">{{ __('Contact Customer Support') }}</span>
+        <span class="cust-title" style="font-size: 16px; font-weight: 600; font-family: Poppins, sans-serif;">{{ __('Contact Customer Support') }}</span>
     </div>
 
     {{-- Chat area (no dark background, like Ziqah) --}}
@@ -161,13 +153,13 @@
             <button id="support-preview-remove" class="preview-remove" type="button">×</button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10vh;">
-            <div class="input-pill" style="flex: 1; height: 44px; border-radius: 9999px; border: none; outline: 1.7px solid rgba(255, 255, 255, 0.21); background: rgba(66, 106, 120, 0.16); backdrop-filter: blur(1.5px); display: flex; align-items: center; overflow: hidden;">
+            <div class="input-pill cust-chat-input-wrap" style="flex: 1; height: 44px; border-radius: 9999px; border: none; outline: 1.7px solid var(--brudms-chip-border); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); display: flex; align-items: center; overflow: hidden;">
                 <button id="support-attach" style="width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.1s ease;">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
                 <input id="support-input" type="text" placeholder="Type a message..." style="flex: 1; height: 44px; border: none; outline: none; background: transparent; padding: 0 16px 0 0; color: white; font-size: 13px; font-family: Poppins, sans-serif;" />
             </div>
-            <button id="support-send" style="width: 44px; height: 44px; border-radius: 9999px; border: none; background: #04BCFF; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease; flex-shrink: 0;">
+            <button id="support-send" style="width: 44px; height: 44px; border-radius: 9999px; border: none; background: var(--brudms-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease; flex-shrink: 0;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#040929" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
             </button>
         </div>

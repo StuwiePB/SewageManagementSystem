@@ -1,12 +1,13 @@
 <x-layouts::customer :title="__('Preview Report') . ' – BruDMS'" :bare="true">
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+        @include('r_customer.partials.report-flow-spacing')
         <style>
             #preview-problem-text { font-size: clamp(12px, 4vw, 20px); font-weight: 700; font-family: Poppins, sans-serif; color: white; white-space: nowrap; }
             #preview-date-text { font-size: 12px; font-weight: 600; font-family: Poppins, sans-serif; color: rgba(255, 255, 255, 0.5); }
             .press-btn { transition: transform 0.06s ease; }
             .press-btn:active { transform: scale(0.92) !important; }
-            #preview-photo-wrapper { position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 100px); right: 20px; z-index: 2; display: flex; flex-direction: column; gap: 14px; align-items: stretch; }
+            #preview-photo-wrapper { position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 100px); right: 20px; z-index: 2; display: flex; flex-direction: column; gap: var(--rflow-gap-section); align-items: stretch; }
             #preview-photo-box { width: calc(50vw - 20px - (40px - 21px) / 2); height: auto; aspect-ratio: 4/3; flex-shrink: 0; }
             .preview-info-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); color: white; font-size: 11px; font-family: Poppins, sans-serif; line-height: 1.3; }
             .preview-info-row img { flex-shrink: 0; width: 16px; height: 16px; }
@@ -47,6 +48,14 @@
                 display: flex;
                 flex-direction: column;
             }
+            .temp-success-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 55;
+                background: rgba(8, 14, 30, 0.22);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+            }
             .temp-success-inner {
                 display: flex;
                 flex-direction: column;
@@ -74,7 +83,7 @@
                 height: 32px;
                 animation: temp-spin 0.85s linear infinite;
                 transition: opacity 0.25s ease;
-                color: #04BCFF;
+                color: var(--brudms-primary);
             }
             .temp-half-spinner-arc {
                 fill: none;
@@ -87,7 +96,7 @@
                 position: absolute;
                 width: 30px;
                 height: 30px;
-                color: #04BCFF;
+                color: var(--brudms-primary);
                 opacity: 0;
                 transform: scale(0.6);
                 transition: opacity 0.25s ease, transform 0.25s ease;
@@ -211,14 +220,6 @@
         </style>
     @endpush
 
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
-
     @php
         $guestReportFlow = filter_var($guestReportFlow ?? false, FILTER_VALIDATE_BOOLEAN);
         $user = auth()->user();
@@ -239,10 +240,10 @@
 
     <img src="{{ asset('images/Vectors/report_rpreview.svg') }}" alt="" style="position: fixed; left: calc(20px + (40px - 21px) / 2); top: calc(11vh + 30px); z-index: 5; width: 30px; height: 31px; pointer-events: none;" />
 
-    <div id="preview-header" style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column; gap: 20px; pointer-events: none;">
-        <div style="display: flex; flex-direction: column; gap: 5px; max-width: calc(100% - 120px); margin-left: calc(20px + (40px - 21px) / 2 + 30px + 24px);">
-            <span style="color: white; font-size: 13px; font-family: Poppins, sans-serif; font-weight: 600; line-height: 1.4;">Finalised information, queued for action</span>
-            <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 200;">Please verify all details before final submission</span>
+    <div id="preview-header" class="rflow-preview-header" style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column;">
+        <div class="rflow-header-col">
+            <span class="rflow-header-line-primary">Finalised information, queued for action</span>
+            <span class="rflow-header-line-secondary">Please verify all details before final submission</span>
         </div>
     </div>
 
@@ -250,24 +251,20 @@
         <div id="preview-photo-box" style="border-radius: 7px; background: rgba(217, 217, 217, 0.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); overflow: hidden;">
             <img id="preview-photo" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
         </div>
-        <div id="preview-info-stack" style="display: flex; flex-direction: column; gap: 6px;">
-        <div style="display: flex; gap: 4px; align-items: stretch;">
+        <div id="preview-info-stack" class="rflow-info-stack">
+        <div class="rflow-name-phone-row">
             <div class="preview-info-row" id="preview-name-row" style="flex: 1; min-width: 0;">
                 <img src="{{ asset('images/Vectors/rpreview_name.svg') }}" alt="" />
                 <input type="text" id="preview-name-text" name="reporter_name" form="submit-report-form" value="{{ old('reporter_name', $user->name ?? '') }}" placeholder="Muhammad Ali" autocomplete="name" style="flex: 1; min-width: 0; background: transparent; border: none; padding: 0; margin: 0; color: white; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 600; outline: none;" />
             </div>
             <div class="preview-info-row" id="preview-phone-row" style="flex: 1; min-width: 0;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-opacity="0.44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                <input type="tel" id="preview-phone-text" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 123 1234" autocomplete="tel" inputmode="tel" pattern="^\+673\s\d{3}\s\d{4}$" style="flex: 1; min-width: 0; background: transparent; border: none; padding: 0; margin: 0; color: white; font-size: 11px; font-family: Poppins, sans-serif; font-weight: 600; outline: none;" />
+                <input type="tel" id="preview-phone-text" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 123 1234" autocomplete="tel" inputmode="tel" pattern="^\+673\s\d{3}\s\d{4}$" readonly aria-readonly="true" style="flex: 1; min-width: 0; background: transparent; border: none; padding: 0; margin: 0; color: rgba(255, 255, 255, 0.58); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 600; outline: none; cursor: not-allowed;" />
             </div>
         </div>
         <div class="preview-info-row" id="preview-location-row">
             <img src="{{ asset('images/Vectors/all_location.svg') }}" alt="" />
             <span id="preview-location-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
-        </div>
-        <div class="preview-info-row" id="preview-severity-row" style="min-width: 0;">
-            <img src="{{ asset('images/Vectors/rpreview_severity.svg') }}" alt="" />
-            <span id="preview-severity-text" style="font-weight: 600;"></span>
         </div>
         <div class="preview-info-row preview-details" id="preview-details-row">
             <div class="preview-details-header">
@@ -283,13 +280,12 @@
         @csrf
         <input type="hidden" name="problem_type" id="submit-problem_type" value="">
         <input type="hidden" name="phone" id="submit-phone" value="">
-        <input type="hidden" name="severity" id="submit-severity" value="">
         <input type="hidden" name="description" id="submit-description" value="">
         <input type="hidden" name="address" id="submit-address" value="">
         <input type="hidden" name="latitude" id="submit-latitude" value="">
         <input type="hidden" name="longitude" id="submit-longitude" value="">
         <input type="hidden" name="photo" id="submit-photo" value="">
-        <button type="submit" class="press-btn" id="submit-report-btn" disabled style="width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);">Submit report</button>
+        <button type="submit" class="press-btn" id="submit-report-btn" class="cust-btn-confirm cust-btn-primary" class="cust-btn-confirm cust-btn-primary" disabled style="width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: var(--brudms-primary); color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3);">Submit report</button>
     </form>
     <span id="preview-problem-text" style="position: fixed; left: 50%; top: calc(11vh + 106px); margin-left: 12px; max-width: calc(50vw - 12px - 24px); padding-right: 12px; z-index: 2; line-height: 1.2;"></span>
     <img src="{{ asset('images/Vectors/all_calempty.svg') }}" alt="" style="position: fixed; left: 50%; top: calc(11vh + 134px); margin-left: 12px; width: 15px; height: 15px; z-index: 2;" />
@@ -298,6 +294,7 @@
     <div id="js-submit-error" class="hidden" style="position: fixed; top: 11vh; left: 20px; right: 20px; z-index: 70; padding: 12px; background: rgba(239, 68, 68, 0.95); color: white; border-radius: 12px; font-size: 13px; font-family: Poppins, sans-serif;"></div>
 
     {{-- Post-submit success (shown after AJAX submit) --}}
+    <div id="temp-success-backdrop" class="temp-success-backdrop" style="display: none;"></div>
     <div id="temp-success-card" class="temp-success-card" style="display: none;" data-redirect-url="">
         <div class="temp-success-inner">
         <div class="temp-success-body">
@@ -327,8 +324,13 @@
         (function() {
             var successAnimTimer = null;
             var card = document.getElementById('temp-success-card');
+            var backdrop = document.getElementById('temp-success-backdrop');
             var cont = document.getElementById('temp-continue-btn');
             var loaderEl = document.getElementById('temp-loader-check');
+            function setSuccessPopupVisible(visible) {
+                if (card) card.style.display = visible ? 'flex' : 'none';
+                if (backdrop) backdrop.style.display = visible ? 'block' : 'none';
+            }
             function clearReportDraftStorage() {
                 try {
                     [
@@ -338,7 +340,6 @@
                         'rproblem_address',
                         'rproblem_lat',
                         'rproblem_lng',
-                        'rproblem_severity',
                         'rproblem_description'
                     ].forEach(function(key) {
                         sessionStorage.removeItem(key);
@@ -393,7 +394,7 @@
                     nam.textContent = (ne && ne.value) ? ne.value.trim() : (nam.textContent || '');
                 }
                 card.setAttribute('data-redirect-url', '');
-                card.style.display = 'flex';
+                setSuccessPopupVisible(true);
                 loaderEl.classList.remove('done');
                 if (cont) {
                     cont.disabled = true;
@@ -433,7 +434,7 @@
                 }
                 if (nam) nam.textContent = data.sender_name || '';
                 card.setAttribute('data-redirect-url', data.redirect_url || '');
-                card.style.display = 'flex';
+                setSuccessPopupVisible(true);
 
                 loaderEl.classList.remove('done');
                 if (cont) {
@@ -451,7 +452,7 @@
             if (cont && card) {
                 cont.addEventListener('click', function() {
                     var url = card.getAttribute('data-redirect-url') || '';
-                    card.style.display = 'none';
+                    setSuccessPopupVisible(false);
                     if (url) {
                         window.location.href = url;
                     }
@@ -485,7 +486,6 @@
                     hideSubmitError();
                     window.showReportSubmitting();
                     document.getElementById('submit-problem_type').value = sessionStorage.getItem('rproblem_choice') || '';
-                    document.getElementById('submit-severity').value = sessionStorage.getItem('rproblem_severity') || '';
                     document.getElementById('submit-description').value = sessionStorage.getItem('rproblem_description') || '';
                     document.getElementById('submit-address').value = sessionStorage.getItem('rproblem_address') || '';
                     document.getElementById('submit-latitude').value = sessionStorage.getItem('rproblem_lat') || '';
@@ -519,7 +519,7 @@
                         });
                     }).then(function(result) {
                         if (!result.ok) {
-                            if (card) card.style.display = 'none';
+                            setSuccessPopupVisible(false);
                             btn.disabled = false;
                             btn.textContent = 'Submit report';
                             showSubmitError(firstJsonError(result.body));
@@ -532,11 +532,11 @@
                             btn.textContent = 'Submit report';
                             return;
                         }
-                        if (card) card.style.display = 'none';
+                        setSuccessPopupVisible(false);
                         btn.disabled = false;
                         btn.textContent = 'Submit report';
                     }).catch(function() {
-                        if (card) card.style.display = 'none';
+                        setSuccessPopupVisible(false);
                         btn.disabled = false;
                         btn.textContent = 'Submit report';
                         showSubmitError('Network error. Please try again.');
@@ -619,9 +619,6 @@
                 var addr = sessionStorage.getItem('rproblem_address');
                 var elAddr = document.getElementById('preview-location-text');
                 if (elAddr) elAddr.textContent = addr || '';
-                var sev = sessionStorage.getItem('rproblem_severity');
-                var elSev = document.getElementById('preview-severity-text');
-                if (elSev) elSev.textContent = (sev === 'urgent') ? 'Urgent' : (sev === 'nonurgent') ? 'Non-Urgent' : '';
                 var desc = sessionStorage.getItem('rproblem_description');
                 var elDesc = document.getElementById('preview-details-text');
                 if (elDesc) elDesc.value = desc || '';

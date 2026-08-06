@@ -19,20 +19,10 @@
             <label class="form-label" for="status">Status</label>
             <select id="status" name="status" class="form-control">
                 <option value="">All Statuses</option>
-                <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>New</option>
+                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                 <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                 <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
                 <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label class="form-label" for="severity">Severity</label>
-            <select id="severity" name="severity" class="form-control">
-                <option value="">All Severities</option>
-                <option value="low" {{ request('severity') == 'low' ? 'selected' : '' }}>Low</option>
-                <option value="medium" {{ request('severity') == 'medium' ? 'selected' : '' }}>Medium</option>
-                <option value="high" {{ request('severity') == 'high' ? 'selected' : '' }}>High</option>
-                <option value="critical" {{ request('severity') == 'critical' ? 'selected' : '' }}>Critical</option>
             </select>
         </div>
         <div class="form-group">
@@ -71,7 +61,6 @@
                     <th>District</th>
                     <th>Mukim</th>
                     <th>Location</th>
-                    <th>Severity</th>
                     <th>Status</th>
                     <th>Work Order</th>
                     <th>Date</th>
@@ -86,14 +75,9 @@
                         <td>{{ $report->mukim_display ?? '—' }}</td>
                         <td>{{ $report->location_address }}</td>
                         <td>
-                            <span class="badge badge-{{ $report->severity === 'critical' ? 'critical' : ($report->severity === 'high' ? 'high' : ($report->severity === 'medium' ? 'medium' : 'low')) }}">
-                                {{ ucfirst($report->severity) }}
-                            </span>
-                        </td>
-                        <td>
                             @php
                                 $reportStatusClass = match($report->status) {
-                                    'new' => 'badge-report-new',
+                                    'pending' => 'badge-report-new',
                                     'in_progress' => 'badge-report-progress',
                                     'resolved' => 'badge-report-resolved',
                                     'closed' => 'badge-report-closed',
@@ -106,14 +90,14 @@
                             @if($report->workOrder)
                                 <a href="{{ route('operations.work-orders.show', $report->workOrder) }}" class="link-primary">{{ $report->workOrder->work_order_number }}</a>
                             @else
-                                <span style="color:#9ca3af;">—</span>
+                                <a href="{{ route('operations.work-orders.create', ['report' => $report->id]) }}" class="link-primary">Create WorkOrder</a>
                             @endif
                         </td>
                         <td>{{ $report->created_at->format('M d, Y') }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="cell-muted">No reports found</td>
+                        <td colspan="8" class="cell-muted">No reports found</td>
                     </tr>
                 @endforelse
             </tbody>

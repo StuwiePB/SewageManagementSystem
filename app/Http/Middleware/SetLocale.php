@@ -10,7 +10,9 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = session('locale', config('app.locale'));
+        $locale = session('locale')
+            ?? $request->user()?->preference_language
+            ?? config('app.locale');
 
         if (in_array($locale, ['en', 'ms'], true)) {
             app()->setLocale($locale);

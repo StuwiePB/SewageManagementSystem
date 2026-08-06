@@ -8,23 +8,16 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-<<<<<<< HEAD
-=======
 use Spatie\Permission\Traits\HasRoles;
->>>>>>> 3wayfusionn-(use-this)
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-<<<<<<< HEAD
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
-=======
     use HasFactory, HasRoles {
         HasRoles::hasRole as spatieHasRole;
     }
 
     use Notifiable, TwoFactorAuthenticatable;
->>>>>>> 3wayfusionn-(use-this)
 
     /**
      * The attributes that are mass assignable.
@@ -32,14 +25,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-<<<<<<< HEAD
-        'name',
-        'email',
-        'password',
-    ];
-
-=======
-        'username',
+        'staffname',
         'name',
         'email',
         'phone',
@@ -64,7 +50,6 @@ class User extends Authenticatable
     /** Danny admin / operations (crew leader for workers portal) */
     public const ROLE_CREW_LEADER = 'crew_leader';
 
->>>>>>> 3wayfusionn-(use-this)
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -87,16 +72,11 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-<<<<<<< HEAD
-=======
             'is_active' => 'boolean',
->>>>>>> 3wayfusionn-(use-this)
         ];
     }
 
     /**
-<<<<<<< HEAD
-=======
      * Get URL-safe slug from name (e.g. "Qasiemul Hisyam" -> "qasiemulhisyam")
      */
     public function profileSlug(): string
@@ -105,7 +85,20 @@ class User extends Authenticatable
     }
 
     /**
->>>>>>> 3wayfusionn-(use-this)
+     * True when the account has no real email for notifications (signup is phone-only).
+     */
+    public function needsEmailBinding(): bool
+    {
+        $email = strtolower(trim((string) ($this->email ?? '')));
+
+        if ($email === '' || $email === 'null') {
+            return true;
+        }
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) === false;
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string
@@ -116,8 +109,6 @@ class User extends Authenticatable
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
-<<<<<<< HEAD
-=======
 
     public function isSuperAdmin(): bool
     {
@@ -171,5 +162,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(SupportMessage::class);
     }
->>>>>>> 3wayfusionn-(use-this)
+
 }

@@ -13,18 +13,20 @@ class LoginResponse implements LoginResponseContract
      */
     public function toResponse($request): Response
     {
+        $request->session()->forget('email_bind_prompt_dismissed');
+
         $user = $request->user();
 
         if ($user->hasRole(User::ROLE_SUPER_ADMIN) || $user->hasRole(User::ROLE_ADMIN)) {
-            return redirect()->intended(route('admin.dashboard'));
+            return redirect()->route('admin.dashboard');
         }
         if ($user->hasRole(User::ROLE_OPERATOR)) {
-            return redirect()->intended(route('operator.dashboard'));
+            return redirect()->route('operator.dashboard');
         }
         if ($user->hasRole(User::ROLE_CUSTOMER)) {
-            return redirect()->intended(route('customer.dashboard', ['name' => $user->profileSlug()]));
+            return redirect()->route('customer.dashboard', ['name' => $user->profileSlug()]);
         }
 
-        return redirect()->intended('/dashboard');
+        return redirect('/dashboard');
     }
 }

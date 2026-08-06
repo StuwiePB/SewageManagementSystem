@@ -1,6 +1,7 @@
 <x-layouts::customer :title="__('Report Problem') . ' – BruDMS'" :bare="true">
     @push('styles')
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+        @include('r_customer.partials.report-flow-spacing')
         <style>
             .press-btn { transition: transform 0.06s ease; }
             .press-btn:active { transform: scale(0.92) !important; }
@@ -13,14 +14,6 @@
             #camera-overlay .capture-bar { margin-top: 20px; display: flex; gap: 16px; align-items: center; }
         </style>
     @endpush
-
-    {{-- Desktop: normal background --}}
-    <div class="hidden lg:block fixed inset-0 z-0" style="background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-
-    {{-- Mobile: rotated -90deg background --}}
-    <div class="lg:hidden" style="position: fixed; inset: 0; overflow: hidden; z-index: 0;">
-        <div style="width: 100vh; height: 100vw; transform: rotate(-90deg); transform-origin: top left; position: absolute; top: 100%; left: 0; background-image: url('/images/crdboard.png'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
-    </div>
 
     @php
         $guestReportFlow = filter_var($guestReportFlow ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -56,12 +49,12 @@
     </div>
 
     <div style="position: fixed; left: 6px; right: 6px; bottom: 0; height: 100px; border-radius: 0; background: linear-gradient(to top, rgba(217, 217, 217, 0.02), transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); mask-image: linear-gradient(to top, black 60%, transparent); -webkit-mask-image: linear-gradient(to top, black 60%, transparent); z-index: 6; pointer-events: none;"></div>
-    <button type="button" id="confirm-photo-btn" class="press-btn" style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: #04BCFF; color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(4, 188, 255, 0.3);">Confirm photo</button>
+    <button type="button" id="confirm-photo-btn" class="press-btn cust-btn-confirm cust-btn-primary" style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 7; width: 82%; max-width: 360px; height: 48px; border: none; border-radius: 16px; background: var(--brudms-primary); color: #0a1628; font-family: Poppins, sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3);">Confirm photo</button>
 
-    <div style="position: fixed; left: 0; right: 0; top: calc(11vh + 28px); z-index: 5; display: flex; flex-direction: column; gap: 18px;">
-        <div style="display: flex; flex-direction: column; gap: 5px; max-width: calc(100% - 120px); margin-left: calc(20px + (40px - 21px) / 2 + 30px + 24px);">
-            <span style="color: white; font-size: 13px; font-family: Poppins, sans-serif; font-weight: 600; line-height: 1.4;">Clear visuals lead to faster action on the ground</span>
-            <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px; font-family: Poppins, sans-serif; font-weight: 200;">Capture the problem using your camera</span>
+    <div class="rflow-main-stack">
+        <div class="rflow-header-col">
+            <span class="rflow-header-line-primary">Clear visuals lead to faster action on the ground</span>
+            <span class="rflow-header-line-secondary">Capture the problem using your camera</span>
         </div>
     </div>
 

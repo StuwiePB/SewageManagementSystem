@@ -9,8 +9,12 @@ use App\Models\Report;
 use App\Models\User;
 use App\Models\Worker;
 use App\Models\WorkOrder;
+use App\Services\AI\GoogleVisionService;
+use App\Services\AI\SewageClassifier;
+use App\Services\BruneiWeatherService;
 use App\Services\Reports\CustomerReportDrainageScan;
 use App\Services\Reports\CustomerReportOperationsSync;
+use App\Services\Sns\SnsNotifier;
 use App\Support\AccountEmail;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +27,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
+use Throwable;
 
 class AdminController extends Controller
 {
@@ -77,6 +82,34 @@ class AdminController extends Controller
         $adminUsers = User::where('role', User::ROLE_ADMIN)->count();
         $operationsUsers = User::where('role', User::ROLE_OPERATOR)->count();
         $crewLeaders = User::where('role', User::ROLE_CREW_LEADER)->count();
+
+        // Crew load, for the dashboard's "crews" card — real active-work-order counts per crew,
+        // not a fabricated on-duty/equipment-type breakdown the system has no data source for.
+        $crews = Crew::withCount(['workOrders', 'activeWorkOrders'])->orderByDesc('active_work_orders_count')->get();
+
+        // Median time-to-close, computed from actual created_at -> completed_at deltas.
+        // Deliberately not an "SLA breach" count — this app has no defined SLA threshold
+        // anywhere, and inventing one to fill a dashboard card would be fabricated data.
+        $medianCloseHours = WorkOrder::where('status', 'completed')
+            ->whereNotNull('completed_at')
+            ->get(['created_at', 'completed_at'])
+            ->filter(fn (WorkOrder $w) => $w->completed_at->greaterThanOrEqualTo($w->created_at))
+            ->map(fn (WorkOrder $w) => $w->created_at->diffInMinutes($w->completed_at) / 60)
+            ->sort()
+            ->values();
+        $medianCloseHours = $medianCloseHours->isEmpty() ? null : (
+            $medianCloseHours->count() % 2 === 1
+                ? round($medianCloseHours[intdiv($medianCloseHours->count(), 2)], 1)
+                : round(($medianCloseHours[$medianCloseHours->count() / 2 - 1] + $medianCloseHours[$medianCloseHours->count() / 2]) / 2, 1)
+        );
+
+        // AI triage snapshot for the Sentinel card — Incident is the standalone AI-photo-triage
+        // flow (Vision + classifier + Winston), separate from the customer Report flow's manual
+        // drainage scan. Real counts even when small/zero, not the mockup's illustrative numbers.
+        $incidentsTotal = Incident::count();
+        $incidentsAnalyzed = Incident::whereNotNull('ai_label')->count();
+        $incidentsAiGenerated = Incident::where('ai_generated', true)->count();
+        $incidentsAutoTriagePct = $incidentsTotal > 0 ? (int) round($incidentsAnalyzed / $incidentsTotal * 100) : null;
 
         // Recent activities: last 7 days only (entire week)
         $activities = collect();
@@ -146,7 +179,13 @@ class AdminController extends Controller
             'adminUsers',
             'operationsUsers',
             'crewLeaders',
-            'recentActivities'
+            'recentActivities',
+            'crews',
+            'medianCloseHours',
+            'incidentsTotal',
+            'incidentsAnalyzed',
+            'incidentsAiGenerated',
+            'incidentsAutoTriagePct'
         ));
     }
 
@@ -155,7 +194,18 @@ class AdminController extends Controller
      */
     public function customerReports(Request $request): View
     {
-        $query = Report::query()->with('user')->latest('created_at');
+        $query = Report::query()
+            ->with(['user', 'operationsReport']);
+
+        $sentFilter = $request->string('sent')->toString();
+        if (! in_array($sentFilter, ['unsent', 'sent', 'all'], true)) {
+            $sentFilter = 'unsent';
+        }
+        if ($sentFilter === 'sent') {
+            $query->whereHas('operationsReport');
+        } elseif ($sentFilter === 'unsent') {
+            $query->whereDoesntHave('operationsReport');
+        }
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -180,22 +230,37 @@ class AdminController extends Controller
             }
         }
 
-        $reports = $query->paginate(15)->withQueryString();
+        $reports = $query->orderByUnsentToOperationsFirst()->paginate(15)->withQueryString();
 
         $unscannedWithPhotoCount = Report::query()
             ->whereNotNull('photo_path')
             ->whereNull('drainage_ai_verdict')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
             ->count();
 
-        return view('r_admin.customer-reports.index', compact('reports', 'unscannedWithPhotoCount'));
+        $reportsWithPhotoCount = Report::query()
+            ->whereNotNull('photo_path')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
+            ->count();
+
+        return view('r_admin.customer-reports.index', compact('reports', 'unscannedWithPhotoCount', 'reportsWithPhotoCount'));
     }
 
     /** JSON: IDs of customer reports that have a photo but no AI drainage verdict yet. */
     public function customerReportsUnscannedIds(): JsonResponse
     {
+        $sentFilter = request()->string('sent')->toString();
+        if (! in_array($sentFilter, ['unsent', 'sent', 'all'], true)) {
+            $sentFilter = 'unsent';
+        }
+
         $ids = Report::query()
             ->whereNotNull('photo_path')
             ->whereNull('drainage_ai_verdict')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
             ->orderBy('id')
             ->pluck('id');
 
@@ -214,7 +279,7 @@ class AdminController extends Controller
 
         try {
             $verdict = $scanner->scanAndPersist($report);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Customer report drainage scan failed', [
                 'report_id' => $report->id,
                 'error' => $e->getMessage(),
@@ -226,17 +291,65 @@ class AdminController extends Controller
         return response()->json(['ok' => true, 'verdict' => $verdict]);
     }
 
+    /** JSON: IDs of customer reports with photos (for bulk re-scan). */
+    public function customerReportsRescanIds(): JsonResponse
+    {
+        $sentFilter = request()->string('sent')->toString();
+        if (! in_array($sentFilter, ['unsent', 'sent', 'all'], true)) {
+            $sentFilter = 'unsent';
+        }
+
+        $ids = Report::query()
+            ->whereNotNull('photo_path')
+            ->when($sentFilter === 'sent', fn ($q) => $q->whereHas('operationsReport'))
+            ->when($sentFilter === 'unsent', fn ($q) => $q->whereDoesntHave('operationsReport'))
+            ->orderBy('id')
+            ->pluck('id');
+
+        return response()->json(['ids' => $ids]);
+    }
+
+    /** Clear prior AI verdict and run drainage scan again (after AI config fixes). */
+    public function customerReportRescanDrainage(Report $report, CustomerReportDrainageScan $scanner): JsonResponse
+    {
+        if (! $report->photo_path) {
+            return response()->json(['ok' => false, 'message' => 'No photo on this report.'], 422);
+        }
+
+        $report->update(['drainage_ai_verdict' => null]);
+
+        try {
+            $verdict = $scanner->scanAndPersist($report);
+        } catch (Throwable $e) {
+            Log::error('Customer report drainage re-scan failed', [
+                'report_id' => $report->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['ok' => false, 'message' => 'Re-scan failed.'], 500);
+        }
+
+        return response()->json(['ok' => true, 'verdict' => $verdict]);
+    }
+
     public function customerReportShow(Report $report): View
     {
         $report->load(['user', 'operationsReport']);
 
-        return view('r_admin.customer-reports.show', compact('report'));
+        return view('r_admin.customer-reports.show', [
+            'report' => $report,
+            'aiReason' => $this->buildCustomerReportAiReason($report),
+        ]);
     }
 
-    public function customerReportSendToOperations(Request $request, Report $report): RedirectResponse
+    public function customerReportSendToOperations(Request $request, Report $report, SnsNotifier $snsNotifier): RedirectResponse
     {
         $already = $report->operationsReport()->exists();
-        CustomerReportOperationsSync::syncFromCustomerReport($report);
+        $operationsReport = CustomerReportOperationsSync::syncFromCustomerReport($report);
+
+        if (! $already) {
+            $snsNotifier->customerReportSentToOperations($report, $operationsReport);
+        }
 
         $message = $already
             ? 'Report was already linked to operations.'
@@ -247,21 +360,33 @@ class AdminController extends Controller
             ->with('success', $message);
     }
 
-    public function customerReportDestroy(Report $report): RedirectResponse
+    public function customerReportDestroy(Request $request, Report $report): RedirectResponse
     {
-        if ($report->photo_path) {
-            Storage::disk('public')->delete($report->photo_path);
-        }
+        $allowedReasons = array_keys(Report::deletionReasonOptions());
+        $validated = $request->validate([
+            'deletion_reason' => ['required', 'string', Rule::in($allowedReasons)],
+        ]);
+
+        $report->deletion_reason = $validated['deletion_reason'];
+        $report->deletion_notes = null;
+        $report->save();
+
         $report->delete();
 
         return redirect()
             ->route('admin.customer-reports.index')
-            ->with('success', 'Customer report deleted.');
+            ->with('success', 'Customer report removed from the queue.');
     }
 
     /** GIS Map: interactive map view of incidents (reports) and work orders. */
-    public function gisMap(): View
+    public function gisMap(Request $request): View
     {
+        $request->validate([
+            'view' => ['nullable', Rule::in(['admin_ops', 'customer'])],
+        ]);
+
+        $mapView = (string) $request->query('view', 'admin_ops');
+
         $reports = OperationsReport::whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->whereIn('status', ['new', 'in_progress'])
@@ -288,7 +413,29 @@ class AdminController extends Controller
             'crew' => $w->crew?->name,
         ])->values()->all();
 
-        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders'));
+        $customerReports = Report::query()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->orderByUnsentToOperationsFirst()
+            ->get();
+
+        $mapCustomerReports = $customerReports->map(fn ($r) => [
+            'id' => $r->id,
+            'lat' => (float) $r->latitude,
+            'lng' => (float) $r->longitude,
+            'number' => 'CR-'.$r->id,
+            'status' => $r->status,
+            'problem_type' => $r->problem_type,
+            'address' => $r->address,
+            'description' => $r->description,
+            'photo_url' => $r->photo_path ? Storage::url($r->photo_path) : null,
+            'created_at' => $r->created_at?->format('jS M Y'),
+            'updated_at' => $r->updated_at?->format('jS M Y'),
+        ])->values()->all();
+
+        $weather = app(BruneiWeatherService::class)->buildMapWidgetPayload();
+
+        return view('r_admin.gis-map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'mapCustomerReports', 'mapView', 'weather'));
     }
 
     /**
@@ -297,43 +444,157 @@ class AdminController extends Controller
     public function staffDirectory(Request $request): View
     {
         $request->validate([
-            'role' => ['sometimes', 'in:all,admin,operator'],
+            'role' => ['sometimes', 'in:all,super_admin,admin,operation,operator'],
             'q' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $roleFilter = $request->query('role', 'all');
+        $roleFilter = (string) $request->query('role', 'all');
+        if ($roleFilter === 'operator') {
+            $roleFilter = 'operation';
+        }
         $search = trim((string) $request->query('q', ''));
         $searchLike = $search !== '' ? '%'.addcslashes($search, '%_\\').'%' : null;
 
-        $adminUsers = collect();
-        $operationUsers = collect();
+        $superAdminIds = User::role(User::ROLE_SUPER_ADMIN)->pluck('id');
+        $superAdminIdsColumn = User::where('role', User::ROLE_SUPER_ADMIN)->pluck('id');
+        $adminIds = User::role(User::ROLE_ADMIN)->pluck('id');
+        $adminIdsColumn = User::where('role', User::ROLE_ADMIN)->pluck('id');
+        $operationIds = User::role(User::ROLE_OPERATOR)->pluck('id');
+        $operationIdsColumn = User::where('role', User::ROLE_OPERATOR)->pluck('id');
 
-        if (in_array($roleFilter, ['all', 'admin'], true)) {
-            $adminIds = User::role([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
-            $adminIdsColumn = User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])->pluck('id');
-            $adminQuery = User::query()
-                ->whereIn('id', $adminIds->merge($adminIdsColumn)->unique())
-                ->orderBy('name');
-            if ($searchLike !== null) {
-                $adminQuery->where('name', 'like', $searchLike);
-            }
-            $adminUsers = $adminQuery->get();
+        $superAdminIdSet = $superAdminIds->merge($superAdminIdsColumn)->unique()->values();
+        $adminIdSet = $adminIds->merge($adminIdsColumn)->unique()->values();
+        $operationIdSet = $operationIds->merge($operationIdsColumn)->unique()->values();
+
+        $allStaffIds = $superAdminIdSet
+            ->merge($adminIdSet)
+            ->merge($operationIdSet)
+            ->unique()
+            ->values();
+
+        $staffQuery = User::query()
+            ->whereIn('id', $allStaffIds)
+            ->orderBy('name');
+
+        if ($searchLike !== null) {
+            $staffQuery->where('name', 'like', $searchLike);
         }
 
-        if (in_array($roleFilter, ['all', 'operator'], true)) {
-            $operationIds = User::role(User::ROLE_OPERATOR)->pluck('id');
-            $operationIdsColumn = User::where('role', User::ROLE_OPERATOR)->pluck('id');
-            $operationQuery = User::query()
-                ->whereIn('id', $operationIds->merge($operationIdsColumn)->unique())
-                ->orderBy('name')
-                ->with('crew');
-            if ($searchLike !== null) {
-                $operationQuery->where('name', 'like', $searchLike);
-            }
-            $operationUsers = $operationQuery->get();
+        if ($roleFilter === User::ROLE_SUPER_ADMIN) {
+            $staffQuery->whereIn('id', $superAdminIdSet);
+        } elseif ($roleFilter === User::ROLE_ADMIN) {
+            $staffQuery->whereIn('id', $adminIdSet);
+        } elseif ($roleFilter === 'operation') {
+            $staffQuery->whereIn('id', $operationIdSet);
         }
 
-        return view('r_admin.staff.index', compact('adminUsers', 'operationUsers', 'roleFilter', 'search'));
+        $staffUsers = $staffQuery->get();
+
+        $staffUsers = $staffUsers->map(function (User $user): User {
+            $user->staff_role_label = $this->staffUserRoleLabel($user);
+
+            return $user;
+        });
+
+        return view('r_admin.staff.index', compact('staffUsers', 'roleFilter', 'search'));
+    }
+
+    /**
+     * Admin console: list civilian/customer accounts.
+     */
+    public function civilianUsersIndex(Request $request): View
+    {
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $search = trim((string) $request->query('q', ''));
+        $searchLike = $search !== '' ? '%'.addcslashes($search, '%_\\').'%' : null;
+
+        $civilianUsers = User::query()
+            ->where(function ($q): void {
+                $q->where('role', User::ROLE_CUSTOMER)
+                    ->orWhereHas('roles', function ($r): void {
+                        $r->where('name', User::ROLE_CUSTOMER);
+                    });
+            })
+            ->orderBy('name');
+
+        if ($searchLike !== null) {
+            $civilianUsers->where('name', 'like', $searchLike);
+        }
+
+        return view('r_admin.civilians.index', [
+            'civilianUsers' => $civilianUsers->get(),
+            'search' => $search,
+        ]);
+    }
+
+    public function showCivilianUser(Request $request, User $user): View
+    {
+        if (! ($user->hasRole(User::ROLE_CUSTOMER) || $user->role === User::ROLE_CUSTOMER)) {
+            abort(404);
+        }
+
+        return view('r_admin.civilians.show', [
+            'civilianUser' => $user,
+            'canManageCivilianAccount' => $this->canManageCivilianAccount($request->user(), $user),
+        ]);
+    }
+
+    public function deactivateCivilianUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageCivilianAccount($request->user(), $user)) {
+            abort(403);
+        }
+
+        if (! ($user->is_active ?? true)) {
+            return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Account is already deactivated.');
+        }
+
+        $user->forceFill(['is_active' => false])->save();
+
+        return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Civilian account deactivated.');
+    }
+
+    public function activateCivilianUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageCivilianAccount($request->user(), $user)) {
+            abort(403);
+        }
+
+        if ($user->is_active ?? true) {
+            return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Account is already active.');
+        }
+
+        $user->forceFill(['is_active' => true])->save();
+
+        return $this->redirectAfterCivilianAction($request, $user)->with('success', 'Civilian account activated.');
+    }
+
+    public function deleteCivilianUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canManageCivilianAccount($request->user(), $user)) {
+            abort(403);
+        }
+
+        $deletedName = $user->name;
+
+        try {
+            $user->syncRoles([]);
+            $user->delete();
+        } catch (Throwable $e) {
+            Log::warning('Failed to delete civilian account.', [
+                'actor_id' => $request->user()?->id,
+                'target_user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->redirectToCivilians($request)
+                ->with('error', 'Unable to delete this civilian account right now. Please try again.');
+        }
+
+        return $this->redirectToCivilians($request)->with('success', 'Deleted civilian account: '.$deletedName.'.');
     }
 
     /**
@@ -352,6 +613,8 @@ class AdminController extends Controller
             'staffUser' => $user,
             'staffRoleLabel' => $this->staffUserRoleLabel($user),
             'canManageStaffActivation' => $this->canManageStaffAccountActivation($actor, $user),
+            'canDeleteStaffUser' => $this->canDeleteStaffUser($actor, $user),
+            'canResetStaffPassword' => $this->canResetStaffUserPassword($actor, $user),
         ]);
     }
 
@@ -383,6 +646,67 @@ class AdminController extends Controller
         $user->forceFill(['is_active' => true])->save();
 
         return $this->redirectToStaffUser($user, $request)->with('success', 'Account activated. They can sign in again.');
+    }
+
+    public function deleteStaffUser(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canDeleteStaffUser($request->user(), $user)) {
+            abort(403);
+        }
+
+        $deletedName = $user->name;
+
+        try {
+            $user->syncRoles([]);
+            $user->delete();
+        } catch (Throwable $e) {
+            Log::warning('Failed to delete staff account.', [
+                'actor_id' => $request->user()?->id,
+                'target_user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->redirectToStaffUser($user, $request)
+                ->with('error', 'Unable to delete this account right now. Please try again.');
+        }
+
+        $query = array_filter([
+            'q' => $request->input('q'),
+            'role' => $request->input('role'),
+        ], fn ($v) => $v !== null && $v !== '');
+
+        return redirect()
+            ->route('admin.staff.index', $query)
+            ->with('success', 'Deleted account: '.$deletedName.'.');
+    }
+
+    public function resetStaffUserPassword(Request $request, User $user): RedirectResponse
+    {
+        if (! $this->canResetStaffUserPassword($request->user(), $user)) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        try {
+            $user->forceFill([
+                'password' => Hash::make($validated['password']),
+            ])->save();
+        } catch (Throwable $e) {
+            Log::warning('Failed to reset staff account password.', [
+                'actor_id' => $request->user()?->id,
+                'target_user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->redirectToStaffUser($user, $request)
+                ->with('error', 'Unable to change the account password right now. Please try again.');
+        }
+
+        return $this->redirectToStaffUser($user, $request)
+            ->with('success', 'Password changed successfully for '.$user->name.'.');
     }
 
     protected function redirectToStaffUser(User $user, Request $request): RedirectResponse
@@ -422,6 +746,119 @@ class AdminController extends Controller
         return false;
     }
 
+    protected function canDeleteStaffUser(?User $actor, User $target): bool
+    {
+        if ($actor === null) {
+            return false;
+        }
+
+        if (! $this->userIsStaffDirectoryMember($target)) {
+            return false;
+        }
+
+        if (! $actor->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($actor->id === $target->id) {
+            return false;
+        }
+
+        return ! $target->hasRole(User::ROLE_SUPER_ADMIN);
+    }
+
+    protected function canResetStaffUserPassword(?User $actor, User $target): bool
+    {
+        return $this->canManageStaffAccountActivation($actor, $target);
+    }
+
+    protected function canManageCivilianAccount(?User $actor, User $target): bool
+    {
+        if ($actor === null) {
+            return false;
+        }
+
+        if (! $actor->hasRole([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN])) {
+            return false;
+        }
+
+        if ($actor->id === $target->id) {
+            return false;
+        }
+
+        return $target->hasRole(User::ROLE_CUSTOMER) || $target->role === User::ROLE_CUSTOMER;
+    }
+
+    protected function redirectToCivilians(Request $request): RedirectResponse
+    {
+        $query = array_filter([
+            'q' => $request->input('q'),
+        ], fn ($v) => $v !== null && $v !== '');
+
+        return redirect()->route('admin.civilians.index', $query);
+    }
+
+    protected function buildCustomerReportAiReason(Report $report): ?string
+    {
+        if (! $report->drainage_ai_verdict || ! $report->photo_path) {
+            return null;
+        }
+
+        try {
+            $vision = app(GoogleVisionService::class)->analyzeImage($report->photo_path, $report->id, 'public');
+            if (isset($vision['error'])) {
+                return match ($report->drainage_ai_verdict) {
+                    CustomerReportDrainageScan::VERDICT_DRAINAGE => 'Detected strong drainage-related visual indicators in the uploaded image.',
+                    CustomerReportDrainageScan::VERDICT_NOT_DRAINAGE => 'Detected non-drainage visual context (for example person/object-centric content) with low drainage indicators.',
+                    default => 'AI confidence is uncertain, so this report is flagged for manual review.',
+                };
+            }
+
+            $classification = app(SewageClassifier::class)->classify($vision, $report->id);
+            $reason = trim((string) ($classification['reason'] ?? ''));
+            $evidence = $classification['evidence'] ?? [];
+            $score = isset($evidence['sewage_score']) ? (float) $evidence['sewage_score'] : null;
+            $indicators = array_values(array_unique(array_filter((array) ($evidence['sewage_indicators'] ?? []))));
+
+            $parts = [];
+            if ($reason !== '') {
+                $parts[] = $reason;
+            }
+            if ($score !== null) {
+                $parts[] = 'Sewage indicator score: '.number_format($score, 2).'.';
+            }
+            if (! empty($indicators)) {
+                $parts[] = 'Detected indicators: '.implode(', ', array_slice($indicators, 0, 5)).'.';
+            }
+
+            return empty($parts) ? null : implode(' ', $parts);
+        } catch (Throwable $e) {
+            Log::warning('Unable to build AI reason for customer report.', [
+                'report_id' => $report->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return match ($report->drainage_ai_verdict) {
+                CustomerReportDrainageScan::VERDICT_DRAINAGE => 'Detected strong drainage-related visual indicators in the uploaded image.',
+                CustomerReportDrainageScan::VERDICT_NOT_DRAINAGE => 'Detected non-drainage visual context with insufficient drainage indicators.',
+                default => 'AI confidence is uncertain, so this report is flagged for manual review.',
+            };
+        }
+    }
+
+    protected function redirectAfterCivilianAction(Request $request, User $user): RedirectResponse
+    {
+        if ($request->input('return_to') === 'show') {
+            $query = array_filter([
+                'q' => $request->input('q'),
+            ], fn ($v) => $v !== null && $v !== '');
+
+            return redirect()->route('admin.civilians.show', array_merge(['user' => $user], $query));
+        }
+
+        return $this->redirectToCivilians($request);
+    }
+
     protected function userIsStaffDirectoryMember(User $user): bool
     {
         return $user->hasRole([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, User::ROLE_OPERATOR]);
@@ -429,14 +866,14 @@ class AdminController extends Controller
 
     protected function staffUserRoleLabel(User $user): string
     {
-        if ($user->hasRole(User::ROLE_SUPER_ADMIN)) {
+        if ($user->hasRole(User::ROLE_SUPER_ADMIN) || $user->role === User::ROLE_SUPER_ADMIN) {
             return 'Super admin';
         }
-        if ($user->hasRole(User::ROLE_ADMIN)) {
+        if ($user->hasRole(User::ROLE_ADMIN) || $user->role === User::ROLE_ADMIN) {
             return 'Admin';
         }
-        if ($user->hasRole(User::ROLE_OPERATOR)) {
-            return 'Operator';
+        if ($user->hasRole(User::ROLE_OPERATOR) || $user->role === User::ROLE_OPERATOR) {
+            return 'Operation';
         }
 
         return 'Staff';
@@ -464,7 +901,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'role' => ['required', Rule::in([User::ROLE_ADMIN, User::ROLE_OPERATOR])],
-            'username' => ['required', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._-]+$/', Rule::unique('users', 'username')],
+            'staffname' => ['required', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._-]+$/', Rule::unique('users', 'staffname')],
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -493,7 +930,7 @@ class AdminController extends Controller
         $crewId = $role === User::ROLE_OPERATOR ? ($validated['crew_id'] ?? null) : null;
 
         $user = User::create([
-            'username' => $validated['username'],
+            'staffname' => $validated['staffname'],
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),

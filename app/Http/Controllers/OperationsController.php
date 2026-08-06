@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FiltersDmsArchiveByDateTime;
+use App\Models\DmsPaperReport;
 use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class OperationsController extends Controller
 {
+    use FiltersDmsArchiveByDateTime;
     public function dashboard()
     {
-        $activeIncidents = OperationsReport::whereIn('status', ['new', 'in_progress'])->count();
-        $previousActiveIncidents = OperationsReport::whereIn('status', ['new', 'in_progress'])
+        $activeIncidents = OperationsReport::whereIn('status', ['pending', 'in_progress'])->count();
+        $previousActiveIncidents = OperationsReport::whereIn('status', ['pending', 'in_progress'])
             ->whereDate('created_at', '<', now()->subDay())
             ->count();
         $incidentChange = $previousActiveIncidents > 0
@@ -62,10 +66,17 @@ class OperationsController extends Controller
             return $found ? $found->count : 0;
         })->toArray();
 
-        $reportsSentToday = OperationsReport::query()
-            ->whereNotNull('customer_report_id')
-            ->whereDate('created_at', today())
-            ->count();
+        $reportsSentTodayQuery = OperationsReport::query()
+            ->whereDate('created_at', today());
+
+        if (Schema::hasColumn('operations_reports', 'customer_report_id')) {
+            $reportsSentTodayQuery->whereNotNull('customer_report_id');
+        } else {
+            // Legacy schema fallback: count today's reports when linkage column is unavailable.
+            $reportsSentTodayQuery->whereNotNull('report_number');
+        }
+
+        $reportsSentToday = $reportsSentTodayQuery->count();
 
         return view('r_operators.dashboard', compact(
             'activeIncidents',
@@ -84,9 +95,6 @@ class OperationsController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
-        }
-        if ($request->filled('severity')) {
-            $query->where('severity', $request->severity);
         }
         if ($request->filled('issue_type')) {
             $query->where('issue_type', $request->issue_type);
@@ -110,11 +118,38 @@ class OperationsController extends Controller
         return view('r_operators.reports', compact('reports'));
     }
 
+    public function oldReports(Request $request)
+    {
+        $query = DmsPaperReport::query()->with('archiveWorkOrders');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('archive_number', 'like', "%{$search}%")
+                    ->orWhere('dds_file_reference', 'like', "%{$search}%")
+                    ->orWhere('service_request_reference', 'like', "%{$search}%")
+                    ->orWhere('contact_name', 'like', "%{$search}%");
+            });
+        }
+
+        $dateColumn = match ($request->input('date_on', 'incident')) {
+            'investigated' => 'investigated_at',
+            'digitized' => 'created_at',
+            default => 'incident_at',
+        };
+
+        $this->applyDateTimeRangeFilter($query, $request, $dateColumn);
+
+        $paperReports = $query->orderByDesc($dateColumn)->paginate(20)->withQueryString();
+
+        return view('r_operators.old-reports.index', compact('paperReports'));
+    }
+
     public function map()
     {
         $reports = OperationsReport::whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->whereIn('status', ['new', 'in_progress'])
+            ->whereIn('status', ['pending', 'in_progress'])
             ->get();
 
         $workOrders = WorkOrder::whereNotNull('latitude')
@@ -136,6 +171,8 @@ class OperationsController extends Controller
             'address' => $w->location_address,
         ])->values()->all();
 
-        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders'));
+        $weather = app(\App\Services\BruneiWeatherService::class)->buildMapWidgetPayload();
+
+        return view('r_operators.map', compact('reports', 'workOrders', 'mapReports', 'mapWorkOrders', 'weather'));
     }
 }

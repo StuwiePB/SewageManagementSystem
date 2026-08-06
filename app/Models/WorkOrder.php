@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkOrder extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'work_order_number',
         'report_id',
@@ -77,14 +80,33 @@ class WorkOrder extends Model
     }
 
     /**
-     * Generate a unique work order number
+     * New work order number (always FR SAL format).
      */
     public static function generateWorkOrderNumber(): string
     {
-        do {
-            $number = 'WO-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
-        } while (self::where('work_order_number', $number)->exists());
+        return Report::generateReferenceCode();
+    }
 
-        return $number;
+    /**
+     * Reuse customer reference when this work order is tied to a customer-originated ops report.
+     */
+    public static function workOrderNumberForOperationsReport(?OperationsReport $operationsReport): string
+    {
+        if ($operationsReport !== null) {
+            $customer = $operationsReport->customerReport;
+            if ($customer !== null) {
+                $reference = $customer->ensureReferenceCode();
+                if (! self::where('work_order_number', $reference)->exists()) {
+                    return $reference;
+                }
+            }
+
+            if (filled($operationsReport->report_number)
+                && ! self::where('work_order_number', $operationsReport->report_number)->exists()) {
+                return (string) $operationsReport->report_number;
+            }
+        }
+
+        return Report::generateReferenceCode();
     }
 }

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Report;
 use App\Services\ZiqahDatabaseBridge;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
@@ -18,6 +20,7 @@ class ChatController extends Controller
             'image' => ['nullable', 'string'], // base64 data URL
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'page' => ['nullable', 'string', 'max:191'],
         ]);
 
         $apiKey = config('services.openai.api_key');
@@ -29,6 +32,119 @@ class ChatController extends Controller
 
         $message = $request->input('message', '');
         $imageData = $request->input('image');
+
+        if ($this->isAwaitingReportGuidanceDecision($request) && is_string($message) && trim($message) !== '') {
+            if ($this->isAffirmativeReply($message)) {
+                $request->session()->put('ziqah_awaiting_report_guidance', false);
+
+                return response()->json([
+                    'reply' => "Great, I'll guide you through it now.\nSHOW_REPORT_BUTTON",
+                    'show_report_button' => true,
+                    'report_image_url' => null,
+                    'quick_actions' => [],
+                ]);
+            }
+
+            if ($this->isNegativeReply($message)) {
+                $request->session()->put('ziqah_awaiting_report_guidance', false);
+
+                return response()->json([
+                    'reply' => "Okay, no problem. I'll be here if you need anything.",
+                    'show_report_button' => false,
+                    'report_image_url' => null,
+                    'quick_actions' => [],
+                ]);
+            }
+        }
+
+        $rememberedArea = (string) $request->session()->get('ziqah_last_area', '');
+        $detectedArea = $this->extractBruneiAreaFromMessage($message);
+        if ($detectedArea !== null) {
+            $request->session()->put('ziqah_last_area', $detectedArea);
+            $rememberedArea = $detectedArea;
+        }
+
+        $coords = $this->validatedBruneiCoordinates($request);
+        if ($coords !== null) {
+            $request->session()->put('ziqah_last_lat', $coords['lat']);
+            $request->session()->put('ziqah_last_lng', $coords['lng']);
+        }
+
+        // isReportIntentMessage() takes priority — "my drain is overflowing near my house" must
+        // reach the normal report-guidance/urgency-triage flow below, not get short-circuited
+        // into a "show me nearby reported issues" lookup just because it contains "near".
+        if ($this->messageRequestsNearbyIssues($message) && ! $this->isReportIntentMessage($message)) {
+            $lat = $coords['lat'] ?? $request->session()->get('ziqah_last_lat');
+            $lng = $coords['lng'] ?? $request->session()->get('ziqah_last_lng');
+
+            if ($lat !== null && $lng !== null) {
+                $nearbyReply = $this->buildNearbyIssuesReply((float) $lat, (float) $lng, $dbBridge, 8, 10.0);
+                if ($nearbyReply !== null) {
+                    $request->session()->put('ziqah_last_topic', 'issues');
+
+                    return response()->json([
+                        'reply' => $nearbyReply,
+                        'show_report_button' => false,
+                        'report_image_url' => null,
+                        'quick_actions' => [],
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'reply' => 'i need your location to check this. please allow location access in your browser, or tell me the area (e.g. jerudong, berakas).',
+                'show_report_button' => false,
+                'report_image_url' => null,
+                'quick_actions' => [],
+            ]);
+        }
+
+        $lastTopic = (string) $request->session()->get('ziqah_last_topic', '');
+
+        if ($this->isCountingQuestion($message) && ! $this->mentionsDatabaseStructure($message) && ! $this->isReportIntentMessage($message)) {
+            $referencesIssues = $this->isGisIssueLookupRequest($message);
+            $isBareFollowUp = $this->isBareCountFollowUp($message);
+
+            if ($referencesIssues || ($isBareFollowUp && $lastTopic === 'issues')) {
+                $countArea = $detectedArea ?? ($rememberedArea !== '' ? $rememberedArea : null);
+                if ($countArea !== null && $countArea !== '') {
+                    $countReply = $this->buildAreaIssueCountReply($countArea, $dbBridge);
+                    if ($countReply !== null) {
+                        $request->session()->put('ziqah_last_topic', 'issues');
+
+                        return response()->json([
+                            'reply' => $countReply,
+                            'show_report_button' => false,
+                            'report_image_url' => null,
+                            'quick_actions' => [],
+                        ]);
+                    }
+                }
+            }
+        }
+
+        if ($this->isGisIssueLookupRequest($message)
+            && ! $this->isCountingQuestion($message)
+            && ! $this->mentionsDatabaseStructure($message)
+            && ! $this->isReportIntentMessage($message)
+            && ($detectedArea !== null || $this->messageRequestsNearbyIssues($message))
+        ) {
+            $lookupArea = $detectedArea ?? $rememberedArea;
+            $excludedArea = $this->extractExcludedAreaFromMessage($message, $rememberedArea);
+            if ($lookupArea !== '') {
+                $gisReply = $this->buildGisIssueDetailsReply($lookupArea, $message, $dbBridge, 20, $excludedArea);
+                if ($gisReply !== null) {
+                    $request->session()->put('ziqah_last_topic', 'issues');
+
+                    return response()->json([
+                        'reply' => $gisReply,
+                        'show_report_button' => false,
+                        'report_image_url' => null,
+                        'quick_actions' => [],
+                    ]);
+                }
+            }
+        }
 
         $content = [];
         if (! empty($message)) {
@@ -48,55 +164,27 @@ class ChatController extends Controller
         }
 
         $model = config('services.openai.model', 'gpt-4o-mini');
-        $schemaEnabled = (bool) config('services.ziqah.database_schema', true);
-        $toolsEnabled = (bool) config('services.ziqah.database_tools', true);
+        // Ziqah never gets live database schema access or a SQL-running tool in the customer
+        // chat — that used to be unlockable via a hardcoded password typed into this same
+        // endpoint ("unrestricted mode"), which meant any authenticated customer could turn
+        // Ziqah into a general engineering assistant with read access to the real database
+        // (including other customers' names/phones/addresses) and the app's route/class map.
+        // Removed entirely rather than re-gated — a customer support widget has no legitimate
+        // reason to expose that, and a real admin tool for this should be its own
+        // properly-authenticated (role:admin) surface, not a password typed into customer chat.
         $maxRows = max(1, min(200, (int) config('services.ziqah.max_select_rows', 50)));
         $maxRounds = max(1, min(8, (int) config('services.ziqah.max_tool_rounds', 4)));
+        $maxTokens = 1024;
 
-        $dbContext = $schemaEnabled ? $dbBridge->buildSchemaContext() : '';
-
-        $locationCatalog = '';
-        if (config('services.ziqah.location_catalog', true)) {
-            $locationCatalog = $dbBridge->buildLocationCatalog(
-                (int) config('services.ziqah.location_catalog_per_source', 60),
-                (int) config('services.ziqah.location_catalog_max_chars', 14000),
-            );
-        }
-
-        $nearestIssues = '';
-        if (config('services.ziqah.nearest_issues', true) && $this->messageRequestsNearbyIssues($message)) {
-            $geo = $this->validatedBruneiCoordinates($request);
-            if ($geo !== null) {
-                $nearestIssues = $dbBridge->buildNearestIssuesContext(
-                    $geo['lat'],
-                    $geo['lng'],
-                    (int) config('services.ziqah.nearest_issues_limit', 8),
-                    (int) config('services.ziqah.nearest_issues_candidates_per_table', 200),
-                );
-            }
-        }
-
-        $systemPrompt = $this->baseSystemPrompt().$dbContext.$locationCatalog.$nearestIssues;
-
-        if ($toolsEnabled) {
-            $systemPrompt .= <<<'TXT'
-
-
-DATABASE TOOL:
-- You have a function `database_select` to run read-only SELECT queries on any Laravel connection listed above.
-- Use it when the user needs factual data: report status, counts, and especially locations (addresses, district/mukim, lat/long on `reports`, `operations_reports`, `work_orders`).
-- Prefer the smallest query (specific columns, LIMIT). Never SELECT wide blobs unless needed.
-- Do not repeat raw personal data unnecessarily; summarize.
-- If the tool errors, explain briefly and continue without leaking stack traces.
-TXT;
-        }
+        $pageContext = $this->buildPageContext((string) $request->input('page', ''));
+        $systemPrompt = $this->baseSystemPrompt().$pageContext.$this->noDatabaseAccessNotice();
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $content],
         ];
 
-        $tools = $toolsEnabled ? $this->openAiDatabaseTools() : null;
+        $tools = null;
 
         try {
             $text = $this->completeWithOptionalTools(
@@ -107,6 +195,7 @@ TXT;
                 $maxRounds,
                 $dbBridge,
                 $maxRows,
+                $maxTokens,
             );
         } catch (\Throwable $e) {
             Log::error('OpenAI chat completion failed', ['error' => $e->getMessage()]);
@@ -116,104 +205,267 @@ TXT;
             ], 502);
         }
 
-        return response()->json(['reply' => trim($text)]);
+        $reply = trim($text);
+        $showReportButton = $this->shouldAttachReportButton($message, $reply) || $this->isReportIntentMessage($message);
+        if ($showReportButton) {
+            $reply .= "\nSHOW_REPORT_BUTTON";
+        }
+        $request->session()->put('ziqah_awaiting_report_guidance', $this->replyRequestsReportGuidance($reply));
+
+        $reportImageUrl = $this->resolveRequestedReportImageUrl((string) $message, (int) $request->user()->id);
+        $quickActions = $this->buildQuickActions((string) $message, $reply);
+
+        return response()->json([
+            'reply' => $reply,
+            'show_report_button' => $showReportButton,
+            'report_image_url' => $reportImageUrl,
+            'quick_actions' => $quickActions,
+        ]);
     }
 
     private function baseSystemPrompt(): string
     {
         return <<<'TXT'
-You are ZIQAH, a friendly support officer for BruDMS (Brunei sewage and drainage reporting).
+You are ZIQAH.
+You are a friendly city support officer for Brunei's sewage and drainage reporting in BruDMS.
+Speak like a helpful person at the other end of the line, not a bot.
+Your job is to help people report blockages, leaks, overflows, and odor issues, and answer incident/report questions accurately using available data.
 
-SCOPE:
-- Help only with BruDMS usage, JKR Brunei contact/info, sewage/drainage issues, and emergency guidance.
-- If user asks unrelated topics, politely decline in one short sentence and redirect to drainage/sewage/JKR help.
+WHO YOU ARE:
+- Name/role: ZIQAH - the friendly face of BruDMS helping people report blockages, leaks, overflows, and odor issues.
+- Personality: polite, empathetic, warm, and human. Not corporate and not robotic.
+- You can call yourself "ZIQAH" or "I" naturally in conversation.
+- You remember the full chat context. Reference what the user already told you.
+- Never ask again for details the user has already provided in this same chat unless they changed or are ambiguous.
 
-EMERGENCY PRIORITY:
-- If user sounds urgent/emergency (urgent, emergency, critical, flooding badly, danger, tolong cepat, kecemasan, etc), start with emergency contacts:
-  - Ambulance: 991
-  - Fire & Rescue: 995
-  - Police: 993
-  - Search & Rescue: 998
-  - Talian Darussalam: 123
-- Then briefly say you can still help log the drainage/sewage report.
+You are warm, clear, and professional.
+You never sound robotic.
+You never guess or make up data.
+For data-specific answers, use available database/tool results.
 
-JKR CONTACT & HOURS (when user asks customer service/contact/technical issues):
-- Main: +673 238 1911
-- Fax: +673 238 3922
-- Email: prob@jkr.gov.bn
-- Website: https://www.pwd.gov.bn
-- Address: JKR Headquarters, Jalan Menteri Besar, Bandar Seri Begawan
-- Normal office hours: Sunday-Thursday 7:45 AM-12:15 PM, 1:30 PM-4:30 PM (closed Friday/Saturday/public holidays)
-- Ramadhan (counter guidance): payment counters Mon-Thu 8:15 AM-12:00 Noon, Sat 8:15 AM-10:00 AM; customer care Mon-Thu & Sat 8:15 AM-2:00 PM; closed Friday/Sunday/public holidays.
+SECTION 1 - WHICH TABLES HOLD “INCIDENTS”
+- The BruDMS data model is spelled out immediately after this prompt block (BRUDMS DATABASE DOMAIN).
+- Never assume a single fictional `incidents` row shape: the real DB uses several tables (`reports`, `incidents`, `operations_reports`, `work_orders`).
+- Always take column names from DATABASE CONTEXT introspection plus that domain section.
 
-LANGUAGE STYLE:
-- Match user language ratio:
-  - Mostly English => reply English
-  - Mostly Malay => reply Malay
-  - Mixed => reply Manglish
-- Understand and naturally use Brunei terms where helpful: longkang, kumbahan, paip pecah, tersumbat, bah, lah, kah, RIPAS, KB, UBD, MIB.
-- Keep tone human, concise, and helpful (usually 1-4 sentences).
+SECTION 2 - YOUR PERSONALITY
+- Warm and approachable, like a knowledgeable colleague.
+- Use short, natural sentences. Avoid walls of text.
+- Use light affirmations such as: "Sure!", "Got it!", "Let me check!"
+- Always make the user feel heard before presenting data.
+- If unclear, ask exactly one follow-up question.
+- Never dump raw data without context.
 
-LOCATION KNOWLEDGE:
-- You receive a LOCATION DATA section built from the live database (sample addresses and district/mukim pairs). Use it to name real areas already present in BruDMS.
-- For fuller lists, text search on addresses, or coordinates, use `database_select` on `reports`, `operations_reports`, or `work_orders` (columns include `address` or `location_address`, `district`, `mukim`, `latitude`, `longitude` as applicable).
+SECTION 3 - CONVERSATION FLOW (follow every time)
+Step 1 - Greet and understand:
+- Acknowledge the user's issue naturally without using fixed scripted greetings.
+- Do not use the phrase "Hi there! I'm Ziqah, your incident assistant. What can I help you with today?".
 
-NEAREST ISSUES (when USER GEO CONTEXT appears below):
-- If the user asks about nearest/nearby/dekat/closest issues, reports, longkang problems, or work orders near them (or “around here”), use the NEAREST KNOWN ISSUES list: state approximate distance in km (straight-line, not driving time), type/problem, status, and address/area briefly.
-- If USER GEO CONTEXT is missing but they still ask for nearest issues, explain that BruDMS can use their location when they allow it for this site in the browser, then try again—or they can describe an area or use Live Map.
-- If NEAREST KNOWN ISSUES says none were found, say so honestly and suggest reporting a new issue or checking the map.
+Step 2 - Confirm before querying:
+- Acknowledge what you are about to do before fetching.
+- Example: "Sure, let me pull up the resolved incidents for you!"
 
-REPORT HELP:
-- Guide user to provide: issue type, location, short description, and urgency/severity.
-- Ask one thing at a time if details are missing.
-- If user asks where/how to report, tell them they can report directly in BruDMS and ask for issue + location (+ photo if available).
-- When inviting the user to start the report flow, append this exact token on a new line at the end of your message: SHOW_REPORT_BUTTON
-- Do not include SHOW_REPORT_BUTTON unless you are explicitly inviting them to file/start a report now.
+Step 3 - Query the database:
+- Run `database_select` with the correct real table/columns from BRUDMS DATABASE DOMAIN + DATABASE CONTEXT.
+- Never guess or use example column names unless they appear in DATABASE CONTEXT for that table.
+- Never guess. Always fetch real data first.
 
-REPORTING FLOW (CRITICAL - FOLLOW THIS APP FLOW):
-- BruDMS report flow is manual and step-based:
-  1) rproblem (choose problem type)
-  2) rpicture (add/take photo)
-  3) rlocation (pin or confirm location)
-  4) rdetails (severity + description)
-  5) rpreview (review everything, then user submits)
-- You are an assistant only. Never claim you can submit the report yourself.
-- Never tell the user the report is already filed unless they explicitly say they pressed submit.
-- Your job is to prepare the user for the next step and remind them to review/edit on preview before submit.
-- If user already gave details in chat, summarize them as "draft info" and ask them to confirm in the proper step.
-- Do not output hidden tags, JSON, or special parser markers. Just plain helpful text.
+Step 4 - Present results naturally:
+- Wrap results in natural sentences, not raw output.
+- Use human-readable timestamps: DD MMM YYYY, HH:MM.
+
+Step 5 - Offer further help:
+- End every response with a gentle offer.
+- Examples: "Need more details on any of these?" / "Is there anything else I can help with?"
+
+SECTION 4 - QUESTION HANDLING (intent -> tool -> reply)
+- Map user words to tables per BRUDMS DATABASE DOMAIN:
+  • “Resolved / completed / done / fixed / selesai” → prefer `reports`, `operations_reports`, and especially `work_orders` (often `completed_at` when status `completed`; see introspection).
+  • “Cancelled / dibatalkan” → status filters on same three tables plus check customer `reports`.
+  • “Open / pending / not done” → non-complete statuses across those tables; include `incidents` only for AI-review queue (`review_status`).
+  • “Who reported / phone / reporter” → `reports.reporter_name`, `reports.phone`; use `reports.reference_code` or `operations_reports.report_number` or `work_orders.work_order_number` for IDs/ref codes.
+  • “Latest / yesterday / recent” → `ORDER BY created_at DESC` on the relevant table(s) with sensible LIMIT.
+- After each `database_select` result: answer in plain language; do not dump raw JSON.
+- Reply style: short, warm sentences and a clear list of what you found.
+
+SECTION 5 - MULTI-QUESTION HANDLING
+- If the user asks multiple things at once, answer each in a numbered list naturally.
+- Example: "Sure, let me answer both of those! 1. Resolved incidents: [list] 2. INC-003 was reported by Siti Nora. Let me know if you need anything else!"
+
+SECTION 6 - FALLBACK RESPONSES
+- Nothing found: "Hmm, I couldn't find any incident matching that. Could you double-check the ID or name? Happy to try again!"
+- Tool returned a query/schema error (e.g. unknown column): briefly apologize, try again once with tables/columns from BRUDMS DATABASE DOMAIN + DATABASE CONTEXT — do NOT claim the database server is unreachable for SQL mistakes.
+- True database/OpenAI outage only: "Oh no, I'm having trouble reaching the database right now. Please try again in a moment - sorry about that!"
+- Vague input: ask one clarifying question: reference number (e.g. report reference vs work order), area, or what “open” vs “completed” means for them.
+
+SECTION 7 - LANGUAGE
+- Default language: English.
+- If user writes in Malay, switch naturally to Malay.
+- Mixed language is fine; match the user's style.
+- Timestamps always: DD MMM YYYY, HH:MM.
+
+SECTION 7B - BRUNEI LOCAL LANGUAGE UNDERSTANDING
+- Many users are Bruneian and may use Brunei Malay + Manglish particles/slang.
+- Understand and correctly interpret common particles: bah, lah, ah, wah, eh, kan, mah, leh, lor, meh, sia, wor/wo, lo, har.
+- Understand common Brunei terms: awu (yes), inda (no/not), urang (people), kitani (we/us), kau (you), ku (me), bisai (good), malar (always), bajalan (walking), kapih/dry season (broke), paloi (insult), tapau/bungkus (takeaway), miss call.
+- Understand common mixed phrases such as: "can or not", "got meh", "how ah", "see first", "already already", "die lah", "mun paham bisai", "jangan speaking bah".
+- Treat these as normal conversational language. Do not over-correct grammar or spelling.
+- When users write in this local style, respond naturally in a similarly clear, respectful Bruneian-friendly style.
+
+SECTION 8 - STRICT RULES (never break these)
+- Never expose raw SQL to the user.
+- Never guess or assume data. Always query first.
+- Never ask more than one follow-up question at a time.
+- Never return raw unformatted timestamps.
+- Always confirm before querying.
+- Always end with an offer to help further.
+- When answering with multiple steps or items (how-to guides, lists of issues, options), put EACH item on its own line using a real line break. Never merge list items into one run-on sentence.
+
+SECTION 9 - OUTPUT STYLE (CLEAN MINIMAL LIST)
+- You are a formatting assistant when list formatting is requested.
+- You MUST convert input into this exact format:
+  title
+  ────────
+  
+  • item 1
+  • item 2
+  • item 3
+- Output ONLY the formatted list.
+- Do NOT include sentences, introductions, or explanations.
+- Do NOT keep original paragraph structure.
+- Each bullet must be short and clean.
+- Keep everything lowercase.
+- Preserve meaning but simplify wording.
+- Follow spacing exactly.
+- EXCEPTION: if user asks for "all brunei emergency numbers" (or equivalent), do not compress to 3 bullets.
+- For that emergency request, return the complete directory from SECTION 10 (core emergency, district contacts, and other hotlines).
+- If user provides an explicit template or says "fill this template only", treat that as highest-priority formatting instruction.
+- In that case, output only the template-filled content with no intro, no outro, and no additional commentary.
+- highlight priority information by applying both bold and underline in markdown (example: <u>**urgent**</u>)
+
+SECTION 9B - TABLE FORMAT FOR DATABASE RESULTS
+- This overrides SECTION 9 whenever the `database_select` result has 2+ rows, each with 2+ meaningful fields (e.g. a list of reports, work orders, or incidents with columns like reference, status, date, area).
+- Format that data as a markdown pipe table: a header row, then a separator row of dashes, then one data row per record. Example:
+  | reference | status | area | reported |
+  |---|---|---|---|
+  | FR SAL/0715/25(0421) | pending | gadong | 15 jul 2026 |
+- Keep a short natural-language lead-in sentence before the table (per SECTION 3 step 4), and the SECTION 3 step 5 offer-to-help line after it — the table itself holds only the data.
+- Use short column headers and short cell values (e.g. dates as `DD MMM YYYY`, not full timestamps) so the table stays readable on a phone screen.
+- If the result is a single row, or a single value (e.g. one count), do NOT build a table — answer in a plain sentence or the SECTION 9 bullet format instead.
+- Never fabricate table rows or columns not present in the query result.
+
+SECTION 10 - BRUNEI HELP DIRECTORY (MEMORIZED REFERENCE)
+- If users ask about emergency contacts, JKR contacts, hotline numbers, or where to reach authorities, provide this directory clearly.
+- Prefer concise list format, and prioritize urgent numbers first.
+- JKR / PUBLIC WORKS:
+  - website: www.pwd.gov.bn
+  - talian darussalam: 123
+  - facebook: @JKRBrunei
+  - instagram: @jkrbrunei
+  - roads instagram: @jkrbrunei_jalanraya
+  - water instagram: @jkrbrunei_air
+  - drainage/sewerage instagram: @jkrbrunei_saliran_pembetungan
+  - note: official mod.gov.bn/pwd page may return 404; recommend 123 or socials first.
+- CORE EMERGENCY:
+  - ambulance: 991
+  - police: 993
+  - fire & rescue: 995
+  - search & rescue: 998
+- DISTRICT CONTACTS:
+  - bsb: police 993 / 222-2333, ambulance 991 / 222-2366, fire 995 / 238-0402
+  - kuala belait: police 333-2333, ambulance 333-2366, fire 333-2555
+  - seria: police 322-2333, ambulance 333-2366, fire 322-2555
+  - tutong: police 422-1333, ambulance 422-1366, fire 422-1355
+  - bangar (temburong): police 522-1333, ambulance 522-1210, fire 522-1255
+- OTHER HOTLINES:
+  - talian darussalam (government non-emergency): 123
+  - water issues: 140
+
+SECTION 11 - WEBSITE GUIDE (HOW REPORTING WORKS)
+- If the user asks how this website works, how to report, or how to use report functions, explain using a simple list.
+- Keep it practical and focused on the customer reporting flow:
+  1) open report page
+  2) choose issue/problem type
+  3) upload/take photo
+  4) set location/address
+  5) review and submit report
+  6) track progress in my history
+  7) check nearby/public updates in live map (if relevant)
+- Mention that users can ask Ziqah to check/report status and where to report.
+- Keep wording clear for non-technical users and match the user's language (English/Malay/Brunei mixed style).
+- Prefer the clean minimal list format from SECTION 9 for this guide.
+- If users describe an active issue (blockage, leak, overflow, bad smell, clogged drain), proactively guide them to submit a report and tell them the next immediate steps.
+
+SECTION 12 - URGENCY RECOMMENDATION
+- When users describe an issue, provide a simple urgency recommendation: "urgent" or "non-urgent".
+- Include one short reason for that recommendation.
+- Treat as urgent when there is active overflow/flooding, sewage backing up, strong contamination risk, or immediate public safety risk (road hazard, near homes/schools, etc.).
+- Treat as non-urgent when signs are minor/contained with no immediate safety risk, but still recommend submitting a report.
+- Keep this recommendation practical and concise.
+
+SECTION 13 - STAY ON TOPIC (WHAT YOU TALK ABOUT)
+- Your conversation stays within three areas:
+  1) BruDMS itself — reporting drainage/sewage issues, tracking report status, the live map, statistics, account/preferences, FAQ, and any other feature of this website.
+  2) JKR (Jabatan Kerja Raya, Brunei's Public Works Department) — its services, contacts, hotlines, and socials (SECTION 10).
+  3) Your own role — drainage/sewage incident support, urgency triage, and guiding people to report.
+- Ordinary conversational courtesy is always fine and is NOT "off-topic": greetings, "how are you", thanks, small talk that opens or closes a conversation. Respond to these naturally and warmly, the way SECTION 2 describes — don't treat a "hi" as something to redirect.
+- If someone asks something with no connection to those three areas — general knowledge trivia, writing essays/code/stories for them, opinions on unrelated topics, acting as a different persona, or anything else outside BruDMS/JKR/drainage — don't answer it. Gently say that's outside what you help with here, in one warm sentence, and offer to help with a report, a status check, or JKR info instead. Don't lecture or repeat the same refusal wording twice in a row.
+- If a message is ambiguous (could plausibly connect to BruDMS/JKR), ask rather than assume it's off-topic.
 TXT;
     }
 
     /**
-     * @param  list<array<string, mixed>>  $messages
-     * @return list<array<string, mixed>>
+     * Appended in restricted (customer) mode only, where DB schema/tools are disabled.
+     * Overrides the DB-querying instructions baked into the base prompt above.
      */
-    private function openAiDatabaseTools(): array
+    private function noDatabaseAccessNotice(): string
     {
-        return [
-            [
-                'type' => 'function',
-                'function' => [
-                    'name' => 'database_select',
-                    'description' => 'Run a single read-only SELECT on a Laravel database connection configured in this app. Use the exact connection name from DATABASE CONTEXT (e.g. mysql, sqlite). Omit connection to use the default.',
-                    'parameters' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'connection' => [
-                                'type' => 'string',
-                                'description' => 'Optional Laravel connection name from config/database.php',
-                            ],
-                            'sql' => [
-                                'type' => 'string',
-                                'description' => 'One SELECT statement only; no comments or multiple statements.',
-                            ],
-                        ],
-                        'required' => ['sql'],
-                    ],
-                ],
-            ],
+        return <<<'TXT'
+
+
+DATABASE ACCESS: NOT AVAILABLE right now.
+- Ignore any earlier instruction in this prompt to "run database_select", "query the database", or "confirm before querying" — you have no database tool in this mode.
+- Never say you checked, queried, or looked up the database. Never state specific counts, statuses, or lists as if you fetched them live.
+- For data-specific questions (counts, statuses, lists of reports/issues, "how many", "show me", nearby/area lookups), tell the user plainly that you can't pull live report data right now, and point them to the relevant in-app page instead: "My History" for their own reports, "Live Map" for nearby/public issues, or "My Statistics" for trends.
+- Still help normally with everything else: reporting guidance, urgency triage, emergency/JKR contacts, and general conversation.
+TXT;
+    }
+
+    /**
+     * Human-readable label for the customer-facing page the user is currently on,
+     * derived from the named route sent by the chat widget (window.BrudmsZiqahConfig.currentPage).
+     */
+    private function buildPageContext(string $routeName): string
+    {
+        $routeName = trim($routeName);
+        if ($routeName === '') {
+            return '';
+        }
+
+        $labels = [
+            'customer.dashboard' => 'Dashboard (home)',
+            'customer.brudmsgpt' => 'Ziqah AI chat (full page)',
+            'customer.general' => 'General settings',
+            'customer.faq' => 'FAQ',
+            'customer.customersupport' => 'Customer support',
+            'customer.contactcustomersupport' => 'Contact customer support',
+            'customer.profilesettings' => 'Profile settings',
+            'customer.myhistory' => 'My report history',
+            'customer.custatistics' => 'My statistics',
+            'customer.rproblem' => 'New report - problem type step',
+            'customer.rpicture' => 'New report - photo step',
+            'customer.rlocation' => 'New report - location step',
+            'customer.rdetails' => 'New report - details step',
+            'customer.rpreview' => 'New report - preview step',
+            'customer.livemap' => 'Live map',
+            'customer.report.type' => 'New report - choose issue type',
+            'customer.report.photo' => 'New report - upload photo',
+            'customer.report.preview' => 'New report - review and submit',
         ];
+
+        $label = $labels[$routeName] ?? str_replace(['customer.', '.', '-'], ['', ' ', ' '], $routeName);
+
+        return "\n\nUSER PAGE CONTEXT: the user is currently on the \"{$label}\" page (route `{$routeName}`). Use this to tailor your reply (e.g. don't re-explain how to get somewhere the user is already on; if they seem stuck on this page, offer help specific to it) but don't mention the raw route name to the user.";
     }
 
     /**
@@ -227,13 +479,14 @@ TXT;
         ?array $tools,
         int $maxRounds,
         ZiqahDatabaseBridge $dbBridge,
-        int $maxRows
+        int $maxRows,
+        int $maxTokens = 1024
     ): string {
         for ($round = 0; $round < $maxRounds; $round++) {
             $payload = [
                 'model' => $model,
                 'messages' => $messages,
-                'max_tokens' => 1024,
+                'max_tokens' => max(256, min(4096, $maxTokens)),
             ];
 
             if ($tools !== null) {
@@ -316,25 +569,27 @@ TXT;
      */
     private function runDatabaseToolCall(string $name, array $args, ZiqahDatabaseBridge $dbBridge, int $maxRows): string
     {
-        if ($name !== 'database_select') {
+        if (! in_array($name, ['database_select', 'database_query'], true)) {
             return json_encode(['error' => 'Unknown tool: '.$name]);
         }
 
         $sql = isset($args['sql']) && is_string($args['sql']) ? $args['sql'] : '';
         $connection = isset($args['connection']) && is_string($args['connection']) ? $args['connection'] : null;
 
-        $result = $dbBridge->runReadOnlySelect($connection ?? '', $sql, $maxRows);
+        $result = $dbBridge->runSql($connection ?? '', $sql, $maxRows);
 
         if (! ($result['ok'] ?? false)) {
             return json_encode(['error' => $result['error'] ?? 'Query failed'], JSON_UNESCAPED_UNICODE);
         }
 
-        $rows = $result['rows'] ?? [];
         $encoded = json_encode(
             [
-                'rows' => $rows,
+                'result_type' => $result['result_type'] ?? 'unknown',
+                'rows' => $result['rows'] ?? [],
                 'truncated' => (bool) ($result['truncated'] ?? false),
-                'row_count' => count($rows),
+                'row_count' => (int) ($result['row_count'] ?? 0),
+                'affected_rows' => (int) ($result['affected_rows'] ?? 0),
+                'success' => (bool) ($result['success'] ?? false),
             ],
             JSON_UNESCAPED_UNICODE
         );
@@ -353,6 +608,616 @@ TXT;
             '/\b(near|nearest|nearby|closest|around\s+(me|here)|radius|dekat|sekitar|berhampiran|terdekat)\b/i',
             $message
         );
+    }
+
+    private function shouldAttachReportButton(string $message, string $reply): bool
+    {
+        if (str_contains($reply, 'SHOW_REPORT_BUTTON')) {
+            return false;
+        }
+
+        $message = trim($message);
+        if ($message === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b('
+            .'where\s+(do\s+i\s+)?(report|make\s+a\s+report|file\s+a\s+report)'
+            .'|where\s+to\s+(report|make\s+a\s+report|file\s+a\s+report)'
+            .'|how\s+to\s+(report|make\s+a\s+report|file\s+a\s+report)'
+            .'|mana(\s+(kan|kah))?\s+(ku\s+)?(report|lapor)'
+            .'|di\s+mana(\s+(kan|kah))?\s+(ku\s+)?(report|lapor)'
+            .'|macam\s+mana\s+nak\s+(report|lapor)'
+            .'|bagaimana\s+(nak\s+)?(report|lapor)'
+            .')\b/i',
+            $message
+        );
+    }
+
+    private function isReportIntentMessage(string $message): bool
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(blockage|blocked|clog|clogged|leak|leaking|overflow|overflowing|smell|odor|bau|tersumbat|bocor|melimpah|saliran|drain|drainage|sewer|pembetungan)\b/i',
+            $message
+        );
+    }
+
+    private function isAwaitingReportGuidanceDecision(Request $request): bool
+    {
+        return (bool) $request->session()->get('ziqah_awaiting_report_guidance', false);
+    }
+
+    private function replyRequestsReportGuidance(string $reply): bool
+    {
+        return (bool) preg_match(
+            '/would\s+you\s+like\s+guidance\s+on\s+how\s+to\s+submit\s+a\s+report|would\s+you\s+like\s+help\s+with\s+that|would\s+you\s+like\s+me\s+to\s+help\s+you\s+report|do\s+you\s+want\s+help\s+submitting\s+a\s+report|mahu\s+saya\s+tunjukkan\s+cara\s+hantar\s+laporan|ingin\s+panduan\s+untuk\s+hantar\s+laporan|mahu\s+bantuan\s+untuk\s+hantar\s+laporan/i',
+            $reply
+        );
+    }
+
+    private function isAffirmativeReply(string $message): bool
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/^(yes|yup|yeah|ya|y|awu|ok|okay|boleh|baik|onz|can)\b/i', $message);
+    }
+
+    private function isNegativeReply(string $message): bool
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/^(no|nope|nah|n|inda|tidak|jangan|not\s+now|later|karang\s*dulu)\b/i', $message);
+    }
+
+    private function resolveRequestedReportImageUrl(string $message, int $userId): ?string
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return null;
+        }
+
+        $report = null;
+        $referenceCode = $this->extractReportReferenceCode($message);
+        if ($referenceCode !== null) {
+            $report = Report::query()
+                ->where('user_id', $userId)
+                ->where('reference_code', $referenceCode)
+                ->first();
+        } elseif (preg_match('/\breport\s*#?\s*(\d+)\b/i', $message, $m)) {
+            $reportId = (int) ($m[1] ?? 0);
+            if ($reportId > 0) {
+                $report = Report::query()
+                    ->where('user_id', $userId)
+                    ->where('id', $reportId)
+                    ->first();
+            }
+        }
+
+        if (! $report || ! $report->photo_path) {
+            return null;
+        }
+
+        if (! Storage::disk('public')->exists($report->photo_path)) {
+            return null;
+        }
+
+        return Storage::url($report->photo_path);
+    }
+
+    private function extractReportReferenceCode(string $message): ?string
+    {
+        if (! preg_match('/\b([a-z]{1,6}-[a-z]{2,8}-\d{2,8})\b/i', $message, $m)) {
+            return null;
+        }
+
+        return strtoupper((string) $m[1]);
+    }
+
+    /**
+     * @return list<array{label: string, type: string, value: string}>
+     */
+    private function buildQuickActions(string $message, string $reply): array
+    {
+        $message = strtolower(trim($message));
+        if ($message === '') {
+            return [];
+        }
+
+        $asksDirectory = (bool) preg_match(
+            '/\b(emergency|hotline|jkr|pwd|talian\s*darussalam|123|water|140|ambulance|police|fire|rescue|instagram|facebook|contact|number)\b/i',
+            $message
+        );
+        $looksUrgent = (bool) preg_match(
+            '/\b(help|urgent|kecemasan|cemas|bahaya|accident|kemalangan|kebakaran|fire|ambulance|police|991|993|995|998)\b/i',
+            $message
+        );
+
+        if (! $asksDirectory && ! $looksUrgent) {
+            return [];
+        }
+
+        $actions = [];
+        if ($looksUrgent) {
+            $actions[] = ['label' => 'call ambulance 991', 'type' => 'tel', 'value' => '991'];
+            $actions[] = ['label' => 'call police 993', 'type' => 'tel', 'value' => '993'];
+            $actions[] = ['label' => 'call fire 995', 'type' => 'tel', 'value' => '995'];
+            $actions[] = ['label' => 'call search & rescue 998', 'type' => 'tel', 'value' => '998'];
+        }
+
+        if ($asksDirectory) {
+            $actions[] = ['label' => 'call talian darussalam 123', 'type' => 'tel', 'value' => '123'];
+            $actions[] = ['label' => 'call water hotline 140', 'type' => 'tel', 'value' => '140'];
+            $actions[] = ['label' => 'open jkr instagram', 'type' => 'url', 'value' => 'https://instagram.com/jkrbrunei'];
+            $actions[] = ['label' => 'open jkr facebook', 'type' => 'url', 'value' => 'https://facebook.com/JKRBrunei'];
+        }
+
+        return $actions;
+    }
+
+    private function isGisIssueLookupRequest(string $message): bool
+    {
+        $message = strtolower(trim($message));
+        if ($message === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(issue|issues|incident|incidents|report|reports|gis|map|nearby|near|dekat|sekitar)\b/i',
+            $message
+        );
+    }
+
+    private function isCountingQuestion(string $message): bool
+    {
+        $m = strtolower(trim($message));
+        if ($m === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(how\s+many|how\s+much|count|total|number\s+of|berapa\s+banyak|berapa|jumlah|bilangan)\b/i',
+            $m
+        );
+    }
+
+    private function isBareCountFollowUp(string $message): bool
+    {
+        $m = strtolower(trim($message));
+        $m = rtrim($m, " \t\n\r\0\x0B?.!");
+        if ($m === '') {
+            return false;
+        }
+
+        $patterns = [
+            '/^how\s+many(\s+(are|is|of)?\s*(there|them|it|they))?$/i',
+            '/^how\s+many\s+in\s+total$/i',
+            '/^total$/i',
+            '/^count$/i',
+            '/^berapa(\s+banyak)?$/i',
+            '/^jumlah$/i',
+            '/^bilangan$/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $m)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function mentionsDatabaseStructure(string $message): bool
+    {
+        $m = strtolower(trim($message));
+        if ($m === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(table|tables|column|columns|schema|database|db|row|rows)\b/i',
+            $m
+        );
+    }
+
+    private function extractBruneiAreaFromMessage(string $message): ?string
+    {
+        $normalized = strtolower(trim($message));
+        if ($normalized === '') {
+            return null;
+        }
+
+        $areas = $this->bruneiAreaCandidates();
+
+        usort($areas, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
+        foreach ($areas as $area) {
+            if ($area === '') {
+                continue;
+            }
+            $pattern = '/\b'.preg_quote($area, '/').'\b/iu';
+            if (preg_match($pattern, $normalized)) {
+                return $area;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function bruneiAreaCandidates(): array
+    {
+        $areas = [
+            'jerudong', 'berakas', 'gadong', 'kiulap', 'kiarong', 'mentiri', 'kota batu',
+            'sengkurong', 'mata-mata', 'rimba', 'tanjung bunut', 'bunut', 'lambak', 'lambak kiri',
+            'manggis', 'subok', 'serasa', 'muara', 'kilanas', 'tungku', 'tungku link',
+            'bandar seri begawan', 'bsb', 'kuala belait', 'kb', 'seria', 'tutong',
+            'pekan tutong', 'bangar', 'temburong', 'panaga', 'lumut', 'sungai liang',
+            'liang', 'lumapas', 'limau manis', 'salambigar', 'rimba', 'beribi',
+            'kampong ayer', 'kampung ayer',
+        ];
+
+        foreach ((array) config('brunei.districts', []) as $key => $district) {
+            if (is_string($district) && $district !== '') {
+                $areas[] = strtolower($district);
+                $areas[] = strtolower(str_replace('-', ' ', $district));
+            }
+            if (is_string($key) && $key !== '') {
+                $areas[] = strtolower(str_replace('-', ' ', $key));
+            }
+        }
+
+        foreach ((array) config('brunei.mukims', []) as $group) {
+            if (! is_array($group)) {
+                continue;
+            }
+            foreach ($group as $key => $mukim) {
+                if (is_string($mukim) && $mukim !== '') {
+                    $full = strtolower($mukim);
+                    $areas[] = $full;
+                    $stripped = trim(preg_replace("/\s*'[ab]'\s*$/iu", '', $full) ?? $full);
+                    if ($stripped !== '' && $stripped !== $full) {
+                        $areas[] = $stripped;
+                    }
+                    $cleaned = trim(str_replace(["'", '"'], '', $full));
+                    if ($cleaned !== '' && $cleaned !== $full) {
+                        $areas[] = $cleaned;
+                    }
+                }
+                if (is_string($key) && $key !== '') {
+                    $slugSpace = strtolower(str_replace('-', ' ', $key));
+                    $areas[] = $slugSpace;
+                    $strippedSlug = trim(preg_replace('/\s+[ab]$/iu', '', $slugSpace) ?? $slugSpace);
+                    if ($strippedSlug !== '' && $strippedSlug !== $slugSpace) {
+                        $areas[] = $strippedSlug;
+                    }
+                }
+            }
+        }
+
+        $areas = array_filter($areas, static fn (string $a): bool => trim($a) !== '');
+        $areas = array_map(static fn (string $a): string => trim($a), $areas);
+
+        return array_values(array_unique($areas));
+    }
+
+    private function extractExcludedAreaFromMessage(string $message, string $rememberedArea = ''): ?string
+    {
+        $m = strtolower(trim($message));
+        if ($m === '') {
+            return null;
+        }
+
+        if (preg_match('/\bnot\s+([a-z][a-z\- ]{2,40})\b/i', $m, $match)) {
+            $candidate = trim((string) $match[1]);
+            $candidate = preg_replace('/\b(issue|issues|area|areas|in|near|nearby|please|thanks)\b/i', '', $candidate ?? '');
+            $candidate = trim((string) $candidate);
+            if ($candidate !== '') {
+                return $candidate;
+            }
+        }
+
+        if ((str_contains($m, 'anywhere else') || str_contains($m, 'area lain') || str_contains($m, 'elsewhere')) && $rememberedArea !== '') {
+            return strtolower(trim($rememberedArea));
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractRequestedStatuses(string $message): array
+    {
+        $m = strtolower(trim($message));
+        if ($m === '') {
+            return [];
+        }
+
+        $statuses = [];
+        if (str_contains($m, 'under review') || str_contains($m, 'under_review')) {
+            $statuses[] = 'under_review';
+        }
+        if (str_contains($m, 'pending')) {
+            $statuses[] = 'pending';
+        }
+        if (str_contains($m, 'in progress') || str_contains($m, 'in_progress')) {
+            $statuses[] = 'in_progress';
+        }
+        if (str_contains($m, 'resolved')) {
+            $statuses[] = 'resolved';
+        }
+
+        return array_values(array_unique($statuses));
+    }
+
+    private function buildAreaIssueCountReply(string $area, ZiqahDatabaseBridge $dbBridge): ?string
+    {
+        $area = trim($area);
+        if ($area === '') {
+            return null;
+        }
+
+        $safeArea = str_replace("'", "''", strtolower($area));
+        $safeAreaSlug = str_replace("'", "''", str_replace(' ', '-', $safeArea));
+
+        $sql = "SELECT
+                    (SELECT COUNT(*) FROM reports
+                        WHERE LOWER(COALESCE(address, '')) LIKE '%{$safeArea}%') AS reports_count,
+                    (SELECT COUNT(*) FROM incidents
+                        WHERE LOWER(COALESCE(admin_message, '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(CAST(ai_reasons AS CHAR), '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(CAST(evidence AS CHAR), '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(CAST(proof AS CHAR), '')) LIKE '%{$safeArea}%') AS incidents_count,
+                    (SELECT COUNT(*) FROM operations_reports
+                        WHERE LOWER(COALESCE(location_address, '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(district, '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(district, '')) LIKE '%{$safeAreaSlug}%'
+                           OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeAreaSlug}%') AS operations_count,
+                    (SELECT COUNT(*) FROM work_orders
+                        WHERE LOWER(COALESCE(location_address, '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(district, '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeArea}%'
+                           OR LOWER(COALESCE(district, '')) LIKE '%{$safeAreaSlug}%'
+                           OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeAreaSlug}%') AS work_orders_count";
+
+        $result = $dbBridge->runSql('', $sql, 1);
+        if (! ($result['ok'] ?? false)) {
+            return null;
+        }
+
+        $rows = $result['rows'] ?? [];
+        if (! is_array($rows) || $rows === []) {
+            return null;
+        }
+
+        $row = $rows[0];
+        $get = static function ($row, string $field): int {
+            $v = is_object($row) ? ($row->{$field} ?? 0) : ($row[$field] ?? 0);
+
+            return (int) $v;
+        };
+
+        $total = $get($row, 'reports_count')
+            + $get($row, 'incidents_count')
+            + $get($row, 'operations_count')
+            + $get($row, 'work_orders_count');
+
+        if ($total === 0) {
+            return "there are no issues in {$area}.";
+        }
+
+        if ($total === 1) {
+            return "there is 1 issue in {$area}.";
+        }
+
+        return "there are {$total} issues in {$area}.";
+    }
+
+    private function buildGisIssueDetailsReply(string $area, string $message, ZiqahDatabaseBridge $dbBridge, int $limit = 20, ?string $excludedArea = null): ?string
+    {
+        $area = trim($area);
+        if ($area === '') {
+            return null;
+        }
+
+        $limit = max(1, min(50, $limit));
+        $safeArea = str_replace("'", "''", strtolower($area));
+        $safeAreaSlug = str_replace("'", "''", str_replace(' ', '-', $safeArea));
+        $requestedStatuses = $this->extractRequestedStatuses($message);
+        $statusSql = '';
+        $incidentStatusSql = '';
+        if ($requestedStatuses !== []) {
+            $quoted = array_map(static fn (string $s): string => "'".$s."'", $requestedStatuses);
+            $statusSql = ' AND LOWER(COALESCE(status, \'\')) IN ('.implode(',', $quoted).')';
+            $incidentStatusSql = ' AND LOWER(COALESCE(review_status, \'\')) IN ('.implode(',', $quoted).')';
+        }
+        $excludeCustomerSql = '';
+        $excludeAdminSql = '';
+        $excludeIncidentSql = '';
+        if ($excludedArea !== null && trim($excludedArea) !== '') {
+            $safeExcluded = str_replace("'", "''", strtolower(trim($excludedArea)));
+            $safeExcludedSlug = str_replace("'", "''", str_replace(' ', '-', $safeExcluded));
+            $excludeCustomerSql = " AND LOWER(COALESCE(address, '')) NOT LIKE '%{$safeExcluded}%'";
+            $excludeAdminSql = " AND LOWER(COALESCE(location_address, '')) NOT LIKE '%{$safeExcluded}%'
+                                 AND LOWER(COALESCE(district, '')) NOT LIKE '%{$safeExcluded}%'
+                                 AND LOWER(COALESCE(mukim, '')) NOT LIKE '%{$safeExcluded}%'
+                                 AND LOWER(COALESCE(district, '')) NOT LIKE '%{$safeExcludedSlug}%'
+                                 AND LOWER(COALESCE(mukim, '')) NOT LIKE '%{$safeExcludedSlug}%'";
+            $excludeIncidentSql = " AND LOWER(COALESCE(admin_message, '')) NOT LIKE '%{$safeExcluded}%'
+                                    AND LOWER(COALESCE(CAST(ai_reasons AS CHAR), '')) NOT LIKE '%{$safeExcluded}%'
+                                    AND LOWER(COALESCE(CAST(evidence AS CHAR), '')) NOT LIKE '%{$safeExcluded}%'
+                                    AND LOWER(COALESCE(CAST(proof AS CHAR), '')) NOT LIKE '%{$safeExcluded}%'";
+        }
+
+        $customerSql = "SELECT * FROM (
+                            SELECT
+                                COALESCE(reference_code, CONCAT('#', id)) AS reference,
+                                COALESCE(status, 'unknown') AS status,
+                                COALESCE(problem_type, 'issue') AS problem_type,
+                                '' AS priority,
+                                COALESCE(reporter_name, '') AS reporter,
+                                COALESCE(phone, '') AS phone,
+                                COALESCE(address, '') AS address,
+                                latitude AS latitude,
+                                longitude AS longitude,
+                                created_at AS submitted,
+                                'reports' AS source
+                            FROM reports
+                            WHERE LOWER(COALESCE(address, '')) LIKE '%{$safeArea}%'
+                            {$excludeCustomerSql}
+                            {$statusSql}
+
+                            UNION ALL
+
+                            SELECT
+                                CONCAT('INC-', id) AS reference,
+                                COALESCE(review_status, 'unknown') AS status,
+                                COALESCE(ai_label, 'incident') AS problem_type,
+                                COALESCE(ai_severity, '') AS priority,
+                                '' AS reporter,
+                                '' AS phone,
+                                COALESCE(admin_message, '') AS address,
+                                NULL AS latitude,
+                                NULL AS longitude,
+                                created_at AS submitted,
+                                'incidents' AS source
+                            FROM incidents
+                            WHERE (
+                                LOWER(COALESCE(admin_message, '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(CAST(ai_reasons AS CHAR), '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(CAST(evidence AS CHAR), '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(CAST(proof AS CHAR), '')) LIKE '%{$safeArea}%'
+                            )
+                            {$excludeIncidentSql}
+                            {$incidentStatusSql}
+                        ) x
+                        ORDER BY submitted DESC
+                        LIMIT {$limit}";
+
+        $result = $dbBridge->runSql('', $customerSql, $limit);
+        if (! ($result['ok'] ?? false)) {
+            return null;
+        }
+
+        $rows = $result['rows'] ?? [];
+        if (! is_array($rows)) {
+            $rows = [];
+        }
+
+        // If customer-side reports have no match, fallback to admin-side GIS datasets.
+        if ($rows === []) {
+            $adminSql = "SELECT * FROM (
+                            SELECT
+                                COALESCE(report_number, CONCAT('#', id)) AS reference,
+                                COALESCE(status, 'unknown') AS status,
+                                COALESCE(issue_type, 'issue') AS problem_type,
+                                '' AS priority,
+                                COALESCE(reporter_name, '') AS reporter,
+                                COALESCE(reporter_contact, '') AS phone,
+                                COALESCE(location_address, '') AS address,
+                                latitude AS latitude,
+                                longitude AS longitude,
+                                created_at AS submitted,
+                                'operations_reports' AS source
+                            FROM operations_reports
+                            WHERE (
+                                LOWER(COALESCE(location_address, '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(district, '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(district, '')) LIKE '%{$safeAreaSlug}%'
+                                OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeAreaSlug}%'
+                            )
+                            {$excludeAdminSql}
+                            {$statusSql}
+
+                            UNION ALL
+
+                            SELECT
+                                COALESCE(work_order_number, CONCAT('#', id)) AS reference,
+                                COALESCE(status, 'unknown') AS status,
+                                COALESCE(type, 'issue') AS problem_type,
+                                COALESCE(priority, '') AS priority,
+                                '' AS reporter,
+                                '' AS phone,
+                                COALESCE(location_address, '') AS address,
+                                latitude AS latitude,
+                                longitude AS longitude,
+                                created_at AS submitted,
+                                'work_orders' AS source
+                            FROM work_orders
+                            WHERE (
+                                LOWER(COALESCE(location_address, '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(district, '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeArea}%'
+                                OR LOWER(COALESCE(district, '')) LIKE '%{$safeAreaSlug}%'
+                                OR LOWER(COALESCE(mukim, '')) LIKE '%{$safeAreaSlug}%'
+                            )
+                            {$excludeAdminSql}
+                            {$statusSql}
+
+                        ) x
+                        ORDER BY submitted DESC
+                        LIMIT {$limit}";
+
+            $adminResult = $dbBridge->runSql('', $adminSql, $limit);
+            if (! ($adminResult['ok'] ?? false)) {
+                return null;
+            }
+            $rows = is_array($adminResult['rows'] ?? null) ? $adminResult['rows'] : [];
+        }
+
+        if (! is_array($rows) || $rows === []) {
+            if ($excludedArea !== null && trim($excludedArea) !== '') {
+                return 'there is no incident in that area.';
+            }
+
+            return 'there is no incident in that area.';
+        }
+
+        $lines = ["issues near {$area}", '────────', ''];
+        foreach ($rows as $row) {
+            $reference = is_object($row) ? (string) ($row->reference ?? 'n/a') : (string) ($row['reference'] ?? 'n/a');
+            $status = is_object($row) ? (string) ($row->status ?? 'n/a') : (string) ($row['status'] ?? 'n/a');
+            $problemType = is_object($row) ? (string) ($row->problem_type ?? 'n/a') : (string) ($row['problem_type'] ?? 'n/a');
+            $priority = is_object($row) ? (string) ($row->priority ?? 'n/a') : (string) ($row['priority'] ?? 'n/a');
+            $reporter = is_object($row) ? (string) ($row->reporter ?? 'n/a') : (string) ($row['reporter'] ?? 'n/a');
+            $phone = is_object($row) ? (string) ($row->phone ?? 'n/a') : (string) ($row['phone'] ?? 'n/a');
+            $address = is_object($row) ? (string) ($row->address ?? 'n/a') : (string) ($row['address'] ?? 'n/a');
+            $lat = is_object($row) ? ($row->latitude ?? null) : ($row['latitude'] ?? null);
+            $lng = is_object($row) ? ($row->longitude ?? null) : ($row['longitude'] ?? null);
+            $submitted = is_object($row) ? (string) ($row->submitted ?? 'n/a') : (string) ($row['submitted'] ?? 'n/a');
+
+            $coords = ($lat !== null && $lng !== null) ? ((string) $lat.', '.(string) $lng) : 'n/a';
+            $lines[] = '• details';
+            $lines[] = '• reference: '.$reference;
+            $lines[] = '• status: '.$status;
+            $lines[] = '• problem type: '.$problemType;
+            $lines[] = '• priority: '.($priority !== '' ? $priority : 'n/a');
+            $lines[] = '• reporter: '.($reporter !== '' ? $reporter : 'n/a');
+            $lines[] = '• phone: '.($phone !== '' ? $phone : 'n/a');
+            $lines[] = '• address: '.($address !== '' ? $address : 'n/a');
+            $lines[] = '• coordinates: '.$coords;
+            $lines[] = '• submitted: '.($submitted !== '' ? $submitted : 'n/a');
+            $lines[] = '';
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
@@ -378,5 +1243,144 @@ TXT;
         }
 
         return ['lat' => $lat, 'lng' => $lng];
+    }
+
+    private function buildNearbyIssuesReply(
+        float $userLat,
+        float $userLng,
+        ZiqahDatabaseBridge $dbBridge,
+        int $limit = 8,
+        float $maxKm = 10.0
+    ): ?string {
+        $limit = max(1, min(20, $limit));
+        $maxKm = max(0.5, min(50.0, $maxKm));
+
+        $sql = "SELECT * FROM (
+                    SELECT
+                        COALESCE(reference_code, CONCAT('#', id)) AS reference,
+                        COALESCE(status, 'unknown') AS status,
+                        COALESCE(problem_type, 'issue') AS problem_type,
+                        '' AS priority,
+                        COALESCE(reporter_name, '') AS reporter,
+                        COALESCE(phone, '') AS phone,
+                        COALESCE(address, '') AS address,
+                        latitude AS latitude,
+                        longitude AS longitude,
+                        created_at AS submitted,
+                        'reports' AS source
+                    FROM reports
+                    WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+
+                    UNION ALL
+
+                    SELECT
+                        COALESCE(report_number, CONCAT('#', id)) AS reference,
+                        COALESCE(status, 'unknown') AS status,
+                        COALESCE(issue_type, 'issue') AS problem_type,
+                        '' AS priority,
+                        COALESCE(reporter_name, '') AS reporter,
+                        COALESCE(reporter_contact, '') AS phone,
+                        COALESCE(location_address, '') AS address,
+                        latitude AS latitude,
+                        longitude AS longitude,
+                        created_at AS submitted,
+                        'operations_reports' AS source
+                    FROM operations_reports
+                    WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+
+                    UNION ALL
+
+                    SELECT
+                        COALESCE(work_order_number, CONCAT('#', id)) AS reference,
+                        COALESCE(status, 'unknown') AS status,
+                        COALESCE(type, 'issue') AS problem_type,
+                        COALESCE(priority, '') AS priority,
+                        '' AS reporter,
+                        '' AS phone,
+                        COALESCE(location_address, '') AS address,
+                        latitude AS latitude,
+                        longitude AS longitude,
+                        created_at AS submitted,
+                        'work_orders' AS source
+                    FROM work_orders
+                    WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+                ) x
+                ORDER BY submitted DESC
+                LIMIT 600";
+
+        $result = $dbBridge->runSql('', $sql, 600);
+        if (! ($result['ok'] ?? false)) {
+            return null;
+        }
+
+        $rows = $result['rows'] ?? [];
+        if (! is_array($rows)) {
+            $rows = [];
+        }
+
+        $scored = [];
+        foreach ($rows as $row) {
+            $lat = is_object($row) ? ($row->latitude ?? null) : ($row['latitude'] ?? null);
+            $lng = is_object($row) ? ($row->longitude ?? null) : ($row['longitude'] ?? null);
+            if ($lat === null || $lng === null) {
+                continue;
+            }
+            $km = $this->haversineKm($userLat, $userLng, (float) $lat, (float) $lng);
+            if ($km > $maxKm) {
+                continue;
+            }
+            $scored[] = ['km' => $km, 'row' => $row];
+        }
+
+        usort($scored, static fn (array $a, array $b): int => $a['km'] <=> $b['km']);
+        $scored = array_slice($scored, 0, $limit);
+
+        if ($scored === []) {
+            return 'there is no incident near you.';
+        }
+
+        $lines = ['issues near you', '────────', ''];
+        foreach ($scored as $entry) {
+            $row = $entry['row'];
+            $km = $entry['km'];
+            $reference = is_object($row) ? (string) ($row->reference ?? 'n/a') : (string) ($row['reference'] ?? 'n/a');
+            $status = is_object($row) ? (string) ($row->status ?? 'n/a') : (string) ($row['status'] ?? 'n/a');
+            $problemType = is_object($row) ? (string) ($row->problem_type ?? 'n/a') : (string) ($row['problem_type'] ?? 'n/a');
+            $priority = is_object($row) ? (string) ($row->priority ?? '') : (string) ($row['priority'] ?? '');
+            $reporter = is_object($row) ? (string) ($row->reporter ?? '') : (string) ($row['reporter'] ?? '');
+            $phone = is_object($row) ? (string) ($row->phone ?? '') : (string) ($row['phone'] ?? '');
+            $address = is_object($row) ? (string) ($row->address ?? '') : (string) ($row['address'] ?? '');
+            $lat = is_object($row) ? ($row->latitude ?? null) : ($row['latitude'] ?? null);
+            $lng = is_object($row) ? ($row->longitude ?? null) : ($row['longitude'] ?? null);
+            $submitted = is_object($row) ? (string) ($row->submitted ?? '') : (string) ($row['submitted'] ?? '');
+
+            $coords = ($lat !== null && $lng !== null) ? ((string) $lat.', '.(string) $lng) : 'n/a';
+
+            $lines[] = '• details';
+            $lines[] = '• reference: '.($reference !== '' ? $reference : 'n/a');
+            $lines[] = '• status: '.($status !== '' ? $status : 'n/a');
+            $lines[] = '• problem type: '.($problemType !== '' ? $problemType : 'n/a');
+            $lines[] = '• priority: '.($priority !== '' ? $priority : 'n/a');
+            $lines[] = '• reporter: '.($reporter !== '' ? $reporter : 'n/a');
+            $lines[] = '• phone: '.($phone !== '' ? $phone : 'n/a');
+            $lines[] = '• address: '.($address !== '' ? $address : 'n/a');
+            $lines[] = '• coordinates: '.$coords;
+            $lines[] = '• distance: ~'.number_format($km, 1).' km';
+            $lines[] = '• submitted: '.($submitted !== '' ? $submitted : 'n/a');
+            $lines[] = '';
+        }
+
+        return rtrim(implode("\n", $lines));
+    }
+
+    private function haversineKm(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earth = 6371.0;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earth * $c;
     }
 }

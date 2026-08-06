@@ -4,182 +4,176 @@ namespace Database\Seeders;
 
 use App\Models\OperationsReport;
 use App\Models\WorkOrder;
-use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class StatisticsSeeder extends Seeder
 {
-    /**
-     * Seed operations_reports and work_orders for Statistics and hotspot views (not customer `reports`).
-     * Run: php artisan db:seed --class=StatisticsSeeder
-     */
     public function run(): void
     {
-        WorkOrder::query()->delete();
-        OperationsReport::query()->delete();
+        $reports = [
+            // BRUNEI-MUARA DISTRICT (4.85-5.00 N, 114.85-115.05 E)
+            ['report_number' => 'RPT-STAT-0001', 'issue_type' => 'blockage','description' => 'Severe blockage in main drain causing road flooding.',          'reporter_name' => 'Ahmad Razali',    'reporter_contact' => '+6738001001', 'location_address' => 'Jalan Gadong, BSB',                 'district' => 'brunei-muara', 'mukim' => 'gadong-b',          'latitude' => 4.9036, 'longitude' => 114.9197, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0002', 'issue_type' => 'overflow', 'description' => 'Manhole overflow near residential area.',                       'reporter_name' => 'Siti Norfazila',  'reporter_contact' => '+6738001002', 'location_address' => 'Kg Sungai Kebun',                   'district' => 'brunei-muara', 'mukim' => 'sungai-kebun',      'latitude' => 4.8942, 'longitude' => 114.9123, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0003', 'issue_type' => 'maintenance','description' => 'Drain cover cracked and needs replacement.',                    'reporter_name' => 'Mohd Faris',      'reporter_contact' => '+6738001003', 'location_address' => 'Jalan Tutong, Sengkurong',           'district' => 'brunei-muara', 'mukim' => 'sengkurong',        'latitude' => 4.9161, 'longitude' => 114.8412, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0004', 'issue_type' => 'odor',     'description' => 'Strong sewage odor in morning hours near park.',               'reporter_name' => 'Hjh Rosnah',      'reporter_contact' => '+6738001004', 'location_address' => 'Taman Berakas, BSB',                 'district' => 'brunei-muara', 'mukim' => 'berakas-a',         'latitude' => 4.9412, 'longitude' => 114.9281, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0005', 'issue_type' => 'other',    'description' => 'Collapsed drain cover poses hazard to road users.',             'reporter_name' => 'Hamzah Pg Damit', 'reporter_contact' => '+6738001005', 'location_address' => 'Jalan Muara, Kg Serasa',             'district' => 'brunei-muara', 'mukim' => 'serasa',            'latitude' => 4.9701, 'longitude' => 115.0514, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0015', 'issue_type' => 'blockage', 'description' => 'Concrete debris from construction blocking main drain.',        'reporter_name' => 'Roslan Md Tahir', 'reporter_contact' => '+6738001015', 'location_address' => 'Jalan Kota Batu, BSB',               'district' => 'brunei-muara', 'mukim' => 'kota-batu',         'latitude' => 4.9250, 'longitude' => 114.9600, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0016', 'issue_type' => 'overflow', 'description' => 'Sump pump failure causing localised overflow.',                 'reporter_name' => 'Azizah Jumat',    'reporter_contact' => '+6738001016', 'location_address' => 'Kg Kilanas, BSB',                    'district' => 'brunei-muara', 'mukim' => 'kilanas',           'latitude' => 4.8750, 'longitude' => 114.9000, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0017', 'issue_type' => 'maintenance','description' => 'Drain grate missing; pedestrian hazard.',                      'reporter_name' => 'Fadzillah Ramli', 'reporter_contact' => '+6738001017', 'location_address' => 'Jalan Lumapas, BSB',                 'district' => 'brunei-muara', 'mukim' => 'lumapas',           'latitude' => 4.9100, 'longitude' => 114.8700, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0018', 'issue_type' => 'odor',     'description' => 'Sewage leak from cracked pipe beneath road.',                  'reporter_name' => 'Safri Hj Johari', 'reporter_contact' => '+6738001018', 'location_address' => 'Jalan Mentiri, BSB',                 'district' => 'brunei-muara', 'mukim' => 'mentiri',           'latitude' => 4.9600, 'longitude' => 114.9900, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0019', 'issue_type' => 'other',    'description' => 'Illegal dumping into drain near industrial area.',             'reporter_name' => 'Halimah Daud',    'reporter_contact' => '+6738001019', 'location_address' => 'Kawasan Industri Sungai Tilong',     'district' => 'brunei-muara', 'mukim' => 'berakas-b',         'latitude' => 4.9480, 'longitude' => 114.9350, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0020', 'issue_type' => 'blockage', 'description' => 'Plastic waste accumulation blocking drain outlet.',             'reporter_name' => 'Mustapha Pg Ali', 'reporter_contact' => '+6738001020', 'location_address' => 'Jalan Muara, Kg Salar',              'district' => 'brunei-muara', 'mukim' => 'saba',              'latitude' => 4.9550, 'longitude' => 115.0000, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0021', 'issue_type' => 'overflow', 'description' => 'Tidal effect causing reverse flow in coastal drain.',           'reporter_name' => 'Norshafinaz',     'reporter_contact' => '+6738001021', 'location_address' => 'Kg Serasa Waterfront',               'district' => 'brunei-muara', 'mukim' => 'serasa',            'latitude' => 4.9800, 'longitude' => 115.0550, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0022', 'issue_type' => 'maintenance','description' => 'Drain channel wall needs repointing; mortar deteriorating.',  'reporter_name' => 'Hafeeza Othman',  'reporter_contact' => '+6738001022', 'location_address' => 'Jalan Peramu, BSB',                  'district' => 'brunei-muara', 'mukim' => 'peramu',            'latitude' => 4.8850, 'longitude' => 114.9450, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0023', 'issue_type' => 'odor',     'description' => 'Stagnant water with sewage smell at road junction.',           'reporter_name' => 'Khairul Anwar',   'reporter_contact' => '+6738001023', 'location_address' => 'Jalan Pangkalan Batu, BSB',          'district' => 'brunei-muara', 'mukim' => 'pangkalan-batu',    'latitude' => 4.9200, 'longitude' => 115.0100, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0024', 'issue_type' => 'blockage', 'description' => 'Sand ingress from construction site blocking storm drain.',    'reporter_name' => 'Suriani Hassan',  'reporter_contact' => '+6738001024', 'location_address' => 'Jalan Tamoi, Gadong',                'district' => 'brunei-muara', 'mukim' => 'tamoi',             'latitude' => 4.9000, 'longitude' => 114.9050, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0025', 'issue_type' => 'overflow', 'description' => 'Burst pipe flooding access road to hospital.',                  'reporter_name' => 'Hj Bakar Latif',  'reporter_contact' => '+6738001025', 'location_address' => 'Jalan Putera, BSB',                  'district' => 'brunei-muara', 'mukim' => 'kianggeh',          'latitude' => 4.8900, 'longitude' => 114.9420, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0039', 'issue_type' => 'blockage', 'description' => 'Algae and moss growth partially blocking slow drain.',         'reporter_name' => 'Zuraidah Latif',  'reporter_contact' => '+6738001039', 'location_address' => 'Jalan Sungai Kedayan, BSB',          'district' => 'brunei-muara', 'mukim' => 'sungai-kedayan',    'latitude' => 4.8950, 'longitude' => 114.9300, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0040', 'issue_type' => 'overflow', 'description' => 'Overflow from septic tank into road surface.',                  'reporter_name' => 'Rasidah Hj Md',   'reporter_contact' => '+6738001040', 'location_address' => 'Kg Burong Pingai, BSB',              'district' => 'brunei-muara', 'mukim' => 'burong-pingai-ayer', 'latitude' => 4.8800, 'longitude' => 114.9500, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0041', 'issue_type' => 'maintenance','description' => 'Overgrown vegetation narrowing drain channel by 60%.',         'reporter_name' => 'Irwandi Hj Sali', 'reporter_contact' => '+6738001041', 'location_address' => 'Jalan Gadong A, BSB',                'district' => 'brunei-muara', 'mukim' => 'gadong-a',          'latitude' => 4.9050, 'longitude' => 114.9200, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0042', 'issue_type' => 'odor',     'description' => 'Residents complain of sewage smell at night only.',            'reporter_name' => 'Salmah Hamid',    'reporter_contact' => '+6738001042', 'location_address' => 'Kg Kilanas Lama, BSB',               'district' => 'brunei-muara', 'mukim' => 'kilanas',           'latitude' => 4.8720, 'longitude' => 114.8950, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0050', 'issue_type' => 'other',    'description' => 'Drain pump station malfunctioning; risk of widespread flooding.',  'reporter_name' => 'Hashim Pg Bakar', 'reporter_contact' => '+6738001050', 'location_address' => 'Stesen Pam Berakas, BSB',            'district' => 'brunei-muara', 'mukim' => 'berakas-b',         'latitude' => 4.9500, 'longitude' => 114.9400, 'status' => 'pending'],
 
-        // Weight districts so Brunei-Muara and Belait are hotspots (more incidents)
-        $districtWeights = [
-            'brunei-muara' => 45,
-            'belait' => 30,
-            'tutong' => 18,
-            'temburong' => 7,
+            // BELAIT DISTRICT (4.20-4.75 N, 114.15-114.50 E)
+            ['report_number' => 'RPT-STAT-0006', 'issue_type' => 'blockage', 'description' => 'Blocked culvert causing water to back up into homes.',          'reporter_name' => 'Roziah Lim',      'reporter_contact' => '+6738001006', 'location_address' => 'Seria Town Centre',                 'district' => 'belait',       'mukim' => 'seria',             'latitude' => 4.6062, 'longitude' => 114.3196, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0007', 'issue_type' => 'overflow', 'description' => 'Minor overflow from storm drain during heavy rain.',            'reporter_name' => 'Pg Hasri',        'reporter_contact' => '+6738001007', 'location_address' => 'Jalan McKerron, Kuala Belait',       'district' => 'belait',       'mukim' => 'kuala-belait',      'latitude' => 4.5836, 'longitude' => 114.1916, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0008', 'issue_type' => 'maintenance','description' => 'Sediment buildup reduces drain capacity by half.',              'reporter_name' => 'Norsaini Damit',  'reporter_contact' => '+6738001008', 'location_address' => 'Jalan Liang, Mukim Liang',           'district' => 'belait',       'mukim' => 'liang',             'latitude' => 4.7332, 'longitude' => 114.4189, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0009', 'issue_type' => 'odor',     'description' => 'Overwhelmingly strong sewage smell near school.',               'reporter_name' => 'Ruslan Ibrahim',  'reporter_contact' => '+6738001009', 'location_address' => 'Kg Melilas, Belait',                 'district' => 'belait',       'mukim' => 'melilas',           'latitude' => 4.4950, 'longitude' => 114.3730, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0026', 'issue_type' => 'blockage', 'description' => 'Drain pipe completely clogged; no water flowing.',              'reporter_name' => 'Ramlah Zakaria',  'reporter_contact' => '+6738001026', 'location_address' => 'Jalan Bukit Sawat, Belait',          'district' => 'belait',       'mukim' => 'bukit-sawat',       'latitude' => 4.6350, 'longitude' => 114.2750, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0027', 'issue_type' => 'overflow', 'description' => 'Low-lying area flooding after moderate rain.',                  'reporter_name' => 'Hj Amir Hamzah',  'reporter_contact' => '+6738001027', 'location_address' => 'Kg Labi, Belait',                    'district' => 'belait',       'mukim' => 'labi',              'latitude' => 4.2800, 'longitude' => 114.4283, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0028', 'issue_type' => 'maintenance','description' => 'Broken manhole cover on busy road needs urgent replacement.',  'reporter_name' => 'Zainah Mohd',     'reporter_contact' => '+6738001028', 'location_address' => 'Jalan Sukang, Belait',               'district' => 'belait',       'mukim' => 'sukang',            'latitude' => 4.3000, 'longitude' => 114.4500, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0029', 'issue_type' => 'odor',     'description' => 'Hydrogen sulfide smell near water treatment outfall.',         'reporter_name' => 'Azhar Kassim',    'reporter_contact' => '+6738001029', 'location_address' => 'Kg Kuala Balai, Belait',             'district' => 'belait',       'mukim' => 'kuala-balai',       'latitude' => 4.0453, 'longitude' => 114.1857, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0043', 'issue_type' => 'other',    'description' => 'Hazardous chemical discharge spotted in drain.',                'reporter_name' => 'Pg Zulkifli',     'reporter_contact' => '+6738001043', 'location_address' => 'Kawasan Perindustrian Seria',         'district' => 'belait',       'mukim' => 'seria',             'latitude' => 4.6000, 'longitude' => 114.3100, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0044', 'issue_type' => 'blockage', 'description' => 'Sand bar formed at drain outlet to river; flow completely stopped.','reporter_name' => 'Hj Salleh Daud','reporter_contact' => '+6738001044', 'location_address' => 'Tepi Sungai Belait, Kuala Belait',   'district' => 'belait',       'mukim' => 'kuala-belait',      'latitude' => 4.5900, 'longitude' => 114.1800, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0045', 'issue_type' => 'overflow', 'description' => 'Shallow overflow observed during rainstorm; receded quickly.',   'reporter_name' => 'Norhaslinda Pg',  'reporter_contact' => '+6738001045', 'location_address' => 'Jalan Seria-KB Highway, Liang',      'district' => 'belait',       'mukim' => 'liang',             'latitude' => 4.6900, 'longitude' => 114.4300, 'status' => 'resolved'],
+
+            // TUTONG DISTRICT (4.75-4.90 N, 114.55-114.75 E)
+            ['report_number' => 'RPT-STAT-0010', 'issue_type' => 'other',    'description' => 'Tree roots have broken into drain pipe causing obstruction.',  'reporter_name' => 'Zulfazli Hj Ali', 'reporter_contact' => '+6738001010', 'location_address' => 'Pekan Tutong Main Road',             'district' => 'tutong',       'mukim' => 'pekan-tutong',      'latitude' => 4.8077, 'longitude' => 114.6599, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0011', 'issue_type' => 'blockage', 'description' => 'Leaves and debris blocking roadside drain channel.',            'reporter_name' => 'Nurul Ain',       'reporter_contact' => '+6738001011', 'location_address' => 'Jalan Keriam, Tutong',               'district' => 'tutong',       'mukim' => 'keriam',            'latitude' => 4.7900, 'longitude' => 114.6800, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0012', 'issue_type' => 'overflow', 'description' => 'Main sewer overflowing onto road after flash flood.',           'reporter_name' => 'Hj Wardi',        'reporter_contact' => '+6738001012', 'location_address' => 'Jalan Rambai, Tutong',               'district' => 'tutong',       'mukim' => 'rambai',            'latitude' => 4.8200, 'longitude' => 114.6100, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0030', 'issue_type' => 'other',    'description' => 'Foreign objects found in sewage channel; investigation needed.','reporter_name' => 'Faizah Idris',    'reporter_contact' => '+6738001030', 'location_address' => 'Jalan Kiudang, Tutong',              'district' => 'tutong',       'mukim' => 'kiudang',           'latitude' => 4.7700, 'longitude' => 114.7000, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0031', 'issue_type' => 'blockage', 'description' => 'Bamboo roots encroaching into drainage pipe.',                 'reporter_name' => 'Hamidah Sabtu',   'reporter_contact' => '+6738001031', 'location_address' => 'Kg Lamunin, Tutong',                 'district' => 'tutong',       'mukim' => 'lamunin',           'latitude' => 4.8400, 'longitude' => 114.6300, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0032', 'issue_type' => 'overflow', 'description' => 'Flash flood overflow entering residential compound.',           'reporter_name' => 'Hj Masdi',        'reporter_contact' => '+6738001032', 'location_address' => 'Kg Tanjong Maya, Tutong',            'district' => 'tutong',       'mukim' => 'tanjong-maya',      'latitude' => 4.8600, 'longitude' => 114.5500, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0033', 'issue_type' => 'maintenance','description' => 'Culvert headwall erosion threatening road structure.',         'reporter_name' => 'Norlela Abidin',  'reporter_contact' => '+6738001033', 'location_address' => 'Jalan Telisai, Tutong',              'district' => 'tutong',       'mukim' => 'telisai',           'latitude' => 4.8800, 'longitude' => 114.5800, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0034', 'issue_type' => 'odor',     'description' => 'Stale sewage odor from blocked vent pipe.',                    'reporter_name' => 'Rokiah Ahmad',    'reporter_contact' => '+6738001034', 'location_address' => 'Kg Ukong, Tutong',                   'district' => 'tutong',       'mukim' => 'ukong',             'latitude' => 4.7500, 'longitude' => 114.6600, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0046', 'issue_type' => 'maintenance','description' => 'Exposed rebar in drain wall; rusting and weakening structure.',  'reporter_name' => 'Nuraini Hj Sani', 'reporter_contact' => '+6738001046', 'location_address' => 'Jalan Rambai Lama, Tutong',          'district' => 'tutong',       'mukim' => 'rambai',            'latitude' => 4.8250, 'longitude' => 114.6050, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0047', 'issue_type' => 'odor',     'description' => 'Foul smell from uncleaned grease trap at commercial area.',    'reporter_name' => 'Faridah Mohd',    'reporter_contact' => '+6738001047', 'location_address' => 'Pekan Tutong Commercial Zone',       'district' => 'tutong',       'mukim' => 'pekan-tutong',      'latitude' => 4.8050, 'longitude' => 114.6650, 'status' => 'in_progress'],
+
+            // TEMBURONG DISTRICT (4.55-4.80 N, 115.05-115.20 E) - CORRECTED TO STAY WITHIN BRUNEI
+            ['report_number' => 'RPT-STAT-0013', 'issue_type' => 'maintenance','description' => 'Drain wall has cracked and is at risk of collapse.',            'reporter_name' => 'Sharifah Mardiah','reporter_contact' => '+6738001013', 'location_address' => 'Kg Bangar, Temburong',               'district' => 'temburong',    'mukim' => 'bangar',            'latitude' => 4.7139, 'longitude' => 115.0700, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0014', 'issue_type' => 'odor',     'description' => 'Intermittent sewage odor near riverbank walkway.',              'reporter_name' => 'Dk Naimah',       'reporter_contact' => '+6738001014', 'location_address' => 'Kg Bokok, Temburong',                'district' => 'temburong',    'mukim' => 'bokok',             'latitude' => 4.6800, 'longitude' => 115.0900, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0035', 'issue_type' => 'blockage', 'description' => 'Entire culvert pipe collapsed blocking water flow.',            'reporter_name' => 'Julaini Hj Md',   'reporter_contact' => '+6738001035', 'location_address' => 'Jalan Amo, Temburong',               'district' => 'temburong',    'mukim' => 'amo',               'latitude' => 4.6500, 'longitude' => 115.1000, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0036', 'issue_type' => 'overflow', 'description' => 'Seasonal flooding worsened by inadequate drain capacity.',      'reporter_name' => 'Mariana Said',    'reporter_contact' => '+6738001036', 'location_address' => 'Kg Batu Apoi, Temburong',            'district' => 'temburong',    'mukim' => 'batu-apoi',         'latitude' => 4.5900, 'longitude' => 115.1500, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0037', 'issue_type' => 'maintenance','description' => 'Drain inspection hatch seized shut; maintenance access blocked.','reporter_name' => 'Norzailah Pg',    'reporter_contact' => '+6738001037', 'location_address' => 'Kg Labu, Temburong',                 'district' => 'temburong',    'mukim' => 'labu',              'latitude' => 4.7500, 'longitude' => 115.0600, 'status' => 'pending'],
+            ['report_number' => 'RPT-STAT-0038', 'issue_type' => 'odor',     'description' => 'Persistent stench near food stalls from drain overflow.',      'reporter_name' => 'Hasri Jumat',     'reporter_contact' => '+6738001038', 'location_address' => 'Pasar Bangar, Temburong',            'district' => 'temburong',    'mukim' => 'bangar',            'latitude' => 4.7200, 'longitude' => 115.0750, 'status' => 'in_progress'],
+            ['report_number' => 'RPT-STAT-0048', 'issue_type' => 'blockage', 'description' => 'Plastic bags caught on drain grate slowing water flow.',       'reporter_name' => 'Zainudin Hj Mus', 'reporter_contact' => '+6738001048', 'location_address' => 'Bangar Town, Temburong',             'district' => 'temburong',    'mukim' => 'bangar',            'latitude' => 4.7100, 'longitude' => 115.0680, 'status' => 'resolved'],
+            ['report_number' => 'RPT-STAT-0049', 'issue_type' => 'overflow', 'description' => 'Sewage overflow into playground area; health hazard.',          'reporter_name' => 'Norazimah Hj',    'reporter_contact' => '+6738001049', 'location_address' => 'Taman Labu, Temburong',              'district' => 'temburong',    'mukim' => 'labu',              'latitude' => 4.7600, 'longitude' => 115.0620, 'status' => 'in_progress'],
         ];
 
-        $issueTypes = ['blockage', 'overflow', 'odor', 'maintenance', 'other'];
-        $severities = ['low', 'medium', 'high', 'critical'];
-        $reportStatuses = ['new', 'new', 'in_progress', 'in_progress', 'resolved', 'resolved', 'resolved'];
+        foreach ($reports as $row) {
+            OperationsReport::updateOrCreate(
+                ['report_number' => $row['report_number']],
+                $row
+            );
+        }
 
-        $locationsByDistrict = [
-            'brunei-muara' => [
-                ['mukim' => 'gadong-a', 'address' => 'Jalan Gadong, near commercial area', 'lat' => 4.9012, 'lng' => 114.9089],
-                ['mukim' => 'gadong-b', 'address' => 'Kampung Gadong, Jalan Pasir', 'lat' => 4.8980, 'lng' => 114.9120],
-                ['mukim' => 'sengkurong', 'address' => 'Kampung Sengkurong, Jalan Bengkurong', 'lat' => 4.8850, 'lng' => 114.8210],
-                ['mukim' => 'sengkurong', 'address' => 'Jalan Sengkurong, near school', 'lat' => 4.8820, 'lng' => 114.8180],
-                ['mukim' => 'berakas-a', 'address' => 'Jalan Berakas, Berakas', 'lat' => 4.9450, 'lng' => 114.9280],
-                ['mukim' => 'berakas-b', 'address' => 'Kampung Berakas, residential zone', 'lat' => 4.9420, 'lng' => 114.9320],
-                ['mukim' => 'kianggeh', 'address' => 'Kianggeh, Bandar area', 'lat' => 4.8901, 'lng' => 114.9416],
-                ['mukim' => 'mentiri', 'address' => 'Kampung Mentiri, Jalan Muara', 'lat' => 4.9650, 'lng' => 115.0100],
-                ['mukim' => 'serasa', 'address' => 'Serasa, near port', 'lat' => 4.9720, 'lng' => 115.0550],
-                ['mukim' => 'kota-batu', 'address' => 'Kota Batu, historical area', 'lat' => 4.8780, 'lng' => 114.9480],
-                ['mukim' => 'lumapas', 'address' => 'Kampung Lumapas', 'lat' => 4.8550, 'lng' => 114.9650],
-                ['mukim' => 'gadong-a', 'address' => 'Gadong Central, behind mall', 'lat' => 4.9030, 'lng' => 114.9050],
-            ],
-            'belait' => [
-                ['mukim' => 'seria', 'address' => 'Pump Station, Seria', 'lat' => 4.6142, 'lng' => 114.3194],
-                ['mukim' => 'seria', 'address' => 'Jalan Bunga Raya, Seria', 'lat' => 4.6100, 'lng' => 114.3220],
-                ['mukim' => 'kuala-belait', 'address' => 'Kuala Belait town centre', 'lat' => 4.5833, 'lng' => 114.1833],
-                ['mukim' => 'kuala-belait', 'address' => 'Kampung Kuala Belait, Jalan Sungai', 'lat' => 4.5810, 'lng' => 114.1880],
-                ['mukim' => 'liang', 'address' => 'Kampung Liang', 'lat' => 4.6520, 'lng' => 114.4120],
-                ['mukim' => 'labi', 'address' => 'Kampung Labi, Labi Road', 'lat' => 4.4200, 'lng' => 114.4500],
-                ['mukim' => 'seria', 'address' => 'Seria Bypass, industrial area', 'lat' => 4.6180, 'lng' => 114.3150],
-                ['mukim' => 'kuala-balai', 'address' => 'Kuala Balai village', 'lat' => 4.5500, 'lng' => 114.3500],
-            ],
-            'tutong' => [
-                ['mukim' => 'pekan-tutong', 'address' => 'Pekan Tutong, town centre', 'lat' => 4.8028, 'lng' => 114.6492],
-                ['mukim' => 'telisai', 'address' => 'Jalan Telisai, Kampung Telisai', 'lat' => 4.7200, 'lng' => 114.5800],
-                ['mukim' => 'keriam', 'address' => 'Kampung Keriam', 'lat' => 4.7800, 'lng' => 114.6200],
-                ['mukim' => 'lamunin', 'address' => 'Kampung Lamunin', 'lat' => 4.6500, 'lng' => 114.7000],
-                ['mukim' => 'pekan-tutong', 'address' => 'Tutong residential, Jalan Bukit', 'lat' => 4.8050, 'lng' => 114.6520],
-            ],
-            'temburong' => [
-                ['mukim' => 'bangar', 'address' => 'Bangar town, Temburong', 'lat' => 4.7081, 'lng' => 115.0717],
-                ['mukim' => 'batu-apoi', 'address' => 'Kampung Batu Apoi', 'lat' => 4.6800, 'lng' => 115.1000],
-                ['mukim' => 'labu', 'address' => 'Kampung Labu', 'lat' => 4.6200, 'lng' => 115.1500],
-                ['mukim' => 'bangar', 'address' => 'Jalan Bangar, near river', 'lat' => 4.7100, 'lng' => 115.0750],
-            ],
+        $reportIds = OperationsReport::whereIn('report_number', array_column($reports, 'report_number'))
+            ->pluck('id')
+            ->values();
+
+        $workOrders = [
+            // BRUNEI-MUARA
+            ['work_order_number' => 'WO-STAT-0001', 'type' => 'blockage',   'priority' => 'high',   'description' => 'Clear severe blockage in main Gadong drain.',              'location_address' => 'Jalan Gadong, BSB',                 'district' => 'brunei-muara', 'mukim' => 'gadong-b',          'latitude' => 4.9036, 'longitude' => 114.9197, 'status' => 'pending',     'report_index' => 0],
+            ['work_order_number' => 'WO-STAT-0002', 'type' => 'overflow',   'priority' => 'high',   'description' => 'Pump out overflow and inspect manhole seal.',              'location_address' => 'Kg Sungai Kebun',                   'district' => 'brunei-muara', 'mukim' => 'sungai-kebun',      'latitude' => 4.8942, 'longitude' => 114.9123, 'status' => 'in_progress', 'report_index' => 1],
+            ['work_order_number' => 'WO-STAT-0003', 'type' => 'maintenance','priority' => 'medium', 'description' => 'Replace cracked drain cover on Jalan Tutong.',            'location_address' => 'Jalan Tutong, Sengkurong',           'district' => 'brunei-muara', 'mukim' => 'sengkurong',        'latitude' => 4.9161, 'longitude' => 114.8412, 'status' => 'completed',   'report_index' => 2],
+            ['work_order_number' => 'WO-STAT-0004', 'type' => 'odor',       'priority' => 'low',    'description' => 'Inspect and deodorise drain in Berakas park area.',       'location_address' => 'Taman Berakas, BSB',                 'district' => 'brunei-muara', 'mukim' => 'berakas-a',         'latitude' => 4.9412, 'longitude' => 114.9281, 'status' => 'pending',     'report_index' => 3],
+            ['work_order_number' => 'WO-STAT-0005', 'type' => 'other',      'priority' => 'high',   'description' => 'Restore and reinstate collapsed drain cover Serasa.',     'location_address' => 'Jalan Muara, Kg Serasa',             'district' => 'brunei-muara', 'mukim' => 'serasa',            'latitude' => 4.9701, 'longitude' => 115.0514, 'status' => 'in_progress', 'report_index' => 4],
+            ['work_order_number' => 'WO-STAT-0015', 'type' => 'blockage',   'priority' => 'high',   'description' => 'Remove construction debris from Kota Batu main drain.',   'location_address' => 'Jalan Kota Batu, BSB',               'district' => 'brunei-muara', 'mukim' => 'kota-batu',         'latitude' => 4.9250, 'longitude' => 114.9600, 'status' => 'in_progress', 'report_index' => 14],
+            ['work_order_number' => 'WO-STAT-0016', 'type' => 'overflow',   'priority' => 'medium', 'description' => 'Repair sump pump failure causing Kilanas overflow.',       'location_address' => 'Kg Kilanas, BSB',                    'district' => 'brunei-muara', 'mukim' => 'kilanas',           'latitude' => 4.8750, 'longitude' => 114.9000, 'status' => 'pending',     'report_index' => 15],
+            ['work_order_number' => 'WO-STAT-0017', 'type' => 'maintenance','priority' => 'low',    'description' => 'Install replacement drain grate along Jalan Lumapas.',    'location_address' => 'Jalan Lumapas, BSB',                 'district' => 'brunei-muara', 'mukim' => 'lumapas',           'latitude' => 4.9100, 'longitude' => 114.8700, 'status' => 'completed',   'report_index' => 16],
+            ['work_order_number' => 'WO-STAT-0018', 'type' => 'odor',       'priority' => 'high',   'description' => 'Excavate and repair cracked sewage pipe under Mentiri Rd.','location_address' => 'Jalan Mentiri, BSB',                 'district' => 'brunei-muara', 'mukim' => 'mentiri',           'latitude' => 4.9600, 'longitude' => 114.9900, 'status' => 'in_progress', 'report_index' => 17],
+            ['work_order_number' => 'WO-STAT-0019', 'type' => 'other',      'priority' => 'medium', 'description' => 'Investigate and document illegal dumping at Tilong zone.', 'location_address' => 'Kawasan Industri Sungai Tilong',     'district' => 'brunei-muara', 'mukim' => 'berakas-b',         'latitude' => 4.9480, 'longitude' => 114.9350, 'status' => 'pending',     'report_index' => 18],
+            ['work_order_number' => 'WO-STAT-0020', 'type' => 'blockage',   'priority' => 'high',   'description' => 'Clear plastic waste from drain outlet Kg Salar.',        'location_address' => 'Jalan Muara, Kg Salar',              'district' => 'brunei-muara', 'mukim' => 'saba',              'latitude' => 4.9550, 'longitude' => 115.0000, 'status' => 'completed',   'report_index' => 19],
+            ['work_order_number' => 'WO-STAT-0021', 'type' => 'overflow',   'priority' => 'high',   'description' => 'Install tidal gate to prevent reverse flow at Serasa.',   'location_address' => 'Kg Serasa Waterfront',               'district' => 'brunei-muara', 'mukim' => 'serasa',            'latitude' => 4.9800, 'longitude' => 115.0550, 'status' => 'in_progress', 'report_index' => 20],
+            ['work_order_number' => 'WO-STAT-0022', 'type' => 'maintenance','priority' => 'low',    'description' => 'Repoint drain channel wall mortar in Peramu area.',       'location_address' => 'Jalan Peramu, BSB',                  'district' => 'brunei-muara', 'mukim' => 'peramu',            'latitude' => 4.8850, 'longitude' => 114.9450, 'status' => 'pending',     'report_index' => 21],
+            ['work_order_number' => 'WO-STAT-0023', 'type' => 'odor',       'priority' => 'low',    'description' => 'Flush drain and apply treatment at Pangkalan Batu junc.', 'location_address' => 'Jalan Pangkalan Batu, BSB',          'district' => 'brunei-muara', 'mukim' => 'pangkalan-batu',    'latitude' => 4.9200, 'longitude' => 115.0100, 'status' => 'completed',   'report_index' => 22],
+            ['work_order_number' => 'WO-STAT-0024', 'type' => 'blockage',   'priority' => 'medium', 'description' => 'Remove sand ingress from construction site drain Tamoi.',  'location_address' => 'Jalan Tamoi, Gadong',                'district' => 'brunei-muara', 'mukim' => 'tamoi',             'latitude' => 4.9000, 'longitude' => 114.9050, 'status' => 'pending',     'report_index' => 23],
+            ['work_order_number' => 'WO-STAT-0025', 'type' => 'overflow',   'priority' => 'high',   'description' => 'Emergency repair of burst pipe flooding hospital road.',   'location_address' => 'Jalan Putera, BSB',                  'district' => 'brunei-muara', 'mukim' => 'kianggeh',          'latitude' => 4.8900, 'longitude' => 114.9420, 'status' => 'in_progress', 'report_index' => 24],
+            ['work_order_number' => 'WO-STAT-0039', 'type' => 'blockage',   'priority' => 'low',    'description' => 'Scrub algae and moss from Sungai Kedayan drain.',          'location_address' => 'Jalan Sungai Kedayan, BSB',          'district' => 'brunei-muara', 'mukim' => 'sungai-kedayan',    'latitude' => 4.8950, 'longitude' => 114.9300, 'status' => 'completed',   'report_index' => 38],
+            ['work_order_number' => 'WO-STAT-0040', 'type' => 'overflow',   'priority' => 'high',   'description' => 'Pump out and repair septic tank overflow Burong Pingai.',  'location_address' => 'Kg Burong Pingai, BSB',              'district' => 'brunei-muara', 'mukim' => 'burong-pingai-ayer', 'latitude' => 4.8800, 'longitude' => 114.9500, 'status' => 'pending',     'report_index' => 39],
+            ['work_order_number' => 'WO-STAT-0041', 'type' => 'maintenance','priority' => 'medium', 'description' => 'Clear vegetation encroaching drain channel Gadong A.',     'location_address' => 'Jalan Gadong A, BSB',                'district' => 'brunei-muara', 'mukim' => 'gadong-a',          'latitude' => 4.9050, 'longitude' => 114.9200, 'status' => 'in_progress', 'report_index' => 40],
+            ['work_order_number' => 'WO-STAT-0042', 'type' => 'odor',       'priority' => 'low',    'description' => 'Night-time drain inspection and flushing in Kilanas.',     'location_address' => 'Kg Kilanas Lama, BSB',               'district' => 'brunei-muara', 'mukim' => 'kilanas',           'latitude' => 4.8720, 'longitude' => 114.8950, 'status' => 'completed',   'report_index' => 41],
+            ['work_order_number' => 'WO-STAT-0050', 'type' => 'other',      'priority' => 'high',   'description' => 'Emergency service call to pump station Berakas.',          'location_address' => 'Stesen Pam Berakas, BSB',            'district' => 'brunei-muara', 'mukim' => 'berakas-b',         'latitude' => 4.9500, 'longitude' => 114.9400, 'status' => 'pending',     'report_index' => 49],
+
+            // BELAIT
+            ['work_order_number' => 'WO-STAT-0006', 'type' => 'blockage',   'priority' => 'high',   'description' => 'Jet-wash blocked culvert causing residential flooding.',   'location_address' => 'Seria Town Centre',                 'district' => 'belait',       'mukim' => 'seria',             'latitude' => 4.6062, 'longitude' => 114.3196, 'status' => 'pending',     'report_index' => 5],
+            ['work_order_number' => 'WO-STAT-0007', 'type' => 'overflow',   'priority' => 'medium', 'description' => 'Inspect storm drain outlet and clear minor blockages.',   'location_address' => 'Jalan McKerron, Kuala Belait',       'district' => 'belait',       'mukim' => 'kuala-belait',      'latitude' => 4.5836, 'longitude' => 114.1916, 'status' => 'completed',   'report_index' => 6],
+            ['work_order_number' => 'WO-STAT-0008', 'type' => 'maintenance','priority' => 'medium', 'description' => 'Desilt drain channel in Mukim Liang.',                   'location_address' => 'Jalan Liang, Mukim Liang',           'district' => 'belait',       'mukim' => 'liang',             'latitude' => 4.7332, 'longitude' => 114.4189, 'status' => 'pending',     'report_index' => 7],
+            ['work_order_number' => 'WO-STAT-0009', 'type' => 'odor',       'priority' => 'high',   'description' => 'Locate and repair sewage leak near school Melilas.',      'location_address' => 'Kg Melilas, Belait',                 'district' => 'belait',       'mukim' => 'melilas',           'latitude' => 4.4950, 'longitude' => 114.3730, 'status' => 'in_progress', 'report_index' => 8],
+            ['work_order_number' => 'WO-STAT-0026', 'type' => 'blockage',   'priority' => 'high',   'description' => 'Hydrojet clogged pipe at Bukit Sawat.',                   'location_address' => 'Jalan Bukit Sawat, Belait',          'district' => 'belait',       'mukim' => 'bukit-sawat',       'latitude' => 4.6350, 'longitude' => 114.2750, 'status' => 'pending',     'report_index' => 25],
+            ['work_order_number' => 'WO-STAT-0027', 'type' => 'overflow',   'priority' => 'low',    'description' => 'Grade and raise low-lying Labi road drain edges.',         'location_address' => 'Kg Labi, Belait',                    'district' => 'belait',       'mukim' => 'labi',              'latitude' => 4.2800, 'longitude' => 114.4283, 'status' => 'completed',   'report_index' => 26],
+            ['work_order_number' => 'WO-STAT-0028', 'type' => 'maintenance','priority' => 'high',   'description' => 'Replace broken manhole cover on Sukang busy road.',       'location_address' => 'Jalan Sukang, Belait',               'district' => 'belait',       'mukim' => 'sukang',            'latitude' => 4.3000, 'longitude' => 114.4500, 'status' => 'in_progress', 'report_index' => 27],
+            ['work_order_number' => 'WO-STAT-0029', 'type' => 'odor',       'priority' => 'high',   'description' => 'Neutralise H2S outfall and inspect treatment facility.',   'location_address' => 'Kg Kuala Balai, Belait',             'district' => 'belait',       'mukim' => 'kuala-balai',       'latitude' => 4.0453, 'longitude' => 114.1857, 'status' => 'pending',     'report_index' => 28],
+            ['work_order_number' => 'WO-STAT-0043', 'type' => 'other',      'priority' => 'high',   'description' => 'Chemical spill containment and drain decontamination.',    'location_address' => 'Kawasan Perindustrian Seria',         'district' => 'belait',       'mukim' => 'seria',             'latitude' => 4.6000, 'longitude' => 114.3100, 'status' => 'pending',     'report_index' => 42],
+            ['work_order_number' => 'WO-STAT-0044', 'type' => 'blockage',   'priority' => 'high',   'description' => 'Dredge sand bar at river outlet near Kuala Belait.',      'location_address' => 'Tepi Sungai Belait, Kuala Belait',   'district' => 'belait',       'mukim' => 'kuala-belait',      'latitude' => 4.5900, 'longitude' => 114.1800, 'status' => 'in_progress', 'report_index' => 43],
+            ['work_order_number' => 'WO-STAT-0045', 'type' => 'overflow',   'priority' => 'low',    'description' => 'Inspect Liang highway drain post-storm; minor works.',      'location_address' => 'Jalan Seria-KB Highway, Liang',      'district' => 'belait',       'mukim' => 'liang',             'latitude' => 4.6900, 'longitude' => 114.4300, 'status' => 'completed',   'report_index' => 44],
+
+            // TUTONG
+            ['work_order_number' => 'WO-STAT-0010', 'type' => 'other',      'priority' => 'medium', 'description' => 'Remove tree roots from drain pipe in Tutong town.',      'location_address' => 'Pekan Tutong Main Road',             'district' => 'tutong',       'mukim' => 'pekan-tutong',      'latitude' => 4.8077, 'longitude' => 114.6599, 'status' => 'completed',   'report_index' => 9],
+            ['work_order_number' => 'WO-STAT-0011', 'type' => 'blockage',   'priority' => 'low',    'description' => 'Clear leaf and debris buildup from Jalan Keriam drain.',  'location_address' => 'Jalan Keriam, Tutong',               'district' => 'tutong',       'mukim' => 'keriam',            'latitude' => 4.7900, 'longitude' => 114.6800, 'status' => 'pending',     'report_index' => 10],
+            ['work_order_number' => 'WO-STAT-0012', 'type' => 'overflow',   'priority' => 'high',   'description' => 'Emergency sewer bypass during Rambai flash flood event.',  'location_address' => 'Jalan Rambai, Tutong',               'district' => 'tutong',       'mukim' => 'rambai',            'latitude' => 4.8200, 'longitude' => 114.6100, 'status' => 'in_progress', 'report_index' => 11],
+            ['work_order_number' => 'WO-STAT-0030', 'type' => 'other',      'priority' => 'medium', 'description' => 'CCTV survey of sewage channel for foreign objects.',       'location_address' => 'Jalan Kiudang, Tutong',              'district' => 'tutong',       'mukim' => 'kiudang',           'latitude' => 4.7700, 'longitude' => 114.7000, 'status' => 'completed',   'report_index' => 29],
+            ['work_order_number' => 'WO-STAT-0031', 'type' => 'blockage',   'priority' => 'low',    'description' => 'Cut and remove bamboo roots from drain pipe Lamunin.',   'location_address' => 'Kg Lamunin, Tutong',                 'district' => 'tutong',       'mukim' => 'lamunin',           'latitude' => 4.8400, 'longitude' => 114.6300, 'status' => 'pending',     'report_index' => 30],
+            ['work_order_number' => 'WO-STAT-0032', 'type' => 'overflow',   'priority' => 'high',   'description' => 'Deploy sandbags and pump at Tanjong Maya compound.',       'location_address' => 'Kg Tanjong Maya, Tutong',            'district' => 'tutong',       'mukim' => 'tanjong-maya',      'latitude' => 4.8600, 'longitude' => 114.5500, 'status' => 'in_progress', 'report_index' => 31],
+            ['work_order_number' => 'WO-STAT-0033', 'type' => 'maintenance','priority' => 'medium', 'description' => 'Repair culvert headwall erosion at Jalan Telisai.',        'location_address' => 'Jalan Telisai, Tutong',              'district' => 'tutong',       'mukim' => 'telisai',           'latitude' => 4.8800, 'longitude' => 114.5800, 'status' => 'completed',   'report_index' => 32],
+            ['work_order_number' => 'WO-STAT-0034', 'type' => 'odor',       'priority' => 'low',    'description' => 'Clear and flush blocked vent pipe in Ukong village.',      'location_address' => 'Kg Ukong, Tutong',                   'district' => 'tutong',       'mukim' => 'ukong',             'latitude' => 4.7500, 'longitude' => 114.6600, 'status' => 'pending',     'report_index' => 33],
+            ['work_order_number' => 'WO-STAT-0046', 'type' => 'maintenance','priority' => 'medium', 'description' => 'Reinforce and coat exposed rebar in Rambai drain wall.',   'location_address' => 'Jalan Rambai Lama, Tutong',          'district' => 'tutong',       'mukim' => 'rambai',            'latitude' => 4.8250, 'longitude' => 114.6050, 'status' => 'pending',     'report_index' => 45],
+            ['work_order_number' => 'WO-STAT-0047', 'type' => 'odor',       'priority' => 'medium', 'description' => 'Clean grease traps and flush commercial drains Tutong.',   'location_address' => 'Pekan Tutong Commercial Zone',       'district' => 'tutong',       'mukim' => 'pekan-tutong',      'latitude' => 4.8050, 'longitude' => 114.6650, 'status' => 'in_progress', 'report_index' => 46],
+
+            // TEMBURONG
+            ['work_order_number' => 'WO-STAT-0013', 'type' => 'maintenance','priority' => 'high',   'description' => 'Stabilise and repair cracked drain wall in Bangar.',      'location_address' => 'Kg Bangar, Temburong',               'district' => 'temburong',    'mukim' => 'bangar',            'latitude' => 4.7139, 'longitude' => 115.0700, 'status' => 'pending',     'report_index' => 12],
+            ['work_order_number' => 'WO-STAT-0014', 'type' => 'odor',       'priority' => 'low',    'description' => 'Flush and deodorise Bokok riverbank drain.',              'location_address' => 'Kg Bokok, Temburong',                'district' => 'temburong',    'mukim' => 'bokok',             'latitude' => 4.6800, 'longitude' => 115.0900, 'status' => 'completed',   'report_index' => 13],
+            ['work_order_number' => 'WO-STAT-0035', 'type' => 'blockage',   'priority' => 'high',   'description' => 'Excavate and replace collapsed culvert pipe in Amo.',     'location_address' => 'Jalan Amo, Temburong',               'district' => 'temburong',    'mukim' => 'amo',               'latitude' => 4.6500, 'longitude' => 115.1000, 'status' => 'in_progress', 'report_index' => 34],
+            ['work_order_number' => 'WO-STAT-0036', 'type' => 'overflow',   'priority' => 'medium', 'description' => 'Upsize drain channel capacity at Batu Apoi area.',         'location_address' => 'Kg Batu Apoi, Temburong',            'district' => 'temburong',    'mukim' => 'batu-apoi',         'latitude' => 4.5900, 'longitude' => 115.1500, 'status' => 'completed',   'report_index' => 35],
+            ['work_order_number' => 'WO-STAT-0037', 'type' => 'maintenance','priority' => 'high',   'description' => 'Unseize and service inspection hatch in Labu.',            'location_address' => 'Kg Labu, Temburong',                 'district' => 'temburong',    'mukim' => 'labu',              'latitude' => 4.7500, 'longitude' => 115.0600, 'status' => 'pending',     'report_index' => 36],
+            ['work_order_number' => 'WO-STAT-0038', 'type' => 'odor',       'priority' => 'high',   'description' => 'Resolve overflow source causing odour at Pasar Bangar.',  'location_address' => 'Pasar Bangar, Temburong',            'district' => 'temburong',    'mukim' => 'bangar',            'latitude' => 4.7200, 'longitude' => 115.0750, 'status' => 'in_progress', 'report_index' => 37],
+            ['work_order_number' => 'WO-STAT-0048', 'type' => 'blockage',   'priority' => 'low',    'description' => 'Clear plastic bags from drain grate in Bangar town.',      'location_address' => 'Bangar Town, Temburong',             'district' => 'temburong',    'mukim' => 'bangar',            'latitude' => 4.7100, 'longitude' => 115.0680, 'status' => 'completed',   'report_index' => 47],
+            ['work_order_number' => 'WO-STAT-0049', 'type' => 'overflow',   'priority' => 'high',   'description' => 'Sanitise playground and repair sewage line in Labu.',      'location_address' => 'Taman Labu, Temburong',              'district' => 'temburong',    'mukim' => 'labu',              'latitude' => 4.7600, 'longitude' => 115.0620, 'status' => 'in_progress', 'report_index' => 48],
         ];
 
-        $reporterNames = ['Ahmad bin Abdullah', 'Siti Nurhaliza', 'Mohammad Hassan', 'Linda Wong', 'Abdul Rahman', 'Noraini binti Omar', 'James Lee', 'Fatimah binti Ali', 'Public Works Monitor', 'Resident Committee'];
+        $now = now();
 
-        $reports = [];
-        $now = Carbon::now();
-        $reportId = 0;
+        foreach ($workOrders as $row) {
+            $reportId = $reportIds->get($row['report_index']) ?? null;
 
-        foreach (range(1, 55) as $i) {
-            $district = $this->weightedRandom($districtWeights);
-            $locations = $locationsByDistrict[$district] ?? $locationsByDistrict['brunei-muara'];
-            $loc = $locations[array_rand($locations)];
-
-            $issueType = $issueTypes[array_rand($issueTypes)];
-            $severity = $severities[array_rand($severities)];
-            $status = $reportStatuses[array_rand($reportStatuses)];
-
-            // Keep rows inside the current calendar month so "This month" on Statistics matches seeded data
-            $createdAt = $this->randomTimestampInCurrentMonth($now);
-
-            $report = OperationsReport::create([
-                'report_number' => OperationsReport::generateReportNumber(),
-                'issue_type' => $issueType,
-                'severity' => $severity,
-                'description' => 'Report #' . ($reportId + 1) . ': ' . ucfirst($issueType) . ' at ' . $loc['address'],
-                'reporter_name' => $reporterNames[array_rand($reporterNames)],
-                'reporter_contact' => '+673 7' . rand(10, 99) . ' ' . rand(1000, 9999),
-                'location_address' => $loc['address'],
-                'district' => $district,
-                'mukim' => $loc['mukim'],
-                'latitude' => $loc['lat'] + (rand(-100, 100) / 10000),
-                'longitude' => $loc['lng'] + (rand(-100, 100) / 10000),
-                'status' => $status,
-                'created_at' => $createdAt,
-                'updated_at' => $createdAt,
-            ]);
-            $reports[] = $report;
-            $reportId++;
-        }
-
-        $woTypes = ['Blockage Removal', 'Emergency Overflow Response', 'Maintenance', 'Inspection', 'Pump Repair', 'Line Clearing'];
-        $woPriorities = ['low', 'medium', 'medium', 'high', 'high', 'critical'];
-        $woStatuses = ['pending', 'pending', 'assigned', 'in_progress', 'on_the_way', 'on_site', 'completed', 'completed', 'completed', 'cancelled'];
-
-        $usedReportIds = [];
-        foreach (range(1, 45) as $i) {
-            $district = $this->weightedRandom($districtWeights);
-            $locations = $locationsByDistrict[$district] ?? $locationsByDistrict['brunei-muara'];
-            $loc = $locations[array_rand($locations)];
-
-            $status = $woStatuses[array_rand($woStatuses)];
-            $priority = $woPriorities[array_rand($woPriorities)];
-            $type = $woTypes[array_rand($woTypes)];
-
-            $createdAt = $this->randomTimestampInCurrentMonth($now);
-            $report = null;
-            if (rand(1, 100) <= 50 && count($usedReportIds) < count($reports)) {
-                $candidates = array_filter($reports, fn ($r) => ! in_array($r->id, $usedReportIds));
-                if (! empty($candidates)) {
-                    $report = $candidates[array_rand($candidates)];
-                    $usedReportIds[] = $report->id;
-                }
+            $timestamps = [];
+            if (in_array($row['status'], ['in_progress', 'completed'])) {
+                $timestamps['assigned_at'] = $now->copy()->subDays(3);
+                $timestamps['started_at']  = $now->copy()->subDays(2);
+            }
+            if ($row['status'] === 'completed') {
+                $timestamps['completed_at'] = $now->copy()->subDays(1);
             }
 
-            $assignedAt = in_array($status, ['assigned', 'in_progress', 'on_the_way', 'on_site', 'completed']) ? $createdAt->copy()->addHours(rand(1, 24)) : null;
-            $startedAt = in_array($status, ['in_progress', 'on_the_way', 'on_site', 'completed']) ? ($assignedAt ? $assignedAt->copy()->addMinutes(rand(15, 120)) : $createdAt->copy()->addHours(2)) : null;
-            $completedAt = $status === 'completed' ? ($startedAt ? $startedAt->copy()->addHours(rand(1, 8)) : $createdAt->copy()->addDays(1)) : null;
-
-            WorkOrder::create([
-                'work_order_number' => WorkOrder::generateWorkOrderNumber(),
-                'report_id' => $report?->id,
-                'crew_id' => null,
-                'type' => $type,
-                'priority' => $priority,
-                'location_address' => $loc['address'],
-                'district' => $district,
-                'mukim' => $loc['mukim'],
-                'latitude' => $loc['lat'] + (rand(-80, 80) / 10000),
-                'longitude' => $loc['lng'] + (rand(-80, 80) / 10000),
-                'description' => $type . ' – ' . $loc['address'],
-                'notes' => $status === 'completed' ? 'Job completed and signed off.' : null,
-                'status' => $status,
-                'assigned_at' => $assignedAt,
-                'started_at' => $startedAt,
-                'completed_at' => $completedAt,
-                'created_at' => $createdAt,
-                'updated_at' => $completedAt ?? $startedAt ?? $assignedAt ?? $createdAt,
-            ]);
+            WorkOrder::updateOrCreate(
+                ['work_order_number' => $row['work_order_number']],
+                array_merge([
+                    'report_id'        => $reportId,
+                    'crew_id'          => null,
+                    'type'             => $row['type'],
+                    'priority'         => $row['priority'],
+                    'location_address' => $row['location_address'],
+                    'district'         => $row['district'],
+                    'mukim'            => $row['mukim'],
+                    'latitude'         => $row['latitude'],
+                    'longitude'        => $row['longitude'],
+                    'description'      => $row['description'],
+                    'notes'            => null,
+                    'status'           => $row['status'],
+                ], $timestamps)
+            );
         }
 
-        $this->command->info('Seeded ' . count($reports) . ' reports and 45 work orders. Hotspots: Brunei-Muara and Belait.');
-    }
-
-    private function randomTimestampInCurrentMonth(Carbon $now): Carbon
-    {
-        $start = $now->copy()->startOfMonth();
-        $end = $now->copy();
-        $seconds = max(1, (int) $start->diffInSeconds($end));
-
-        return $start->copy()->addSeconds(random_int(0, $seconds));
-    }
-
-    private function weightedRandom(array $weights): string
-    {
-        $total = array_sum($weights);
-        $r = rand(1, (int) $total);
-        foreach ($weights as $key => $w) {
-            $r -= $w;
-            if ($r <= 0) {
-                return $key;
-            }
-        }
-        return array_key_first($weights);
+        $this->command->info('StatisticsSeeder: seeded 50 operations reports and 50 work orders.');
     }
 }

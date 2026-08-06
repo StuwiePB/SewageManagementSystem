@@ -61,7 +61,21 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::authenticateUsing(function (Request $request) {
             $field = Fortify::username();
-            $user = User::where($field, $request->input($field))->first();
+            $identifier = trim((string) $request->input($field));
+            $user = null;
+
+            if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+                $user = User::where('email', $identifier)->first();
+            } else {
+                $localDigits = $this->extractBruneiLocalDigits($identifier);
+                if ($localDigits !== null) {
+                    $fullDigits = '673'.$localDigits;
+                    $user = User::whereRaw(
+                        "REPLACE(REPLACE(REPLACE(COALESCE(phone, ''), '+', ''), ' ', ''), '-', '') = ?",
+                        [$fullDigits]
+                    )->first();
+                }
+            }
 
             if (! $user || ! Hash::check($request->input('password'), $user->password)) {
                 return null;
@@ -106,7 +120,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::registerView(fn () => view('signup'));
 >>>>>>> 3wayfusionn-(use-this)
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
-        Fortify::requestPasswordResetLinkView(fn () => view('pages::auth.forgot-password'));
+        Fortify::requestPasswordResetLinkView(fn () => view('signup'));
     }
 
     /**
@@ -123,5 +137,19 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
+    }
+
+    private function extractBruneiLocalDigits(string $value): ?string
+    {
+        $digits = preg_replace('/\D+/', '', $value);
+        if (! is_string($digits) || $digits === '') {
+            return null;
+        }
+
+        if (str_starts_with($digits, '673')) {
+            $digits = substr($digits, 3);
+        }
+
+        return strlen($digits) === 7 ? $digits : null;
     }
 }

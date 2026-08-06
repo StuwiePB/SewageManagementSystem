@@ -23,6 +23,7 @@ class PreferenceController extends Controller
         }
         if ($request->has('language')) {
             $updates['preference_language'] = $request->language;
+            session(['locale' => $request->language]);
         }
         if ($request->has('anonymous')) {
             $updates['preference_anonymous'] = $request->anonymous;
@@ -30,8 +31,14 @@ class PreferenceController extends Controller
 
         if (! empty($updates)) {
             $user->update($updates);
+            $user->refresh();
         }
 
-        return response()->json(['ok' => true]);
+        return response()->json([
+            'ok' => true,
+            'appearance' => $user->preference_appearance ?? 'light',
+            'language' => $user->preference_language ?? 'ms',
+            'anonymous' => $user->preference_anonymous ?? 'nonanonymous',
+        ]);
     }
 }

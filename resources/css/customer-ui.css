@@ -1,0 +1,439 @@
+/**
+ * BruDMS customer mobile UI — uses theme variables (light + dark).
+ * Primary white, secondary light grey, tertiary light blue (light mode).
+ */
+
+.brudms-customer-ui {
+    color: var(--text-primary);
+}
+
+/* —— Typography —— */
+.brudms-customer-ui .cust-title,
+.brudms-customer-ui .cust-section-title {
+    color: var(--text-primary) !important;
+    font-family: Poppins, sans-serif;
+}
+
+.brudms-customer-ui .cust-subtitle,
+.brudms-customer-ui .cust-label,
+.brudms-customer-ui .cust-muted {
+    color: var(--text-secondary) !important;
+    font-family: Poppins, sans-serif;
+}
+
+.brudms-customer-ui .cust-text {
+    color: var(--text-primary) !important;
+}
+
+.brudms-customer-ui .cust-text-muted {
+    color: var(--text-secondary) !important;
+}
+
+.brudms-customer-ui .cust-accent {
+    color: var(--accent-blue) !important;
+}
+
+/* —— Shell / panels —— */
+.brudms-customer-ui .cust-dashboard-shell,
+.brudms-customer-ui .cust-shell-panel {
+    background: rgba(255, 255, 255, 0.28) !important;
+    box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-dashboard-shell,
+html.dark .brudms-customer-ui .cust-dashboard-shell {
+    background: rgba(217, 217, 217, 0.07) !important;
+    box-shadow: none;
+}
+
+.brudms-customer-ui .cust-glass,
+.brudms-customer-ui .cust-panel {
+    background: var(--brudms-chip-bg) !important;
+    outline: 0.7px solid var(--brudms-chip-border) !important;
+    border-color: var(--brudms-chip-border);
+    color: var(--text-primary);
+    backdrop-filter: blur(18px) saturate(1.5);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-glass,
+html.dark .brudms-customer-ui .cust-glass,
+html[data-theme='dark'] .brudms-customer-ui .cust-panel,
+html.dark .brudms-customer-ui .cust-panel {
+    background: rgba(66, 106, 120, 0.16) !important;
+    outline: 0.7px solid rgba(255, 255, 255, 0.21) !important;
+}
+
+/* —— Tabs (home / chat / history) —— */
+.brudms-customer-ui .tab-btn {
+    background: var(--brudms-secondary) !important;
+    color: var(--text-secondary) !important;
+    outline: 1.7px solid var(--brudms-chip-border) !important;
+    border: none;
+}
+
+.brudms-customer-ui .tab-btn:hover {
+    color: var(--accent-blue) !important;
+    outline-color: var(--accent-blue) !important;
+}
+
+.brudms-customer-ui .tab-btn-active {
+    background: var(--brudms-primary) !important;
+    color: var(--text-primary) !important;
+    outline: 1.7px solid var(--brudms-chip-border) !important;
+}
+
+html[data-theme='dark'] .brudms-customer-ui .tab-btn-active,
+html.dark .brudms-customer-ui .tab-btn-active {
+    color: #0f2942 !important;
+}
+
+/* —— Preference radio dots (appearance/language/anonymous) —— */
+.brudms-customer-ui .appearance-radio-selected,
+.brudms-customer-ui .language-radio-selected,
+.brudms-customer-ui .anonymous-radio-selected {
+    background: var(--accent-blue) !important;
+}
+
+/* —— Filter chips —— */
+.brudms-customer-ui .dashboard-filter-chip,
+.brudms-customer-ui .cust-chip {
+    background: var(--brudms-chip-bg) !important;
+    color: var(--text-primary) !important;
+    outline: 1px solid var(--brudms-chip-border) !important;
+    border: 1px solid var(--brudms-chip-border);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.brudms-customer-ui .dashboard-filter-chip--active,
+.brudms-customer-ui .cust-chip-active {
+    outline: 1.2px solid var(--accent-blue) !important;
+    background: var(--brudms-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* —— Buttons —— */
+.brudms-customer-ui .cust-btn-primary,
+.brudms-customer-ui .cust-btn-confirm {
+    background: var(--accent-blue) !important;
+    color: var(--brudms-primary) !important;
+    border: none !important;
+    box-shadow: var(--shadow-soft);
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-btn-primary,
+html.dark .brudms-customer-ui .cust-btn-primary,
+html[data-theme='dark'] .brudms-customer-ui .cust-btn-confirm,
+html.dark .brudms-customer-ui .cust-btn-confirm {
+    background: var(--brudms-primary) !important;
+    color: #0a1628 !important;
+    box-shadow: 0 2px 8px rgba(var(--brudms-primary-rgb), 0.3);
+}
+
+.brudms-customer-ui .cust-btn-secondary,
+.brudms-customer-ui .cust-btn-cancel {
+    background: var(--brudms-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 2px solid var(--brudms-chip-border) !important;
+    box-shadow: var(--shadow-soft);
+}
+
+.brudms-customer-ui .cust-btn-secondary:disabled,
+.brudms-customer-ui .cust-btn-confirm:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* —— Inputs —— */
+.brudms-customer-ui .cust-input,
+.brudms-customer-ui input.cust-field,
+.brudms-customer-ui textarea.cust-field {
+    background: var(--brudms-chip-bg) !important;
+    border: 1.2px solid var(--brudms-chip-border) !important;
+    color: var(--text-primary) !important;
+    outline: none;
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.brudms-customer-ui .cust-input::placeholder,
+.brudms-customer-ui input.cust-field::placeholder,
+.brudms-customer-ui textarea.cust-field::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-input,
+html.dark .brudms-customer-ui .cust-input,
+html[data-theme='dark'] .brudms-customer-ui input.cust-field,
+html.dark .brudms-customer-ui input.cust-field {
+    background: rgba(66, 106, 120, 0.16) !important;
+    border-color: rgba(255, 255, 255, 0.21) !important;
+}
+
+/* —— Preference / settings cards —— */
+.brudms-customer-ui .cust-settings-card {
+    background: var(--brudms-chip-bg) !important;
+    border: 0.7px solid var(--brudms-chip-border) !important;
+    backdrop-filter: blur(18px) saturate(1.5);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-settings-card,
+html.dark .brudms-customer-ui .cust-settings-card {
+    background: rgba(66, 106, 120, 0.16) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* —— Chat —— */
+.brudms-customer-ui .cust-chat-bubble-user {
+    background: var(--accent-blue) !important;
+    color: var(--brudms-primary) !important;
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-chat-bubble-user,
+html.dark .brudms-customer-ui .cust-chat-bubble-user {
+    background: var(--brudms-primary) !important;
+    color: #040929 !important;
+}
+
+.brudms-customer-ui .cust-chat-bubble-bot {
+    background: var(--brudms-chip-bg) !important;
+    outline: 1px solid var(--brudms-chip-border);
+    color: var(--text-primary) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+}
+
+.brudms-customer-ui .cust-chat-input-wrap {
+    background: var(--brudms-chip-bg) !important;
+    outline: 1.7px solid var(--brudms-chip-border) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+}
+
+.brudms-customer-ui .cust-chat-input {
+    color: var(--text-primary) !important;
+    background: transparent !important;
+}
+
+.brudms-customer-ui .cust-chat-send {
+    background: var(--accent-blue) !important;
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-chat-send,
+html.dark .brudms-customer-ui .cust-chat-send {
+    background: var(--brudms-primary) !important;
+}
+
+/* —— List rows (general, support links) —— */
+.brudms-customer-ui .cust-list-row {
+    background: var(--brudms-chip-bg) !important;
+    border: 0.7px solid var(--brudms-chip-border) !important;
+    color: var(--text-primary) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-list-row,
+html.dark .brudms-customer-ui .cust-list-row {
+    background: rgba(66, 106, 120, 0.16) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* —— Hide the dark-mode topo background in light mode; the aurora background (see
+   customer-aurora-bg.blade.php) takes over for light mode instead. —— */
+html[data-theme='light'] .brudms-customer-ui .cust-page-bg,
+html[data-theme='light'] .brudms-customer-ui .cust-page-bg > div {
+    display: none !important;
+}
+
+/* —— Legacy inline overrides (both themes where needed) —— */
+.brudms-customer-ui [style*='rgba(66, 106, 120, 0.16)'],
+.brudms-customer-ui [style*='rgba(66, 106, 120, 0.35)'],
+.brudms-customer-ui [style*='rgba(66, 106, 120, 0.2)'] {
+    background: var(--brudms-chip-bg) !important;
+}
+
+html[data-theme='light'] .brudms-customer-ui [style*='rgba(66, 106, 120, 0.16)'],
+html[data-theme='light'] .brudms-customer-ui [style*='rgba(66, 106, 120, 0.35)'] {
+    background: var(--brudms-primary) !important;
+}
+
+.brudms-customer-ui [style*='rgba(255, 255, 255'],
+.brudms-customer-ui [style*='rgba(255,255,255'] {
+    outline-color: var(--brudms-chip-border) !important;
+    border-color: var(--brudms-chip-border) !important;
+}
+
+/* Any remaining plain solid-white buttons (e.g. the map "locate me" button) become
+   glass instead, matching the rest of the UI's frosted panels. */
+.brudms-customer-ui button[style*='background: white'],
+.brudms-customer-ui button[style*='background:white'],
+.brudms-customer-ui button[style*='background: #fff'],
+.brudms-customer-ui button[style*='background:#fff'] {
+    background: var(--brudms-chip-bg) !important;
+    outline: 0.7px solid var(--brudms-chip-border) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+}
+
+/* Buttons/press targets with no border at all still get a visible edge in light mode.
+   (Deliberately excludes .press-btn — that class is a generic click-animation utility
+   also used on plain wrapper links like the header logo and profile photo. Also excludes
+   any [class*="glass-filter"] button — the small circular filter-icon triggers and their
+   dropdown option rows on dashboard/myhistory are meant to stay borderless and blend into
+   the glass filter box around them — and any [class*="cr-"] button, which is the Ziqah
+   chat widget's own icon buttons (attach/send/close), themed separately and meant to stay
+   plain rather than getting a boxed outline.) */
+html[data-theme='light'] .brudms-customer-ui .tab-btn,
+html[data-theme='light'] .brudms-customer-ui .cust-glass,
+html[data-theme='light'] .brudms-customer-ui .cust-panel,
+html[data-theme='light'] .brudms-customer-ui .cust-chip,
+html[data-theme='light'] .brudms-customer-ui .dashboard-filter-chip,
+html[data-theme='light'] .brudms-customer-ui .cust-settings-card,
+html[data-theme='light'] .brudms-customer-ui .cust-list-row,
+html[data-theme='light'] .brudms-customer-ui button:not([class*="glass-filter"]):not([class*="cr-"]) {
+    outline: 1.2px solid var(--brudms-chip-border) !important;
+    box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Preference page: appearance/language/anonymous radio dots and their clickable option areas. */
+html[data-theme='light'] .brudms-customer-ui .appearance-radio,
+html[data-theme='light'] .brudms-customer-ui .language-radio,
+html[data-theme='light'] .brudms-customer-ui .anonymous-radio {
+    box-shadow: var(--shadow-soft) !important;
+}
+
+/* Icon SVGs are drawn white/light-grey for the dark theme; darken them a touch so they
+   still read clearly against the lighter background. */
+html[data-theme='light'] .brudms-customer-ui img[src*='/images/Vectors/'] {
+    filter: brightness(0.4);
+}
+
+/* Same idea for hand-authored inline <svg stroke="white"> icons (e.g. back arrows). */
+html[data-theme='light'] .brudms-customer-ui svg[stroke='white'] {
+    stroke: var(--text-primary) !important;
+}
+
+.brudms-customer-ui [style*='color: white'],
+.brudms-customer-ui [style*='color:white'],
+.brudms-customer-ui [style*='color: rgba(255, 255, 255'],
+.brudms-customer-ui [style*='color: rgba(255,255,255'] {
+    color: var(--text-primary) !important;
+}
+
+.brudms-customer-ui [style*='rgba(255, 255, 255, 0.5)'],
+.brudms-customer-ui [style*='rgba(255, 255, 255, 0.6)'],
+.brudms-customer-ui [style*='rgba(255,255,255,0.4)'],
+.brudms-customer-ui [style*='rgba(255, 255, 255, 0.42)'],
+.brudms-customer-ui [style*='rgba(255,255,255,0.72)'],
+.brudms-customer-ui [style*='rgba(255,255,255,0.7)'],
+.brudms-customer-ui [style*='rgba(255,255,255,0.8)'],
+.brudms-customer-ui [style*='rgba(255,255,255,0.9)'] {
+    color: var(--text-secondary) !important;
+}
+
+.brudms-customer-ui input[style*='color: white'],
+.brudms-customer-ui input[style*='color:white'],
+.brudms-customer-ui textarea[style*='color: white'],
+.brudms-customer-ui textarea[style*='color:white'] {
+    color: var(--text-primary) !important;
+    background: var(--brudms-chip-bg) !important;
+    border-color: var(--brudms-chip-border) !important;
+}
+
+.brudms-customer-ui [style*='background: var(--brudms-primary)'] {
+    background: var(--brudms-chip-bg) !important;
+}
+
+html[data-theme='light'] .brudms-customer-ui [style*='background: var(--brudms-primary)'] {
+    color: var(--text-primary) !important;
+}
+
+.brudms-customer-ui [style*='color: var(--brudms-primary)'] {
+    color: var(--accent-blue) !important;
+}
+
+html[data-theme='dark'] .brudms-customer-ui [style*='color: #040929'],
+html.dark .brudms-customer-ui [style*='color: #040929'] {
+    color: #040929 !important;
+}
+
+/* —— Live map (theme-aware) —— */
+html[data-theme='light'] .brudms-customer-ui #livemap.leaflet-container,
+html[data-theme='light'] .brudms-customer-ui .leaflet-container {
+    background: var(--brudms-tertiary) !important;
+}
+
+html[data-theme='dark'] .brudms-customer-ui #livemap.leaflet-container,
+html.dark .brudms-customer-ui #livemap.leaflet-container {
+    background: #0b1628 !important;
+}
+
+/* —— Avatar placeholder —— */
+.brudms-customer-ui .cust-avatar-placeholder {
+    background: var(--brudms-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-avatar-placeholder,
+html.dark .brudms-customer-ui .cust-avatar-placeholder {
+    background: #3f3f46 !important;
+    color: #e4e4e7 !important;
+}
+
+/* —— FAQ / support headers —— */
+.brudms-customer-ui .faq-item {
+    background: var(--brudms-chip-bg) !important;
+    border: 1px solid var(--brudms-chip-border) !important;
+    color: var(--text-primary);
+}
+
+.brudms-customer-ui .faq-item span,
+.brudms-customer-ui .faq-item .faq-chevron {
+    color: var(--text-primary) !important;
+}
+
+.brudms-customer-ui .faq-answer,
+.brudms-customer-ui .faq-answer p {
+    color: var(--text-secondary) !important;
+}
+
+.brudms-customer-ui .customer-tab {
+    color: var(--text-secondary);
+}
+
+.brudms-customer-ui .customer-tab.cust-accent,
+.brudms-customer-ui a.customer-tab:hover {
+    color: var(--accent-blue) !important;
+}
+
+.brudms-customer-ui .cust-stat-panel {
+    background: var(--brudms-chip-bg) !important;
+    outline: 0.7px solid var(--brudms-chip-border) !important;
+}
+
+html[data-theme='dark'] .brudms-customer-ui .cust-stat-panel,
+html.dark .brudms-customer-ui .cust-stat-panel {
+    background: rgba(66, 106, 120, 0.16) !important;
+    outline-color: rgba(255, 255, 255, 0.21) !important;
+}
+
+.brudms-customer-ui .cust-stat-select {
+    background: var(--brudms-chip-bg) !important;
+    border-color: var(--brudms-chip-border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* —— Press feedback —— */
+.brudms-customer-ui .press-btn {
+    transition: transform 0.1s ease;
+}
+
+.brudms-customer-ui .press-btn:active {
+    transform: scale(0.93) !important;
+}

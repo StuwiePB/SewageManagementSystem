@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" role="img" aria-label="BruDMS shield">
+    <defs>
+        <linearGradient id="shieldFill" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0A2540"/>
+            <stop offset="45%" stop-color="#2E7D8F"/>
+            <stop offset="100%" stop-color="#8FD3F4"/>
+        </linearGradient>
+        <linearGradient id="shieldSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.28"/>
+            <stop offset="35%" stop-color="#FFFFFF" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="crescentMask">
+            <rect x="0" y="0" width="100" height="120" fill="#fff"/>
+            <circle cx="54.5" cy="23" r="8.4" fill="#000"/>
+        </mask>
+    </defs>
+
+    <!-- Shield silhouette -->
+    <path d="M50,3 C34,3 18,7.5 10,11.5 L10,53 C10,79 25,101 50,116 C75,101 90,79 90,53 L90,11.5 C82,7.5 66,3 50,3 Z"
+          fill="url(#shieldFill)" stroke="#BFE9FB" stroke-opacity="0.55" stroke-width="1.5"/>
+    <!-- Top sheen for a bit of dimension, no photoreal texture -->
+    <path d="M50,3 C34,3 18,7.5 10,11.5 L10,53 C10,79 25,101 50,116 C75,101 90,79 90,53 L90,11.5 C82,7.5 66,3 50,3 Z"
+          fill="url(#shieldSheen)"/>
+
+    <!-- Crescent moon: a light nod to Brunei's flag/state symbolism, kept abstract rather than
+         reproducing the national crest itself -->
+    <circle cx="50" cy="22" r="8.4" fill="#EAF6FF" mask="url(#crescentMask)"/>
+
+    <!-- Flowing water / drainage motif -->
+    <path d="M20,72 Q28,66 36,72 T52,72 T68,72 T84,72" fill="none" stroke="#EAF6FF" stroke-width="2.3" stroke-linecap="round" opacity="0.9"/>
+    <path d="M22,83 Q30,77 38,83 T54,83 T70,83 T82,83" fill="none" stroke="#EAF6FF" stroke-width="2.1" stroke-linecap="round" opacity="0.65"/>
+    <path d="M26,94 Q33,89 40,94 T54,94 T68,94 T78,94" fill="none" stroke="#EAF6FF" stroke-width="1.9" stroke-linecap="round" opacity="0.42"/>
+</svg>

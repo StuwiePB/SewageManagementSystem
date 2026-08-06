@@ -8,7 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg-primary: #1A1D2B; --bg-secondary: #272B3C; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --accent-blue: #6A96FF; --accent-red: #FF5B5B; --accent-green: #56FF8B; --accent-purple: #A86AFF; --warning-yellow: #ffbe0b; }
+        {{-- Previously --bg-primary/--accent-blue referenced --text-primary/--brudms-* which
+             were never defined on this standalone page — that self-reference resolved to
+             white-on-white body text and a blown-out white background. Real literal values
+             below, chosen for actual contrast against the light background instead. --}}
+        :root { --bg-primary: #E4E9E7; --bg-secondary: #FFFFFF; --text-primary: #16262C; --text-secondary: #4E5F65; --accent-blue: #0A5F8F; --accent-red: #B33A34; --accent-green: #2E7D52; --accent-purple: #6F4FC4; --warning-yellow: #9A6A00; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
         h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif; font-weight: 600; color: var(--text-primary); }
         .navbar { background: var(--bg-secondary); border-bottom: 1px solid rgba(106, 150, 255, 0.15); }
@@ -52,10 +56,10 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ route('ai.incidents.dashboard') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ route('ai.incidents.dashboard') }}">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ route('incidents.create') }}">Upload</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ route('admin.incidents.review') }}">Review</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{{ route('ai.incidents.dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Admin</a></li>
                 </ul>
             </div>

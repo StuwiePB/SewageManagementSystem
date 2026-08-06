@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OperationsReport;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderPhoto;
-use App\Models\OperationsReport;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class AdminWorkOrderController extends Controller
@@ -29,14 +31,14 @@ class AdminWorkOrderController extends Controller
 
     public function create()
     {
-        $reports = OperationsReport::where('status', 'new')->orderBy('created_at', 'desc')->get();
+        $reports = OperationsReport::where('status', 'pending')->orderBy('created_at', 'desc')->get();
         $districts = config('brunei.districts', []);
         $mukims = config('brunei.mukims', []);
 
         return view('r_admin.work-orders.create', compact('reports', 'districts', 'mukims'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SnsNotifier $snsNotifier)
     {
         $validated = $request->validate([
             'report_id' => 'nullable|exists:operations_reports,id',
@@ -73,9 +75,9 @@ class AdminWorkOrderController extends Controller
 
         $workOrder = WorkOrder::create($validated);
 
-        if ($workOrder->report_id) {
-            $workOrder->report->update(['status' => 'in_progress']);
-        }
+        $snsNotifier->workOrderCreated($workOrder);
+
+        $this->syncLinkedReportStatuses($workOrder, 'in_progress');
 
         return redirect()->route('admin.work-orders.index')
             ->with('success', 'Work order created successfully.');
@@ -100,23 +102,24 @@ class AdminWorkOrderController extends Controller
 
         if ($validated['status'] === 'completed' && $oldStatus !== 'completed') {
             $workOrder->update(['completed_at' => now()]);
-            if ($workOrder->report_id) {
-                $workOrder->report->update(['status' => 'resolved']);
-            }
         }
+
+        $this->syncLinkedReportStatuses($workOrder, $this->mapWorkOrderStatusToReportStatus($validated['status']));
 
         return redirect()->back()->with('success', 'Work order status updated.');
     }
 
     public function show(WorkOrder $workOrder)
     {
-        $workOrder->load(['report', 'photos']);
+        $workOrder->load(['report.customerReport', 'photos']);
+
         return view('r_admin.work-orders.show', compact('workOrder'));
     }
 
     public function pdf(WorkOrder $workOrder)
     {
         $workOrder->load(['report', 'photos']);
+
         return view('r_admin.work-orders.pdf', compact('workOrder'));
     }
 
@@ -170,7 +173,7 @@ class AdminWorkOrderController extends Controller
 
         $uploaded = 0;
         foreach ($request->file('photos') as $file) {
-            $path = $file->store('work-order-photos/' . $workOrder->id, 'public');
+            $path = $file->store('work-order-photos/'.$workOrder->id, 'public');
             WorkOrderPhoto::create([
                 'work_order_id' => $workOrder->id,
                 'path' => $path,
@@ -179,7 +182,7 @@ class AdminWorkOrderController extends Controller
             $uploaded++;
         }
 
-        return redirect()->back()->with('success', $uploaded . ' photo(s) added.');
+        return redirect()->back()->with('success', $uploaded.' photo(s) added.');
     }
 
     public function destroyPhoto(WorkOrder $workOrder, WorkOrderPhoto $photo)
@@ -196,7 +199,98 @@ class AdminWorkOrderController extends Controller
     public function submitForApproval(WorkOrder $workOrder)
     {
         $workOrder->update(['status' => 'pending_approval']);
+        $this->syncLinkedReportStatuses($workOrder, 'in_progress');
 
         return redirect()->back()->with('success', 'Work order submitted for approval.');
+    }
+
+    public function destroy(WorkOrder $workOrder)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403, 'Only Super Admin can archive work orders.');
+
+        $workOrder->load('report');
+        $workOrder->delete();
+        $this->syncLinkedReportStatuses($workOrder, 'cancelled');
+
+        return redirect()
+            ->route('admin.work-orders.index')
+            ->with('success', 'Work order '.$workOrder->work_order_number.' archived.');
+    }
+
+    public function archived(Request $request)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403, 'Only Super Admin can access archived work orders.');
+
+        $query = WorkOrder::onlyTrashed()->with('report');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        $workOrders = $query
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('r_admin.work-orders.archived', compact('workOrders'));
+    }
+
+    public function restore(int $workOrder)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403, 'Only Super Admin can restore archived work orders.');
+
+        $record = WorkOrder::withTrashed()->findOrFail($workOrder);
+        if (! $record->trashed()) {
+            return redirect()
+                ->route('admin.work-orders.archived')
+                ->with('error', 'Work order is already active.');
+        }
+
+        $record->restore();
+        $this->syncLinkedReportStatuses($record, $this->mapWorkOrderStatusToReportStatus((string) $record->status));
+
+        return redirect()
+            ->route('admin.work-orders.archived')
+            ->with('success', 'Work order '.$record->work_order_number.' restored.');
+    }
+
+    private function mapWorkOrderStatusToReportStatus(string $workOrderStatus): string
+    {
+        return match ($workOrderStatus) {
+            'completed' => 'resolved',
+            'cancelled' => 'cancelled',
+            default => 'in_progress',
+        };
+    }
+
+    private function syncLinkedReportStatuses(WorkOrder $workOrder, string $operationsStatus): void
+    {
+        if (! $workOrder->report_id) {
+            return;
+        }
+
+        $report = $workOrder->report()->first();
+        if (! $report) {
+            return;
+        }
+
+        $report->update(['status' => $operationsStatus]);
+
+        if (! Schema::hasColumn('operations_reports', 'customer_report_id') || ! $report->customer_report_id) {
+            return;
+        }
+
+        $customerStatus = match ($operationsStatus) {
+            'resolved' => 'resolved',
+            'cancelled' => 'cancelled',
+            default => 'in_progress',
+        };
+        \App\Models\Report::query()
+            ->whereKey($report->customer_report_id)
+            ->update(['status' => $customerStatus]);
     }
 }

@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Models\RiskCell;
+use App\Services\Sns\SnsNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ReportController extends Controller
 {
-    public function submit(Request $request): JsonResponse|RedirectResponse
+    public function submit(Request $request, SnsNotifier $snsNotifier): JsonResponse|RedirectResponse
     {
         $isGuest = ! $request->user();
 
@@ -30,13 +33,20 @@ class ReportController extends Controller
                     }
                 },
             ],
-            'severity' => ['nullable', 'string', 'in:urgent,nonurgent'],
             'description' => ['nullable', 'string', 'max:2000'],
             'address' => ['nullable', 'string', 'max:500'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
             'photo' => ['nullable', 'string'],
         ]);
+
+        $latitude = (float) $request->input('latitude');
+        $longitude = (float) $request->input('longitude');
+        if (! $this->isWithinBruneiBounds($latitude, $longitude)) {
+            throw ValidationException::withMessages([
+                'latitude' => ['Please choose a location within Brunei only.'],
+            ]);
+        }
 
         $user = $request->user();
         $photoPath = null;
@@ -60,14 +70,16 @@ class ReportController extends Controller
             'reporter_name' => $request->filled('reporter_name') ? $request->reporter_name : null,
             'phone' => $request->filled('phone') ? $this->normalizePhone($request->phone) : null,
             'problem_type' => $request->problem_type,
-            'severity' => $request->filled('severity') ? $request->severity : null,
             'description' => $request->description,
             'address' => $request->address,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'h3_index' => RiskCell::nearestH3Index($latitude, $longitude),
             'photo_path' => $photoPath,
             'status' => Report::STATUS_PENDING,
         ]);
+
+        $snsNotifier->customerReportSubmitted($report);
 
         if ($request->expectsJson()) {
             $senderName = $report->reporter_name
@@ -100,6 +112,7 @@ class ReportController extends Controller
     private function normalizePhone(string $phone): string
     {
         $digits = preg_replace('/\D+/', '', trim($phone)) ?? '';
+
         return '+'.$digits;
     }
 
@@ -119,5 +132,13 @@ class ReportController extends Controller
 
         // Brunei numbers: must be +673 followed by 7 digits.
         return str_starts_with($digits, '673') && strlen($digits) === 10;
+    }
+
+    private function isWithinBruneiBounds(float $latitude, float $longitude): bool
+    {
+        return $latitude >= 4.00
+            && $latitude <= 5.12
+            && $longitude >= 114.00
+            && $longitude <= 115.40;
     }
 }

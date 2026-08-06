@@ -13,10 +13,12 @@ class RegisterResponse implements RegisterResponseContract
      */
     public function toResponse($request): Response
     {
+        $request->session()->forget('email_bind_prompt_dismissed');
+
         if ($request->wantsJson()) {
             return new JsonResponse('', 201);
         }
 
-        return redirect()->intended(route('customer.dashboard', ['name' => $request->user()->profileSlug()]));
+        return redirect()->route('customer.dashboard', ['name' => $request->user()->profileSlug()]);
     }
 }
